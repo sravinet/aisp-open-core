@@ -501,7 +501,7 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
   title = {AISP: AI Symbolic Protocol - The Assembly Language for AI Cognition},
   year = {2026},
   publisher = {GitHub},
-  howpublished = {\url{https://github.com/bar181/aisp-5.1}},
+  howpublished = {\url{https://github.com/bar181/aisp-open-core}},
   note = {This is an open code version.  Support for Harvard ALM Capstone Project}
 }
 ```
