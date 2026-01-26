@@ -61,6 +61,9 @@ pub mod invariant_discovery;
 // Satisfiability checking components
 pub mod satisfiability_checker;
 
+// Formal verification framework
+pub mod formal_verification;
+
 // Formal methods and remediation components  
 pub mod formal_semantics;
 pub mod soundness_proofs;

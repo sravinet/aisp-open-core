@@ -18,6 +18,7 @@ z3-verification = ["dep:z3"]
 serde = { version = "1.0", features = ["derive"], optional = true }
 thiserror = "1.0"
 z3 = { version = "0.12", optional = true }
+uuid = { version = "1.0", features = ["v4"] }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
