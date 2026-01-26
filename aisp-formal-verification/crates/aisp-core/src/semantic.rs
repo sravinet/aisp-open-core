@@ -84,6 +84,10 @@ pub struct SemanticAnalysisResult {
     pub validation_errors: Vec<String>,
     /// Analysis warnings
     pub warnings: Vec<String>,
+    /// Coherence score (for compatibility)
+    pub coherence_score: f64,
+    /// Rule coverage (for compatibility)  
+    pub rule_coverage: f64,
 }
 
 impl SemanticAnalysis {
@@ -97,6 +101,8 @@ impl SemanticAnalysis {
             quality_score: self.quality_score,
             validation_errors: self.errors.iter().map(|e| e.to_string()).collect(),
             warnings: vec![], // SemanticAnalysis doesn't have warnings field
+            coherence_score: self.quality_score, // Use quality_score as approximation
+            rule_coverage: self.completeness,   // Use completeness as approximation
         }
     }
 }
