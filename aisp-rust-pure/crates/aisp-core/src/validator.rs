@@ -5,7 +5,7 @@
 
 use crate::ast::*;
 use crate::error::*;
-use crate::parser::*;
+use crate::parser_new::*;
 use crate::semantic::*;
 use crate::z3_integration::*;
 use crate::{MAX_DOCUMENT_SIZE, AISP_VERSION};

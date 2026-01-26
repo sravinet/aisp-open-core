@@ -4,10 +4,10 @@
 //! AISP 5.1 documents with zero-copy parsing and strong type safety guarantees.
 
 pub mod ast;
-pub mod parser;
-pub mod relational;
+pub mod parser_new;
+pub mod relational_new;
 pub mod semantic;
-pub mod temporal;
+pub mod temporal_new;
 pub mod validator;
 pub mod z3_integration;
 pub mod error;
@@ -22,54 +22,51 @@ pub mod meta_parser;
 pub mod types_parser;
 pub mod evidence_parser;
 pub mod logic_parser;
-pub mod parser_new;
 
 // New modular semantic analysis components
 pub mod type_checker;
-pub mod symbol_analyzer;
-pub mod quality_analyzer;
 
 // New modular relational analysis components
 pub mod constraint_solver;
-pub mod set_analyzer;
-pub mod dependency_analyzer;
-pub mod type_graph;
 pub mod conflict_detector;
-pub mod relational_new;
 
 // New modular temporal analysis components
 pub mod temporal_operator_analyzer;
 pub mod temporal_pattern_detector;
 pub mod temporal_logic_solver;
 pub mod temporal_model_checker;
-pub mod temporal_new;
 
 // Advanced formal verification components
 pub mod property_types;
 pub mod formula_converter;
 pub mod property_factory;
-pub mod property_extractor_main;
 pub mod property_extractor;
 pub mod smt_types;
 pub mod smt_formula_converter;
-pub mod smt_generator_main;
 pub mod smt_generator;
 pub mod proof_types;
 pub mod axiom_system;
 pub mod proof_search;
-pub mod theorem_prover_main;
 pub mod theorem_prover;
 pub mod model_checker;
 
-// Test fixtures and utilities
-#[cfg(test)]
-pub mod test_fixtures;
+// Formal methods and remediation components  
+pub mod formal_semantics;
+pub mod soundness_proofs;
+pub mod completeness_analysis;
+pub mod semantic_preservation;
+
+// Rigorous mathematical foundations
+pub mod mathematical_semantics;
+pub mod mechanized_proofs;
+
+// Test fixtures and utilities are now handled inline in each module
 
 pub use ast::*;
-pub use parser::*;
-pub use relational::*;
+pub use parser_new::*;
+pub use relational_new::*;
 pub use semantic::*;
-pub use temporal::*;
+pub use temporal_new::*;
 pub use validator::*;
 pub use z3_integration::*;
 pub use error::*;

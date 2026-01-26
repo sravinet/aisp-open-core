@@ -331,3 +331,9 @@ mod tests {
         assert!(result.is_err());
     }
 }
+
+/// Standalone parse function for compatibility
+pub fn parse(source: &str) -> AispResult<AispDocument> {
+    let mut parser = AispParser::new(source.to_string());
+    parser.parse()
+}

@@ -5,8 +5,8 @@
 
 use crate::ast::*;
 use crate::error::*;
-use crate::relational::*;
-use crate::temporal::*;
+use crate::relational_new::*;
+use crate::temporal_new::*;
 use crate::symbols::*;
 use crate::tier_thresholds;
 use std::collections::{HashMap, HashSet};
@@ -89,7 +89,7 @@ pub struct SemanticAnalysis {
     /// Level 4 relational analysis results
     pub relational_analysis: Option<RelationalAnalysis>,
     /// Level 5 temporal analysis results
-    pub temporal_analysis: Option<TemporalAnalysis>,
+    pub temporal_analysis: Option<TemporalAnalysisResult>,
     /// Symbol usage statistics
     pub symbol_stats: SymbolStatistics,
     /// Semantic warnings
@@ -235,20 +235,11 @@ impl SemanticAnalyzer {
         let temporal_analysis = if doc.blocks.len() >= 4 && 
             doc.blocks.iter().any(|b| matches!(b, AispBlock::Rules(_))) {
             // Only perform temporal analysis for documents with logical rules
-            let mut temporal_analyzer = TemporalAnalyzer::new();
-            match temporal_analyzer.analyze(doc) {
-                Ok(analysis) => {
-                    // Merge temporal warnings
-                    self.warnings.extend(analysis.warnings.clone());
-                    Some(analysis)
-                }
-                Err(err) => {
-                    self.warnings.push(AispWarning::warning(
-                        format!("Temporal analysis failed: {}", err)
-                    ));
-                    None
-                }
-            }
+            let mut temporal_analyzer = UnifiedTemporalAnalyzer::new();
+            let analysis = temporal_analyzer.analyze(doc);
+            // Merge temporal warnings
+            self.warnings.extend(analysis.warnings.clone());
+            Some(analysis)
         } else {
             None
         };
@@ -611,7 +602,7 @@ mod tests {
 ⟦Ε⟧⟨δ≜0.8;φ≜100;τ≜◊⁺⟩
         "#.trim();
 
-        let mut parser = AispParser::new(source.to_string());
+        let mut parser = crate::parser_new::AispParser::new(source.to_string());
         let doc = parser.parse().unwrap();
         
         let mut analyzer = SemanticAnalyzer::new();
