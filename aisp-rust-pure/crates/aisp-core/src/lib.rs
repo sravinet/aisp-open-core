@@ -64,6 +64,12 @@ pub mod satisfiability_checker;
 // Formal verification framework
 pub mod formal_verification;
 
+// Advanced behavioral verification components
+pub mod protocol_state_machine;
+pub mod concurrent_behavior_verifier;
+pub mod resource_utilization_analyzer;
+pub mod performance_constraint_verifier;
+
 // Formal methods and remediation components  
 pub mod formal_semantics;
 pub mod soundness_proofs;
