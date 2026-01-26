@@ -5,6 +5,7 @@
 
 use crate::ast::*;
 use crate::error::*;
+use crate::conflict_types::ConflictSeverity;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 /// Constraint solver for relational logic
@@ -90,18 +91,6 @@ pub struct ConstraintConflict {
     pub resolution: Option<String>,
 }
 
-/// Severity of constraint conflicts
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum ConflictSeverity {
-    /// Minor conflict that can be ignored
-    Minor,
-    /// Warning-level conflict
-    Warning,
-    /// Error-level conflict
-    Error,
-    /// Critical conflict that prevents validation
-    Critical,
-}
 
 impl ConstraintSolver {
     /// Create a new constraint solver

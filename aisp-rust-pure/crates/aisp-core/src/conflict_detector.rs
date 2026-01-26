@@ -6,7 +6,8 @@
 
 use crate::ast::*;
 use crate::error::*;
-use crate::constraint_solver::{ConstraintAnalysisResult, ConstraintConflict, ConflictSeverity};
+use crate::constraint_solver::{ConstraintAnalysisResult, ConstraintConflict};
+use crate::conflict_types::ConflictSeverity;
 use crate::type_graph::{TypeGraphResult, RelationType};
 use crate::set_analyzer::SetAnalysisResult;
 use crate::dependency_analyzer::{DependencyAnalysisResult, CircularDependency};
@@ -553,8 +554,10 @@ impl ConflictDetector {
             let score_contribution = match conflict.severity {
                 ConflictSeverity::Critical => 10.0,
                 ConflictSeverity::Error => 5.0,
+                ConflictSeverity::Major => 3.0,
                 ConflictSeverity::Warning => 1.0,
                 ConflictSeverity::Minor => 0.2,
+                ConflictSeverity::Info => 0.1,
             };
             total_score += score_contribution;
 
