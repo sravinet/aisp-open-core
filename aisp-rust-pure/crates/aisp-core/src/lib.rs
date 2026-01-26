@@ -58,6 +58,9 @@ pub mod invariant_exporters;
 pub mod invariant_discovery_main;
 pub mod invariant_discovery;
 
+// Satisfiability checking components
+pub mod satisfiability_checker;
+
 // Formal methods and remediation components  
 pub mod formal_semantics;
 pub mod soundness_proofs;

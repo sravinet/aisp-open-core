@@ -9,7 +9,16 @@ use crate::{
     invariant_types::{DiscoveredInvariant, InvariantDiscoveryConfig, DiscoveryStats},
     invariant_analyzer::InvariantAnalyzer,
     invariant_exporters,
+    satisfiability_checker::SatisfiabilityResult,
 };
+
+/// Result of analysis with satisfiability checking
+#[derive(Debug, Clone)]
+pub struct AnalysisWithSatResult {
+    pub invariants: Vec<DiscoveredInvariant>,
+    pub satisfiability_result: SatisfiabilityResult,
+    pub discovery_stats: DiscoveryStats,
+}
 
 /// Main invariant discovery engine
 pub struct InvariantDiscovery {
@@ -88,6 +97,31 @@ impl InvariantDiscovery {
         
         let mut discovery = Self::with_config(config);
         discovery.discover_invariants(document)
+    }
+
+    /// Analyze and verify satisfiability of discovered invariants
+    pub fn analyze_with_satisfiability(&mut self, document: &AispDocument) -> AispResult<AnalysisWithSatResult> {
+        // Discover invariants
+        let invariants = self.discover_invariants(document)?;
+        
+        // Check satisfiability
+        let sat_checker = crate::satisfiability_checker::SatisfiabilityChecker::default();
+        let sat_result = sat_checker.check_invariants(&invariants)?;
+        
+        let stats = self.get_discovery_stats().clone();
+        
+        Ok(AnalysisWithSatResult {
+            invariants,
+            satisfiability_result: sat_result,
+            discovery_stats: stats,
+        })
+    }
+
+    /// Quick satisfiability analysis with basic configuration
+    pub fn quick_satisfiability_check(document: &AispDocument) -> AispResult<crate::satisfiability_checker::SatisfiabilityResult> {
+        let invariants = Self::quick_analyze(document)?;
+        let sat_checker = crate::satisfiability_checker::SatisfiabilityChecker::default();
+        sat_checker.check_invariants(&invariants)
     }
 }
 

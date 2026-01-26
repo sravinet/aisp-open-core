@@ -32,6 +32,7 @@ pub use crate::invariant_formulas::*;
 pub use crate::invariant_analyzer::*;
 pub use crate::invariant_exporters::*;
 pub use crate::invariant_discovery_main::*;
+pub use crate::satisfiability_checker::*;
 
 #[cfg(test)]
 mod tests {

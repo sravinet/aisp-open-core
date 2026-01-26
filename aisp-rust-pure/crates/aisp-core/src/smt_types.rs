@@ -5,6 +5,67 @@
 
 use std::collections::HashMap;
 
+/// SMT-LIB formula representation
+#[derive(Debug, Clone, PartialEq)]
+pub enum SmtFormula {
+    /// Variable reference
+    Variable(String),
+    /// Integer literal
+    IntLiteral(i64),
+    /// Boolean literal
+    BoolLiteral(bool),
+    /// String literal
+    StringLiteral(String),
+    /// Function application
+    Application(String, Vec<SmtFormula>),
+    /// Logical conjunction
+    And(Vec<SmtFormula>),
+    /// Logical disjunction
+    Or(Vec<SmtFormula>),
+    /// Logical negation
+    Not(Box<SmtFormula>),
+    /// Universal quantification
+    Forall(Vec<(String, SmtSort)>, Box<SmtFormula>),
+    /// Existential quantification
+    Exists(Vec<(String, SmtSort)>, Box<SmtFormula>),
+}
+
+/// SMT sort (type) representation
+#[derive(Debug, Clone, PartialEq)]
+pub enum SmtSort {
+    /// Boolean sort
+    Boolean,
+    /// Integer sort
+    Integer,
+    /// Natural number sort
+    Natural,
+    /// Real number sort
+    Real,
+    /// String sort
+    String,
+    /// Custom sort
+    Custom(String),
+}
+
+/// SMT command representation
+#[derive(Debug, Clone, PartialEq)]
+pub enum SmtCommand {
+    /// Declare a sort
+    DeclareSort(String, u32),
+    /// Declare a function
+    DeclareFun(String, Vec<SmtSort>, SmtSort),
+    /// Assert a formula
+    Assert(SmtFormula),
+    /// Check satisfiability
+    CheckSat,
+    /// Get model
+    GetModel,
+    /// Set logic
+    SetLogic(String),
+    /// Set option
+    SetOption(String, String),
+}
+
 /// Complete SMT-LIB program for Z3
 #[derive(Debug, Clone)]
 pub struct SMTProgram {
