@@ -119,6 +119,8 @@ pub enum VerificationStatus {
 pub enum PropertyCategory {
     /// Tri-vector orthogonality
     TriVectorOrthogonality,
+    /// Temporal logic properties (LTL/CTL)
+    TemporalLogic,
     /// Temporal safety property
     TemporalSafety,
     /// Temporal liveness property
