@@ -44,6 +44,9 @@ pub enum AispError {
 
     #[error("Z3 error: {message}")]
     Z3Error { message: String },
+
+    #[error("Verification failed: {0}")]
+    VerificationFailed(String),
 }
 
 impl AispError {
@@ -85,6 +88,7 @@ impl AispError {
             Self::UnsupportedVersion { .. } => false,
             Self::IoError { .. } => false,
             Self::Z3Error { .. } => true,
+            Self::VerificationFailed(_) => true,
         }
     }
 }
