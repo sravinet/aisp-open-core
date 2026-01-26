@@ -72,7 +72,7 @@ impl TypesParser {
         if let Some(ch) = lexer.peek() {
             match ch {
                 '{' => {
-                    // Enumeration type {A, B, C}
+                    // Enumeration type {A, B, C} or {A B C} (AISP allows space separation)
                     lexer.advance(); // consume {
                     let mut values = Vec::new();
                     
@@ -85,12 +85,30 @@ impl TypesParser {
                         values.push(TokenParser::parse_identifier(lexer)?);
                         
                         lexer.skip_whitespace_and_comments();
+                        
+                        // Handle both comma-separated and space-separated variants
                         if lexer.match_char(',') {
+                            // Comma found, continue to next item
                             continue;
                         } else if lexer.check('}') {
+                            // End of enumeration, break
                             break;
                         } else {
-                            return Err(lexer.parse_error("Expected ',' or '}' in enumeration"));
+                            // Check if there's another identifier (space-separated)
+                            if let Some(ch) = lexer.peek() {
+                                if ch.is_alphabetic() || ch == '_' {
+                                    // Space-separated variant, continue parsing
+                                    continue;
+                                } else if ch == '}' {
+                                    // End of enumeration
+                                    break;
+                                } else {
+                                    // Invalid character
+                                    return Err(lexer.parse_error(&format!("Unexpected character '{}' in enumeration", ch)));
+                                }
+                            } else {
+                                break;
+                            }
                         }
                     }
                     

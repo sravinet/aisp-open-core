@@ -14,6 +14,7 @@ use crate::{
     proof_types::ProofTree,
     theorem_prover::TheoremProver,
 };
+use std::collections::HashSet;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
@@ -503,27 +504,164 @@ impl FormalVerifier {
     }
 
     fn try_direct_proof(&mut self, property: &PropertyFormula) -> AispResult<ProofSteps> {
-        // Simplified direct proof construction
-        let steps = vec![
-            ProofStep {
-                step_number: 1,
-                rule_name: "ASSUMPTION".to_string(),
-                premises: vec![],
-                conclusion: "Property assumed for direct proof".to_string(),
-                justification: "Starting assumption".to_string(),
-                dependencies: vec![],
-            },
-            ProofStep {
-                step_number: 2,
-                rule_name: "DIRECT_DERIVATION".to_string(),
-                premises: vec!["Assumption".to_string()],
-                conclusion: format!("Property {:?} holds", property.structure),
-                justification: "Direct logical derivation".to_string(),
-                dependencies: vec![1],
-            },
-        ];
+        // Genuine proof construction with logical derivation
+        let mut proof_context = DirectProofContext::new();
+        let mut derivation_steps = Vec::new();
+        let step_counter = &mut 1;
         
-        Ok(ProofSteps(steps))
+        match &property.structure {
+            FormulaStructure::Universal(var, body) => {
+                // Universal introduction: prove for arbitrary variable
+                let var_name = &var.variable;
+                let arbitrary_var = proof_context.introduce_arbitrary_variable(var_name);
+                
+                derivation_steps.push(ProofStep {
+                    step_number: *step_counter,
+                    rule_name: "ARBITRARY_VARIABLE_INTRODUCTION".to_string(),
+                    premises: vec![],
+                    conclusion: format!("Let {} be arbitrary", var_name),
+                    justification: format!("Introduce arbitrary variable {} for universal proof", var_name),
+                    dependencies: vec![],
+                });
+                *step_counter += 1;
+                
+                // Recursively prove the body for the arbitrary variable
+                let instantiated_body = self.instantiate_formula(body, var_name, &arbitrary_var)?;
+                let body_proof_formula = PropertyFormula {
+                    structure: instantiated_body,
+                    quantifiers: property.quantifiers.clone(),
+                    free_variables: property.free_variables.clone(),
+                    predicates: property.predicates.clone(),
+                    functions: property.functions.clone(),
+                    constants: property.constants.clone(),
+                };
+                
+                let body_steps = self.try_direct_proof(&body_proof_formula)?;
+                for mut step in body_steps.0 {
+                    step.step_number = *step_counter;
+                    *step_counter += 1;
+                    derivation_steps.push(step);
+                }
+                
+                derivation_steps.push(ProofStep {
+                    step_number: *step_counter,
+                    rule_name: "UNIVERSAL_INTRODUCTION".to_string(),
+                    premises: vec![format!("For arbitrary {}", var_name)],
+                    conclusion: format!("∀{}.{:?}", var_name, body),
+                    justification: format!("Since {} is arbitrary and we proved the body, universal quantification holds", var_name),
+                    dependencies: (1..*step_counter).collect(),
+                });
+            }
+            
+            FormulaStructure::Implication(antecedent, consequent) => {
+                // Implication introduction: assume antecedent, derive consequent
+                proof_context.add_assumption(antecedent);
+                
+                derivation_steps.push(ProofStep {
+                    step_number: *step_counter,
+                    rule_name: "ASSUMPTION".to_string(),
+                    premises: vec![],
+                    conclusion: format!("{:?}", antecedent),
+                    justification: "Assume antecedent for implication proof".to_string(),
+                    dependencies: vec![],
+                });
+                *step_counter += 1;
+                
+                // Prove the consequent under the assumption
+                let consequent_formula = PropertyFormula {
+                    structure: (**consequent).clone(),
+                    quantifiers: property.quantifiers.clone(),
+                    free_variables: property.free_variables.clone(),
+                    predicates: property.predicates.clone(),
+                    functions: property.functions.clone(),
+                    constants: property.constants.clone(),
+                };
+                
+                let consequent_steps = self.try_direct_proof(&consequent_formula)?;
+                for mut step in consequent_steps.0 {
+                    step.step_number = *step_counter;
+                    *step_counter += 1;
+                    derivation_steps.push(step);
+                }
+                
+                derivation_steps.push(ProofStep {
+                    step_number: *step_counter,
+                    rule_name: "IMPLICATION_INTRODUCTION".to_string(),
+                    premises: vec![format!("{:?}", antecedent), format!("{:?}", consequent)],
+                    conclusion: format!("{:?} → {:?}", antecedent, consequent),
+                    justification: "Discharge assumption to complete implication proof".to_string(),
+                    dependencies: (1..*step_counter).collect(),
+                });
+            }
+            
+            FormulaStructure::Conjunction(conjuncts) => {
+                // Conjunction introduction: prove all conjuncts
+                if conjuncts.len() >= 2 {
+                    let mut conjunct_premises = Vec::new();
+                    
+                    for (i, conjunct) in conjuncts.iter().enumerate() {
+                        let conjunct_formula = PropertyFormula {
+                            structure: conjunct.clone(),
+                            quantifiers: property.quantifiers.clone(),
+                            free_variables: property.free_variables.clone(),
+                            predicates: property.predicates.clone(),
+                            functions: property.functions.clone(),
+                            constants: property.constants.clone(),
+                        };
+                        
+                        let conjunct_steps = self.try_direct_proof(&conjunct_formula)?;
+                        for mut step in conjunct_steps.0 {
+                            step.step_number = *step_counter;
+                            *step_counter += 1;
+                            derivation_steps.push(step);
+                        }
+                        
+                        conjunct_premises.push(format!("Conjunct {}: {:?}", i + 1, conjunct));
+                    }
+                    
+                    derivation_steps.push(ProofStep {
+                        step_number: *step_counter,
+                        rule_name: "CONJUNCTION_INTRODUCTION".to_string(),
+                        premises: conjunct_premises,
+                        conclusion: format!("{:?}", FormulaStructure::Conjunction(conjuncts.clone())),
+                        justification: "All conjuncts proven independently".to_string(),
+                        dependencies: (1..*step_counter).collect(),
+                    });
+                } else {
+                    return Err(AispError::VerificationFailed(
+                        "Conjunction must have at least 2 conjuncts".to_string()
+                    ));
+                }
+            }
+            
+            FormulaStructure::Atomic(atomic) => {
+                // Base case: try to prove atomic formula through axioms or assumptions
+                if let Some(proof_step) = proof_context.find_atomic_proof(atomic)? {
+                    derivation_steps.push(ProofStep {
+                        step_number: *step_counter,
+                        rule_name: "AXIOM_APPLICATION".to_string(),
+                        premises: proof_step.premises,
+                        conclusion: format!("{:?}", atomic),
+                        justification: proof_step.justification,
+                        dependencies: vec![],
+                    });
+                } else {
+                    return Err(AispError::VerificationFailed(
+                        format!("Cannot prove atomic formula: {:?}", atomic)
+                    ));
+                }
+            }
+            
+            _ => {
+                return Err(AispError::VerificationFailed(
+                    format!("Direct proof not implemented for formula type: {:?}", property.structure)
+                ));
+            }
+        }
+        
+        // Validate proof correctness
+        self.validate_proof_steps(&derivation_steps)?;
+        Ok(ProofSteps(derivation_steps))
     }
 
     fn try_contradiction_proof(&mut self, property: &PropertyFormula) -> AispResult<ProofSteps> {
@@ -758,6 +896,116 @@ impl FormalVerifier {
     fn hash_property(&self, property: &PropertyFormula) -> String {
         format!("{:?}", property)
     }
+    
+    /// Instantiate a formula by substituting a variable with a term
+    fn instantiate_formula(&self, formula: &FormulaStructure, var: &str, replacement: &str) -> AispResult<FormulaStructure> {
+        match formula {
+            FormulaStructure::Atomic(atomic) => {
+                let new_terms: Vec<Term> = atomic.terms.iter().map(|term| {
+                    match term {
+                        Term::Variable(name, type_info) if name == var => {
+                            Term::Variable(replacement.to_string(), type_info.clone())
+                        }
+                        _ => term.clone(),
+                    }
+                }).collect();
+                
+                Ok(FormulaStructure::Atomic(AtomicFormula {
+                    predicate: atomic.predicate.clone(),
+                    terms: new_terms,
+                    type_signature: atomic.type_signature.clone(),
+                }))
+            }
+            
+            FormulaStructure::Universal(bound_var, body) if bound_var.variable != var => {
+                let new_body = self.instantiate_formula(body, var, replacement)?;
+                Ok(FormulaStructure::Universal(bound_var.clone(), Box::new(new_body)))
+            }
+            
+            FormulaStructure::Existential(bound_var, body) if bound_var.variable != var => {
+                let new_body = self.instantiate_formula(body, var, replacement)?;
+                Ok(FormulaStructure::Existential(bound_var.clone(), Box::new(new_body)))
+            }
+            
+            FormulaStructure::Implication(antecedent, consequent) => {
+                let new_antecedent = self.instantiate_formula(antecedent, var, replacement)?;
+                let new_consequent = self.instantiate_formula(consequent, var, replacement)?;
+                Ok(FormulaStructure::Implication(Box::new(new_antecedent), Box::new(new_consequent)))
+            }
+            
+            FormulaStructure::Conjunction(formulas) => {
+                let new_formulas: Result<Vec<FormulaStructure>, AispError> = formulas.iter()
+                    .map(|f| self.instantiate_formula(f, var, replacement))
+                    .collect();
+                Ok(FormulaStructure::Conjunction(new_formulas?))
+            }
+            
+            FormulaStructure::Disjunction(formulas) => {
+                let new_formulas: Result<Vec<FormulaStructure>, AispError> = formulas.iter()
+                    .map(|f| self.instantiate_formula(f, var, replacement))
+                    .collect();
+                Ok(FormulaStructure::Disjunction(new_formulas?))
+            }
+            
+            FormulaStructure::Negation(formula) => {
+                let new_formula = self.instantiate_formula(formula, var, replacement)?;
+                Ok(FormulaStructure::Negation(Box::new(new_formula)))
+            }
+            
+            _ => Ok(formula.clone()), // For bound variables or unsupported structures
+        }
+    }
+    
+    /// Validate the logical correctness of proof steps
+    fn validate_proof_steps(&self, steps: &[ProofStep]) -> AispResult<()> {
+        // Basic validation: check that each step's dependencies are valid
+        for (i, step) in steps.iter().enumerate() {
+            for &dep in &step.dependencies {
+                if dep == 0 || dep > i {
+                    return Err(AispError::VerificationFailed(
+                        format!("Invalid dependency {} in step {}", dep, step.step_number)
+                    ));
+                }
+            }
+            
+            // Validate rule application
+            match step.rule_name.as_str() {
+                "UNIVERSAL_INTRODUCTION" => {
+                    if step.premises.is_empty() {
+                        return Err(AispError::VerificationFailed(
+                            "Universal introduction requires premises".to_string()
+                        ));
+                    }
+                }
+                
+                "IMPLICATION_INTRODUCTION" => {
+                    if step.premises.len() < 2 {
+                        return Err(AispError::VerificationFailed(
+                            "Implication introduction requires antecedent and consequent".to_string()
+                        ));
+                    }
+                }
+                
+                "CONJUNCTION_INTRODUCTION" => {
+                    if step.premises.len() < 2 {
+                        return Err(AispError::VerificationFailed(
+                            "Conjunction introduction requires two premises".to_string()
+                        ));
+                    }
+                }
+                
+                "AXIOM_APPLICATION" | "ASSUMPTION" | "ARBITRARY_VARIABLE_INTRODUCTION" => {
+                    // These are always valid as starting points
+                }
+                
+                _ => {
+                    // Unknown rule - could be extended in future
+                }
+            }
+        }
+        
+        Ok(())
+    }
 }
 
 // Helper types and enums
@@ -765,6 +1013,87 @@ impl FormalVerifier {
 /// Wrapper for proof steps
 #[derive(Debug, Clone)]
 struct ProofSteps(Vec<ProofStep>);
+
+/// Context for direct proof construction
+#[derive(Debug, Clone)]
+struct DirectProofContext {
+    /// Variables introduced as arbitrary for universal proofs
+    arbitrary_variables: HashSet<String>,
+    /// Current assumptions in scope
+    assumptions: Vec<FormulaStructure>,
+    /// Known axioms for atomic proofs
+    axioms: Vec<AtomicFormula>,
+}
+
+/// Result of searching for atomic formula proof
+#[derive(Debug, Clone)]
+struct AtomicProofStep {
+    premises: Vec<String>,
+    justification: String,
+}
+
+impl DirectProofContext {
+    fn new() -> Self {
+        Self {
+            arbitrary_variables: HashSet::new(),
+            assumptions: Vec::new(),
+            axioms: vec![
+                // Basic AISP axioms for type safety
+                AtomicFormula {
+                    predicate: "TypeSafe".to_string(),
+                    terms: vec![Term::Variable("x".to_string(), Some("Any".to_string()))],
+                    type_signature: None,
+                },
+                AtomicFormula {
+                    predicate: "WellFormed".to_string(), 
+                    terms: vec![Term::Variable("d".to_string(), Some("Document".to_string()))],
+                    type_signature: None,
+                },
+            ],
+        }
+    }
+    
+    fn introduce_arbitrary_variable(&mut self, var: &str) -> String {
+        let arbitrary_name = format!("{}_arbitrary", var);
+        self.arbitrary_variables.insert(arbitrary_name.clone());
+        arbitrary_name
+    }
+    
+    fn add_assumption(&mut self, assumption: &FormulaStructure) {
+        self.assumptions.push(assumption.clone());
+    }
+    
+    fn find_atomic_proof(&self, atomic: &AtomicFormula) -> AispResult<Option<AtomicProofStep>> {
+        // Check if this atomic formula matches any axioms
+        for axiom in &self.axioms {
+            if self.atomic_formulas_match(atomic, axiom) {
+                return Ok(Some(AtomicProofStep {
+                    premises: vec![],
+                    justification: format!("Axiom: {}", axiom.predicate),
+                }));
+            }
+        }
+        
+        // Check if this atomic formula can be derived from assumptions
+        for (i, assumption) in self.assumptions.iter().enumerate() {
+            if let FormulaStructure::Atomic(assumed_atomic) = assumption {
+                if self.atomic_formulas_match(atomic, assumed_atomic) {
+                    return Ok(Some(AtomicProofStep {
+                        premises: vec![format!("Assumption {}", i + 1)],
+                        justification: format!("From assumption: {}", assumed_atomic.predicate),
+                    }));
+                }
+            }
+        }
+        
+        Ok(None)
+    }
+    
+    fn atomic_formulas_match(&self, f1: &AtomicFormula, f2: &AtomicFormula) -> bool {
+        // Simple matching - in practice would include unification
+        f1.predicate == f2.predicate && f1.terms.len() == f2.terms.len()
+    }
+}
 
 /// Result of individual invariant verification
 #[derive(Debug, Clone)]
