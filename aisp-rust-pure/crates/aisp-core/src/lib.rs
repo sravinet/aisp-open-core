@@ -49,6 +49,7 @@ pub mod axiom_system;
 pub mod proof_search;
 pub mod theorem_prover;
 pub mod model_checker;
+pub mod invariant_discovery;
 
 // Formal methods and remediation components  
 pub mod formal_semantics;
