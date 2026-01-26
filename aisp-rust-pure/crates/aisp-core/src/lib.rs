@@ -49,6 +49,13 @@ pub mod axiom_system;
 pub mod proof_search;
 pub mod theorem_prover;
 pub mod model_checker;
+
+// Invariant discovery system components
+pub mod invariant_types;
+pub mod invariant_formulas;
+pub mod invariant_analyzer;
+pub mod invariant_exporters;
+pub mod invariant_discovery_main;
 pub mod invariant_discovery;
 
 // Formal methods and remediation components  
