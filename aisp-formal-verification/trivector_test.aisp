@@ -36,4 +36,4 @@
   verify_orthogonal≜λx.check_orthogonality(x)
 }
 
-⟦Ε⟧⟨δ≜0.85;φ≜178;τ≜◊⁺⁺⟩
+⟦Ε⟧⟨δ≜0.85;φ≜78;τ≜◊⁺⁺⟩
