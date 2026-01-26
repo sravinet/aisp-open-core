@@ -40,7 +40,7 @@ impl ReferenceChallengeTestSuite {
         let validation_result = self.validator.validate_reference_compliance(
             &document,
             test_document,
-            &semantic_result,
+            &semantic_result.to_result(),
         )?;
 
         // Report results
@@ -142,10 +142,9 @@ impl ReferenceChallengeTestSuite {
                     validation_result.compliance_score * 100.0,
                     success_threshold * 100.0);
             Err(crate::error::AispError::ValidationError {
-                message: format!("Reference compliance score {:.1}% below {:.1}% threshold", 
+                message: format!("Reference compliance score {:.1}% below {:.1}% threshold in reference_challenge", 
                                validation_result.compliance_score * 100.0,
                                success_threshold * 100.0),
-                location: "reference_challenge".to_string(),
             })
         }
     }
@@ -158,7 +157,7 @@ impl ReferenceChallengeTestSuite {
         let validation_result = self.validator.validate_reference_compliance(
             &document,
             test_document,
-            &semantic_result,
+            &semantic_result.to_result(),
         )?;
 
         let mut report = String::new();
@@ -323,7 +322,7 @@ pub fn create_reference_test_document() -> String {
 ⊢Pipeline:P_aisp(10)≡0.817
 ⊢Ambiguity:Ambig<0.02
 ⊢Layers:𝕃₀→𝕃₁→𝕃₂
-⟩"#
+⟩"#.to_string()
 }
 
 #[cfg(test)]

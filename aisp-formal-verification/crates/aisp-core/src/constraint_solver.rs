@@ -4,9 +4,8 @@
 //! and conflict resolution for relational logic constraints.
 
 use crate::ast::*;
-use crate::error::*;
 use crate::conflict_types::ConflictSeverity;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::HashMap;
 
 /// Constraint solver for relational logic
 pub struct ConstraintSolver {

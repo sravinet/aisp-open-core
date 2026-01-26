@@ -7,7 +7,7 @@ use crate::ast::*;
 use crate::error::*;
 use crate::constraint_solver::{ConstraintSolver, ConstraintAnalysisResult};
 use crate::conflict_detector::{ConflictDetector, ConflictDetectionResult};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 /// Production-ready relational analysis result
 #[derive(Debug, Clone)]

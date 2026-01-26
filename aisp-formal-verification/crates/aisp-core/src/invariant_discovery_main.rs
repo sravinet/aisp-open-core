@@ -4,7 +4,7 @@
 //! orchestrating the various components (analyzer, formulas, exporters).
 
 use crate::{
-    ast::AispDocument,
+    ast::{AispDocument, AispBlock, DocumentHeader, DocumentMetadata, TypesBlock, TypeExpression, BasicType},
     error::AispResult,
     invariant_types::{DiscoveredInvariant, InvariantDiscoveryConfig, DiscoveryStats},
     invariant_analyzer::InvariantAnalyzer,
@@ -142,7 +142,7 @@ mod tests {
 
     fn create_test_document() -> AispDocument {
         let mut types = HashMap::new();
-        types.insert("Counter".to_string(), TypeExpression::Natural);
+        types.insert("Counter".to_string(), TypeExpression::Basic(BasicType::Natural));
         types.insert("Status".to_string(), TypeExpression::Enumeration(vec![
             "Running".to_string(),
             "Stopped".to_string(),
@@ -153,12 +153,25 @@ mod tests {
                 version: "5.1".to_string(),
                 name: "TestDoc".to_string(),
                 date: "2026-01-26".to_string(),
+                metadata: None,
+            },
+            metadata: DocumentMetadata {
+                domain: None,
+                protocol: None,
             },
             blocks: vec![
                 AispBlock::Types(TypesBlock {
                     definitions: types,
+                    span: crate::ast::Span {
+                        start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                        end: crate::ast::Position { line: 1, column: 10, offset: 10 },
+                    },
                 }),
             ],
+            span: crate::ast::Span {
+                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                end: crate::ast::Position { line: 10, column: 1, offset: 100 },
+            },
         }
     }
 

@@ -52,6 +52,8 @@ impl Default for AdvancedVerificationConfig {
 pub struct EnhancedVerificationStats {
     /// Total verification time
     pub total_time: Duration,
+    /// Verification time in milliseconds
+    pub verification_time_ms: u128,
     /// Number of SMT queries executed
     pub smt_queries: usize,
     /// Number of successful proofs
@@ -70,6 +72,7 @@ impl Default for EnhancedVerificationStats {
     fn default() -> Self {
         Self {
             total_time: Duration::ZERO,
+            verification_time_ms: 0,
             smt_queries: 0,
             successful_proofs: 0,
             counterexamples: 0,
@@ -97,7 +100,10 @@ pub struct EnhancedVerificationResult {
     pub stats: EnhancedVerificationStats,
     /// Z3 solver diagnostics
     pub diagnostics: Vec<SolverDiagnostic>,
+    /// Tri-vector validation result (optional)
+    pub tri_vector_result: Option<TriVectorValidationResult>,
 }
+
 
 /// Status of verification process
 #[derive(Debug, Clone, PartialEq)]
@@ -127,6 +133,8 @@ pub enum PropertyCategory {
     TemporalLiveness,
     /// Type safety invariant
     TypeSafety,
+    /// Semantic consistency property
+    SemanticConsistency,
     /// Functional correctness
     Correctness,
     /// Resource constraints
@@ -266,6 +274,7 @@ impl EnhancedVerificationResult {
             unsat_cores: HashMap::new(),
             stats: EnhancedVerificationStats::default(),
             diagnostics: vec![],
+            tri_vector_result: None,
         }
     }
 
@@ -279,6 +288,7 @@ impl EnhancedVerificationResult {
             unsat_cores: HashMap::new(),
             stats: EnhancedVerificationStats::default(),
             diagnostics: vec![],
+            tri_vector_result: None,
         }
     }
 }

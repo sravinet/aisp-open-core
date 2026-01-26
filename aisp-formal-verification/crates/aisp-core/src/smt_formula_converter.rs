@@ -5,7 +5,6 @@
 
 use crate::error::*;
 use crate::property_types::*;
-use std::fmt::Write;
 
 /// Converts property formulas to SMT-LIB format
 pub struct SMTFormulaConverter {

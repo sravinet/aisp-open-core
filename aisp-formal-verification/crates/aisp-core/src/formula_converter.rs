@@ -5,7 +5,7 @@
 
 use crate::ast::*;
 use crate::error::*;
-use crate::property_types::{FormulaStructure, PropertyFormula, Term, ArithmeticOp, AtomicFormula, PropertyComplexity, PropertyType};
+use crate::property_types::{FormulaStructure, PropertyFormula, Term, AtomicFormula, PropertyComplexity, PropertyType};
 use crate::property_types::Quantifier as PropertyQuantifier;
 use std::collections::HashSet;
 

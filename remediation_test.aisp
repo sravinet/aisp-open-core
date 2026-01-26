@@ -1,0 +1,20 @@
+𝔸5.1.remediation-test@2026-01-26
+γ≔formal.verification.remediation.test
+⟦Ω:Meta⟧{
+  ∀D∈AISP:Ambig(D)<0.02
+  Purpose≜"Test remediated formal verification system"
+}
+
+⟦Σ:Types⟧{
+  Signal≜V_H⊕V_L⊕V_S
+  V_H≜ℝ⁷⁶⁸
+  V_L≜ℝ⁵¹²
+  V_S≜ℝ²⁵⁶
+}
+
+⟦Λ:Functions⟧{
+  Ambig≜λD.1-|Parse_u(D)|/|Parse_t(D)|
+  ψ_g≜λb.ψ_*⊖ψ_have(b.G)
+}
+
+⟦Ε⟧⟨δ≜0.85;τ≜◊⁺⁺⟩

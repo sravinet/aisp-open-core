@@ -4,11 +4,11 @@
 //! and Computation Tree Logic (CTL) formulas, including satisfiability checking,
 //! formula evaluation, and constraint solving.
 
-use crate::ast::*;
 use crate::error::*;
+use crate::ast::Span;
 use crate::temporal_operator_analyzer::{TemporalOperator, OperatorInstance};
 use crate::temporal_pattern_detector::{TemporalPattern, PatternType};
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 
 /// Logical value for temporal logic
 #[derive(Debug, Clone, PartialEq)]

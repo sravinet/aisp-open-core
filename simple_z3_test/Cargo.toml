@@ -1,0 +1,10 @@
+[package]
+name = "simple_z3_test"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+# Empty workspace table to avoid inheriting from parent workspace
+
+[dependencies]
+z3 = "0.11"

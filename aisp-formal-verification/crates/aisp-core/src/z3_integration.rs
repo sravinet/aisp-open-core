@@ -8,23 +8,23 @@ mod z3_backend {
     use crate::ast::*;
     use crate::error::*;
     use crate::relational_new::*;
-    use crate::temporal_new::*;
+    use crate::temporal_new::TemporalAnalysisResult;
     use std::collections::HashMap;
     use std::time::{Duration, Instant};
     use z3::*;
 
     /// Z3-based formal verification engine
-    pub struct Z3Verifier {
+    pub struct Z3Verifier<'ctx> {
         /// Z3 context
         context: Context,
         /// Z3 solver instance
-        solver: Solver<'static>,
+        solver: Solver<'ctx>,
         /// Variable declarations
-        variables: HashMap<String, ast::Dynamic>,
+        variables: HashMap<String, ast::Dynamic<'ctx>>,
         /// Function declarations  
-        functions: HashMap<String, FuncDecl<'static>>,
+        functions: HashMap<String, FuncDecl<'ctx>>,
         /// Type mappings
-        type_mappings: HashMap<String, Sort<'static>>,
+        type_mappings: HashMap<String, Sort<'ctx>>,
         /// Verification timeout
         timeout: Duration,
         /// Statistics
@@ -195,7 +195,7 @@ mod z3_backend {
         Error,
     }
 
-    impl Z3Verifier {
+    impl<'ctx> Z3Verifier<'ctx> {
         /// Create new Z3 verifier with default configuration
         pub fn new() -> AispResult<Self> {
             let cfg = Config::new();
@@ -243,7 +243,7 @@ mod z3_backend {
             &mut self,
             doc: &AispDocument,
             relational_analysis: Option<&RelationalAnalysis>,
-            temporal_analysis: Option<&TemporalAnalysis>,
+            temporal_analysis: Option<&TemporalAnalysisResult>,
         ) -> AispResult<FormalVerificationResult> {
             let start_time = Instant::now();
             let mut properties = Vec::new();
@@ -325,10 +325,10 @@ mod z3_backend {
         /// Setup Z3 environment with AISP types and functions
         fn setup_z3_environment(&mut self, doc: &AispDocument) -> AispResult<()> {
             // Create basic AISP sorts
-            let bool_sort = ast::Bool::new(&self.context);
-            let int_sort = ast::Int::new(&self.context);
-            let real_sort = ast::Real::new(&self.context);
-            let string_sort = ast::String::new(&self.context);
+            let bool_sort = Sort::bool(&self.context);
+            let int_sort = Sort::int(&self.context);
+            let real_sort = Sort::real(&self.context);
+            let string_sort = Sort::string(&self.context);
 
             self.type_mappings.insert("Bool".to_string(), bool_sort);
             self.type_mappings.insert("Int".to_string(), int_sort);
@@ -498,7 +498,7 @@ mod z3_backend {
         }
 
         /// Verify temporal properties
-        fn verify_temporal_properties(&mut self, analysis: &TemporalAnalysis) -> AispResult<Vec<VerifiedProperty>> {
+        fn verify_temporal_properties(&mut self, analysis: &TemporalAnalysisResult) -> AispResult<Vec<VerifiedProperty>> {
             let mut properties = Vec::new();
 
             // Verify LTL formulas
@@ -606,7 +606,7 @@ mod z3_backend {
         Unknown,
     }
 
-    impl Default for Z3Verifier {
+    impl<'ctx> Default for Z3Verifier<'ctx> {
         fn default() -> Self {
             Self::new().expect("Failed to create Z3 verifier")
         }
@@ -623,7 +623,7 @@ mod stub {
     use crate::ast::*;
     use crate::error::*;
     use crate::relational_new::*;
-    use crate::temporal_new::*;
+    use crate::temporal_new::TemporalAnalysisResult;
     use std::collections::HashMap;
     use std::time::Duration;
 

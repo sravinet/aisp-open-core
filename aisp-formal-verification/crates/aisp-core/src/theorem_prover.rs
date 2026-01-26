@@ -8,7 +8,6 @@ use crate::property_types::*;
 use crate::proof_types::*;
 use crate::axiom_system::*;
 use crate::proof_search::*;
-use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
 /// Automated theorem prover for AISP properties

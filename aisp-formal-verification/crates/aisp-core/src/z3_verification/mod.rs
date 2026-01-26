@@ -1,18 +1,24 @@
 //! Enhanced Z3 verification system for AISP documents
 //!
 //! This module provides a comprehensive Z3-based verification system
-//! for AISP documents, with support for tri-vector validation,
-//! temporal logic, and formal proof generation.
+//! for AISP documents, with genuine formal verification capabilities.
 //!
 //! The system is organized into focused modules:
 //! - `types`: Core types and configuration
 //! - `environment`: Z3 environment setup and AISP sorts
 //! - `properties`: Property verification logic
-//! - `verifier`: Main verifier implementation with facades
+//! - `enhanced_verifier`: Enhanced Z3 verifier with AISP capabilities
+//! - `smt_interface`: SMT syntax validation and Z3 integration
+//! - `facade`: High-level verification facade
 
 pub mod types;
-pub mod environment;
+pub mod environment; 
 pub mod properties;
+pub mod enhanced_verifier;
+pub mod smt_interface;
+pub mod facade;
+
+// Legacy verifier (deprecated, use enhanced_verifier and facade instead)
 pub mod verifier;
 
 // Re-export main interfaces for convenience
@@ -27,7 +33,9 @@ pub use environment::{AispZ3Environment, AispSort, AispFunction, AispConstant};
 
 pub use properties::PropertyVerifier;
 
-pub use verifier::{EnhancedZ3Verifier, Z3VerificationFacade};
+pub use enhanced_verifier::EnhancedZ3Verifier;
+pub use smt_interface::SmtInterface;
+pub use facade::Z3VerificationFacade;
 
 /// Convenience function to check Z3 availability
 pub fn is_z3_available() -> bool {

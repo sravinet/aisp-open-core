@@ -86,6 +86,21 @@ pub struct SemanticAnalysisResult {
     pub warnings: Vec<String>,
 }
 
+impl SemanticAnalysis {
+    /// Convert to SemanticAnalysisResult for validation modules
+    pub fn to_result(&self) -> SemanticAnalysisResult {
+        SemanticAnalysisResult {
+            delta: self.delta,
+            ambiguity: self.ambiguity,
+            completeness: self.completeness,
+            tier: self.tier.clone(),
+            quality_score: self.quality_score,
+            validation_errors: self.errors.iter().map(|e| e.to_string()).collect(),
+            warnings: vec![], // SemanticAnalysis doesn't have warnings field
+        }
+    }
+}
+
 /// Semantic analysis result
 #[derive(Debug, Clone)]
 pub struct SemanticAnalysis {

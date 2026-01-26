@@ -1,0 +1,9 @@
+[package]
+name = "reference_verification"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+z3 = "0.11"

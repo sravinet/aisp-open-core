@@ -38,16 +38,51 @@ pub use crate::satisfiability_checker::*;
 mod tests {
     use super::*;
     use crate::{
-        ast::{AispDocument, DocumentHeader, AispBlock, TypesBlock, TypeExpression},
+        ast::{AispDocument, DocumentHeader, DocumentMetadata, AispBlock, TypesBlock, TypeExpression, BasicType},
         parser_new::AispParser,
     };
     use std::collections::HashMap;
+
+    /// Helper function to create a valid test AispDocument
+    fn create_test_aisp_document(name: &str, types: HashMap<String, TypeExpression>, has_types_block: bool) -> AispDocument {
+        let blocks = if has_types_block {
+            vec![
+                AispBlock::Types(TypesBlock {
+                    definitions: types,
+                    span: crate::ast::Span {
+                        start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                        end: crate::ast::Position { line: 1, column: 10, offset: 10 },
+                    },
+                }),
+            ]
+        } else {
+            vec![]
+        };
+
+        AispDocument {
+            header: DocumentHeader {
+                version: "5.1".to_string(),
+                name: name.to_string(),
+                date: "2026-01-26".to_string(),
+                metadata: None,
+            },
+            metadata: DocumentMetadata {
+                domain: None,
+                protocol: None,
+            },
+            blocks,
+            span: crate::ast::Span {
+                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                end: crate::ast::Position { line: 10, column: 1, offset: 100 },
+            },
+        }
+    }
 
     #[test]
     fn test_full_invariant_discovery_workflow() {
         // Create a test document
         let mut types = HashMap::new();
-        types.insert("Counter".to_string(), TypeExpression::Natural);
+        types.insert("Counter".to_string(), TypeExpression::Basic(BasicType::Natural));
         types.insert("State".to_string(), TypeExpression::Enumeration(vec![
             "Init".to_string(),
             "Running".to_string(),
@@ -59,12 +94,25 @@ mod tests {
                 version: "5.1".to_string(),
                 name: "WorkflowTest".to_string(),
                 date: "2026-01-26".to_string(),
+                metadata: None,
+            },
+            metadata: DocumentMetadata {
+                domain: None,
+                protocol: None,
             },
             blocks: vec![
                 AispBlock::Types(TypesBlock {
                     definitions: types,
+                    span: crate::ast::Span {
+                        start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                        end: crate::ast::Position { line: 1, column: 10, offset: 10 },
+                    },
                 }),
             ],
+            span: crate::ast::Span {
+                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                end: crate::ast::Position { line: 10, column: 1, offset: 100 },
+            },
         };
 
         // Test the full workflow
@@ -102,14 +150,7 @@ mod tests {
         config.enable_patterns = true;
         config.enable_structural_analysis = false;
 
-        let document = AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: "ConfigTest".to_string(),
-                date: "2026-01-26".to_string(),
-            },
-            blocks: vec![],
-        };
+        let document = create_test_aisp_document("ConfigTest", HashMap::new(), false);
 
         let mut discovery = InvariantDiscovery::with_config(config);
         let invariants = discovery.discover_invariants(&document).unwrap();
@@ -121,7 +162,7 @@ mod tests {
     #[test]
     fn test_quick_vs_comprehensive_analysis() {
         let mut types = HashMap::new();
-        types.insert("Value".to_string(), TypeExpression::Natural);
+        types.insert("Value".to_string(), TypeExpression::Basic(BasicType::Natural));
 
         let document = AispDocument {
             header: DocumentHeader {
@@ -155,7 +196,7 @@ mod tests {
     #[test]
     fn test_evidence_tracking() {
         let mut types = HashMap::new();
-        types.insert("Counter".to_string(), TypeExpression::Natural);
+        types.insert("Counter".to_string(), TypeExpression::Basic(BasicType::Natural));
 
         let document = AispDocument {
             header: DocumentHeader {

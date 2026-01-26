@@ -4,7 +4,7 @@
 //! mathematical invariants from AISP document structures.
 
 use crate::{
-    ast::{AispDocument, AispBlock, TypeExpression, TypeDefinition, BasicType},
+    ast::{AispDocument, AispBlock, TypeExpression, BasicType, DocumentHeader, DocumentMetadata, TypesBlock},
     error::AispResult,
     invariant_types::{
         DiscoveredInvariant, InvariantType, InvariantEvidence, EvidenceType,
@@ -227,7 +227,10 @@ mod tests {
         types.insert("Natural".to_string(), TypeDefinition {
             name: "Natural".to_string(),
             type_expr: TypeExpression::Basic(BasicType::Natural),
-            span: crate::ast::Span { start: 0, end: 0 },
+            span: crate::ast::Span {
+                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                end: crate::ast::Position { line: 1, column: 10, offset: 10 },
+            },
         });
         types.insert("Status".to_string(), TypeDefinition {
             name: "Status".to_string(),
@@ -235,7 +238,10 @@ mod tests {
                 "Active".to_string(),
                 "Inactive".to_string(),
             ]),
-            span: crate::ast::Span { start: 0, end: 0 },
+            span: crate::ast::Span {
+                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                end: crate::ast::Position { line: 1, column: 10, offset: 10 },
+            },
         });
 
         AispDocument {
@@ -243,13 +249,25 @@ mod tests {
                 version: "5.1".to_string(),
                 name: "TestDoc".to_string(),
                 date: "2026-01-26".to_string(),
+                metadata: None,
+            },
+            metadata: DocumentMetadata {
+                domain: None,
+                protocol: None,
             },
             blocks: vec![
                 AispBlock::Types(TypesBlock {
                     definitions: types,
-                    span: crate::ast::Span { start: 0, end: 0 },
+                    span: crate::ast::Span {
+                        start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                        end: crate::ast::Position { line: 1, column: 10, offset: 10 },
+                    },
                 }),
             ],
+            span: crate::ast::Span {
+                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                end: crate::ast::Position { line: 10, column: 1, offset: 100 },
+            },
         }
     }
 
@@ -342,7 +360,10 @@ mod tests {
         types.insert("CustomType".to_string(), TypeDefinition {
             name: "CustomType".to_string(),
             type_expr: TypeExpression::Basic(BasicType::Boolean),
-            span: crate::ast::Span { start: 0, end: 0 },
+            span: crate::ast::Span {
+                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                end: crate::ast::Position { line: 1, column: 10, offset: 10 },
+            },
         });
 
         let document = AispDocument {
@@ -350,13 +371,25 @@ mod tests {
                 version: "5.1".to_string(),
                 name: "TestDoc".to_string(),
                 date: "2026-01-26".to_string(),
+                metadata: None,
+            },
+            metadata: DocumentMetadata {
+                domain: None,
+                protocol: None,
             },
             blocks: vec![
                 AispBlock::Types(TypesBlock {
                     definitions: types,
-                    span: crate::ast::Span { start: 0, end: 0 },
+                    span: crate::ast::Span {
+                        start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                        end: crate::ast::Position { line: 1, column: 10, offset: 10 },
+                    },
                 }),
             ],
+            span: crate::ast::Span {
+                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
+                end: crate::ast::Position { line: 10, column: 1, offset: 100 },
+            },
         };
         
         let result = analyzer.analyze(&document).unwrap();
