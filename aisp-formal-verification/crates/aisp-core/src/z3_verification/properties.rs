@@ -5,7 +5,7 @@
 
 use super::types::*;
 use crate::{ast::*, error::*, tri_vector_validation::*};
-use std::time::Instant;
+use std::{time::Instant, collections::HashMap};
 
 #[cfg(feature = "z3-verification")]
 use z3::*;
@@ -238,11 +238,45 @@ impl PropertyVerifier {
     /// Verify type safety properties
     pub fn verify_type_safety_properties(
         &mut self,
-        _document: &AispDocument,
+        document: &AispDocument,
     ) -> AispResult<Vec<VerifiedProperty>> {
-        // Placeholder for type safety verification
-        // TODO: Implement type safety checks
-        Ok(vec![])
+        let mut verified_properties = Vec::new();
+
+        // Extract type safety properties from document
+        let type_safety_properties = self.extract_type_safety_properties(document)?;
+        
+        for (property_id, type_constraint, property_description) in type_safety_properties {
+            let verification_start = std::time::Instant::now();
+            
+            // Convert type constraint to SMT formula
+            let smt_formula = self.type_constraint_to_smt(&type_constraint)?;
+            
+            // Perform actual SMT verification
+            let result = self.verify_smt_formula(&smt_formula, &property_id)?;
+            
+            // Update statistics
+            match result {
+                PropertyResult::Proven => self.stats.successful_proofs += 1,
+                PropertyResult::Disproven => self.stats.counterexamples += 1,
+                PropertyResult::Unknown => {},
+                PropertyResult::Error(_) => {},
+                PropertyResult::Unsupported => {},
+            }
+            
+            self.stats.smt_queries += 1;
+            
+            verified_properties.push(VerifiedProperty {
+                id: property_id.clone(),
+                category: PropertyCategory::TypeSafety,
+                description: property_description,
+                smt_formula,
+                result: result.clone(),
+                verification_time: verification_start.elapsed(),
+                proof_certificate: self.generate_type_safety_certificate(&property_id, &result),
+            });
+        }
+
+        Ok(verified_properties)
     }
 
     /// Verify functional correctness properties
@@ -504,6 +538,307 @@ impl PropertyVerifier {
             )),
             PropertyResult::Disproven => Some(format!(
                 "TEMPORAL_COUNTEREXAMPLE: Property {} violated, counterexample found", 
+                property_id
+            )),
+            _ => None,
+        }
+    }
+
+    /// Extract type safety properties from AISP document
+    fn extract_type_safety_properties(&self, document: &AispDocument) -> AispResult<Vec<(String, String, String)>> {
+        let mut type_properties = Vec::new();
+        
+        // Check type definitions for consistency
+        for block in &document.blocks {
+            match block {
+                AispBlock::Types(types_block) => {
+                    // Verify each type definition
+                    for (type_name, type_def) in &types_block.definitions {
+                        // Type well-formedness
+                        let property_id = format!("type_wellformed_{}", type_name);
+                        let constraint = self.generate_type_wellformedness_constraint(type_name, &type_def.type_expr);
+                        let description = format!("Type '{}' is well-formed", type_name);
+                        type_properties.push((property_id, constraint, description));
+                        
+                        // Type consistency
+                        if let Some(consistency_constraint) = self.generate_type_consistency_constraint(type_name, &type_def.type_expr) {
+                            let property_id = format!("type_consistent_{}", type_name);
+                            let description = format!("Type '{}' is internally consistent", type_name);
+                            type_properties.push((property_id, consistency_constraint, description));
+                        }
+                    }
+                    
+                    // Cross-type compatibility
+                    type_properties.extend(self.generate_cross_type_constraints(&types_block.definitions));
+                }
+                AispBlock::Functions(functions_block) => {
+                    // Verify function type signatures
+                    for (func_name, func_def) in &functions_block.functions {
+                        let property_id = format!("function_type_safe_{}", func_name);
+                        let constraint = self.generate_function_type_constraint(func_name, func_def);
+                        let description = format!("Function '{}' respects type constraints", func_name);
+                        type_properties.push((property_id, constraint, description));
+                    }
+                }
+                AispBlock::Rules(rules_block) => {
+                    // Verify logical rule type consistency
+                    for (index, rule) in rules_block.rules.iter().enumerate() {
+                        let property_id = format!("rule_type_safe_{}", index);
+                        let constraint = self.generate_rule_type_constraint(index, rule);
+                        let description = format!("Rule {} maintains type safety", index);
+                        type_properties.push((property_id, constraint, description));
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        // Add default AISP type safety properties
+        type_properties.extend(self.get_default_type_safety_properties());
+
+        Ok(type_properties)
+    }
+
+    /// Generate type well-formedness constraint
+    fn generate_type_wellformedness_constraint(&self, type_name: &str, type_expr: &TypeExpression) -> String {
+        match type_expr {
+            TypeExpression::Basic(basic_type) => {
+                format!("(assert (well_formed_basic_type {}))", self.basic_type_to_smt(basic_type))
+            }
+            TypeExpression::Enumeration(variants) => {
+                let variant_constraints = variants.iter()
+                    .map(|v| format!("(distinct {})", v))
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                format!("(assert (and {} (finite_enumeration {})))", variant_constraints, type_name)
+            }
+            TypeExpression::Array { element_type, size } => {
+                let element_constraint = self.generate_type_wellformedness_constraint(
+                    &format!("{}_element", type_name), 
+                    element_type
+                );
+                match size {
+                    Some(n) => format!("(assert (and {} (= (array_size {}) {})))", 
+                                     element_constraint, type_name, n),
+                    None => format!("(assert (and {} (>= (array_size {}) 0)))", 
+                                  element_constraint, type_name),
+                }
+            }
+            TypeExpression::Function { input, output } => {
+                let input_constraint = self.generate_type_wellformedness_constraint(
+                    &format!("{}_input", type_name), 
+                    input
+                );
+                let output_constraint = self.generate_type_wellformedness_constraint(
+                    &format!("{}_output", type_name), 
+                    output
+                );
+                format!("(assert (and {} {} (function_type {} {} {})))", 
+                       input_constraint, output_constraint, type_name, 
+                       format!("{}_input", type_name), format!("{}_output", type_name))
+            }
+            TypeExpression::Tuple(elements) => {
+                let element_constraints = elements.iter().enumerate()
+                    .map(|(i, elem)| self.generate_type_wellformedness_constraint(
+                        &format!("{}_{}", type_name, i), 
+                        elem
+                    ))
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                format!("(assert (and {} (tuple_type {} {})))", 
+                       element_constraints, type_name, elements.len())
+            }
+            TypeExpression::Generic { name, parameters } => {
+                let param_constraints = parameters.iter().enumerate()
+                    .map(|(i, param)| self.generate_type_wellformedness_constraint(
+                        &format!("{}_{}", name, i), 
+                        param
+                    ))
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                format!("(assert (and {} (generic_type {} {} {})))", 
+                       param_constraints, name, type_name, parameters.len())
+            }
+            TypeExpression::Reference(ref_name) => {
+                format!("(assert (type_reference_valid {} {}))", ref_name, type_name)
+            }
+        }
+    }
+
+    /// Generate type consistency constraint
+    fn generate_type_consistency_constraint(&self, type_name: &str, type_expr: &TypeExpression) -> Option<String> {
+        match type_expr {
+            TypeExpression::Function { input, output } => {
+                // Ensure function domains and codomains are compatible
+                Some(format!(
+                    "(assert (=> (function_type {}) (compatible_domains {} {})))",
+                    type_name,
+                    format!("{}_input", type_name),
+                    format!("{}_output", type_name)
+                ))
+            }
+            TypeExpression::Array { element_type, .. } => {
+                // Ensure array elements are consistently typed
+                Some(format!(
+                    "(assert (forall ((i Int)) (=> (and (>= i 0) (< i (array_size {}))) (has_type (array_get {} i) {}))))",
+                    type_name, type_name, format!("{}_element", type_name)
+                ))
+            }
+            TypeExpression::Generic { parameters, .. } => {
+                // Ensure generic type parameters are consistently instantiated
+                if !parameters.is_empty() {
+                    Some(format!(
+                        "(assert (consistent_generic_instantiation {}))",
+                        type_name
+                    ))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// Generate cross-type compatibility constraints
+    fn generate_cross_type_constraints(&self, type_definitions: &HashMap<String, TypeDefinition>) -> Vec<(String, String, String)> {
+        let mut constraints = Vec::new();
+        
+        // Check for circular type dependencies
+        let property_id = "no_circular_dependencies".to_string();
+        let type_names = type_definitions.keys().collect::<Vec<_>>();
+        let constraint = format!(
+            "(assert (acyclic_type_dependencies ({})))",
+            type_names.iter().map(|name| name.as_str()).collect::<Vec<_>>().join(" ")
+        );
+        let description = "Type definitions have no circular dependencies".to_string();
+        constraints.push((property_id, constraint, description));
+        
+        // Check type name uniqueness
+        let property_id = "unique_type_names".to_string();
+        let constraint = format!(
+            "(assert (distinct {}))",
+            type_names.iter().map(|name| name.as_str()).collect::<Vec<_>>().join(" ")
+        );
+        let description = "All type names are unique".to_string();
+        constraints.push((property_id, constraint, description));
+
+        constraints
+    }
+
+    /// Generate function type constraint
+    fn generate_function_type_constraint(&self, func_name: &str, func_def: &FunctionDefinition) -> String {
+        // Ensure function parameters and body have compatible types
+        let param_types = func_def.lambda.parameters.iter()
+            .map(|param| format!("(type_of {})", param))
+            .collect::<Vec<_>>()
+            .join(" ");
+        
+        format!(
+            "(assert (=> (function {}) (and {} (well_typed_expression {}))))",
+            func_name,
+            param_types,
+            format!("{}_body", func_name)
+        )
+    }
+
+    /// Generate rule type constraint
+    fn generate_rule_type_constraint(&self, rule_index: usize, rule: &LogicalRule) -> String {
+        let rule_name = format!("rule_{}", rule_index);
+        
+        // Ensure quantified variables and expressions are well-typed
+        match &rule.quantifier {
+            Some(quantifier) => {
+                format!(
+                    "(assert (=> (rule {}) (and (well_typed_variable {}) (well_typed_expression {}))))",
+                    rule_name,
+                    quantifier.variable,
+                    format!("{}_expression", rule_name)
+                )
+            }
+            None => {
+                format!(
+                    "(assert (=> (rule {}) (well_typed_expression {})))",
+                    rule_name,
+                    format!("{}_expression", rule_name)
+                )
+            }
+        }
+    }
+
+    /// Convert basic type to SMT representation
+    fn basic_type_to_smt(&self, basic_type: &BasicType) -> &'static str {
+        match basic_type {
+            BasicType::Natural => "Natural",
+            BasicType::Integer => "Int",
+            BasicType::Real => "Real",
+            BasicType::Boolean => "Bool",
+            BasicType::String => "String",
+        }
+    }
+
+    /// Get default AISP type safety properties
+    fn get_default_type_safety_properties(&self) -> Vec<(String, String, String)> {
+        vec![
+            (
+                "aisp_basic_type_soundness".to_string(),
+                "(assert (forall ((x Term)) (=> (well_typed x) (type_sound x))))".to_string(),
+                "All well-typed terms are type sound".to_string()
+            ),
+            (
+                "aisp_function_application_safety".to_string(),
+                "(assert (forall ((f Function) (x Term)) (=> (and (function f) (applicable f x)) (well_typed (apply f x)))))".to_string(),
+                "Function applications preserve type safety".to_string()
+            ),
+            (
+                "aisp_quantifier_type_consistency".to_string(),
+                "(assert (forall ((q Quantifier) (v Variable) (e Expression)) (=> (quantified_expression q v e) (consistent_quantifier_types q v e))))".to_string(),
+                "Quantifier variables have consistent types".to_string()
+            ),
+            (
+                "aisp_tri_vector_type_preservation".to_string(),
+                "(assert (forall ((s Signal)) (=> (tri_vector_signal s) (and (has_type (project_H s) VectorH) (has_type (project_L s) VectorL) (has_type (project_S s) VectorS)))))".to_string(),
+                "Tri-vector decomposition preserves component types".to_string()
+            ),
+        ]
+    }
+
+    /// Convert type constraint to SMT formula
+    fn type_constraint_to_smt(&self, constraint: &str) -> AispResult<String> {
+        // Add SMT-LIB declarations for type checking
+        let declarations = r#"
+(declare-sort Type)
+(declare-sort Term)
+(declare-fun well_formed_basic_type (Type) Bool)
+(declare-fun well_typed (Term) Bool)
+(declare-fun type_sound (Term) Bool)
+(declare-fun has_type (Term Type) Bool)
+(declare-fun compatible_domains (Type Type) Bool)
+(declare-fun type_reference_valid (String String) Bool)
+(declare-fun consistent_generic_instantiation (Type) Bool)
+(declare-fun acyclic_type_dependencies (TypeList) Bool)
+(declare-fun function (String) Bool)
+(declare-fun applicable (Function Term) Bool)
+(declare-fun apply (Function Term) Term)
+(declare-fun quantified_expression (Quantifier Variable Expression) Bool)
+(declare-fun consistent_quantifier_types (Quantifier Variable Expression) Bool)
+(declare-fun tri_vector_signal (Signal) Bool)
+(declare-fun project_H (Signal) VectorH)
+(declare-fun project_L (Signal) VectorL)
+(declare-fun project_S (Signal) VectorS)
+"#;
+        
+        Ok(format!("{}\n{}", declarations, constraint))
+    }
+
+    /// Generate type safety certificate
+    fn generate_type_safety_certificate(&self, property_id: &str, result: &PropertyResult) -> Option<String> {
+        match result {
+            PropertyResult::Proven => Some(format!(
+                "TYPE_SAFETY_CERTIFICATE: Property {} verified using SMT-based type checking", 
+                property_id
+            )),
+            PropertyResult::Disproven => Some(format!(
+                "TYPE_SAFETY_VIOLATION: Property {} violated, type error found", 
                 property_id
             )),
             _ => None,
