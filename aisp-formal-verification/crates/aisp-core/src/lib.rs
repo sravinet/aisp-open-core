@@ -83,7 +83,10 @@ pub mod mechanized_proofs;
 // Tri-vector signal validation
 pub mod tri_vector_validation;
 
-// Enhanced Z3 SMT solver integration
+// Enhanced Z3 SMT solver integration (modular)
+pub mod z3_verification;
+
+// Enhanced Z3 SMT solver integration (legacy re-exports)
 pub mod enhanced_z3_verification;
 
 // Test fixtures and utilities are now handled inline in each module
