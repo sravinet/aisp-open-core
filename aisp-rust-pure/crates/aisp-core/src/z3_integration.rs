@@ -7,8 +7,8 @@
 mod z3_backend {
     use crate::ast::*;
     use crate::error::*;
-    use crate::relational::*;
-    use crate::temporal::*;
+    use crate::relational_new::*;
+    use crate::temporal_new::*;
     use std::collections::HashMap;
     use std::time::{Duration, Instant};
     use z3::*;
@@ -622,8 +622,8 @@ pub use z3_backend::*;
 mod stub {
     use crate::ast::*;
     use crate::error::*;
-    use crate::relational::*;
-    use crate::temporal::*;
+    use crate::relational_new::*;
+    use crate::temporal_new::*;
     use std::collections::HashMap;
     use std::time::Duration;
 
@@ -783,7 +783,7 @@ mod stub {
             &mut self,
             _doc: &AispDocument,
             _relational_analysis: Option<&RelationalAnalysis>,
-            _temporal_analysis: Option<&TemporalAnalysis>,
+            _temporal_analysis: Option<&TemporalAnalysisResult>,
         ) -> AispResult<FormalVerificationResult> {
             Ok(FormalVerificationResult {
                 properties: vec![],

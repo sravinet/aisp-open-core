@@ -6,7 +6,7 @@
 use crate::ast::*;
 use crate::error::*;
 use crate::property_extractor::*;
-use crate::temporal::*;
+use crate::temporal_new::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::{Hash, Hasher};
 use std::time::{Duration, Instant};
