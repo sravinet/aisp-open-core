@@ -773,6 +773,10 @@ impl PropertyVerifier {
             BasicType::Real => "Real",
             BasicType::Boolean => "Bool",
             BasicType::String => "String",
+            BasicType::VectorSpace(_) => "VectorSpace",
+            BasicType::RealVector => "RealVector",
+            BasicType::DirectSum => "DirectSum",
+            BasicType::MathematicalStructure(_) => "MathematicalStructure",
         }
     }
 
