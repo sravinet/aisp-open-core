@@ -6,6 +6,9 @@
 import { readFile } from 'fs/promises';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { validateWithZ3 } from './z3-bridge.js';
+import { RelationalAnalyzer } from './relational-analyzer.js';
+import { TemporalAnalyzer } from './temporal-analyzer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -206,6 +209,7 @@ const AISP = {
      * @param {string} source - AISP source code
      * @param {object} [options] - Validation options
      * @param {boolean} [options.strict] - Use strict WASM validation (limited to 1KB)
+     * @param {boolean} [options.z3] - Enable Z3 formal verification
      * @returns {object} Validation result
      */
     validate(source, options = {}) {
@@ -251,7 +255,7 @@ const AISP = {
 
             const parseResult = this._instance.aisp_validate(docId);
 
-            return {
+            const result = {
                 valid: parseResult === 0,
                 tier: tierResult.tier,
                 tierValue: tierResult.tierValue,
@@ -262,12 +266,22 @@ const AISP = {
                 errorCode: parseResult,
                 mode: 'wasm'
             };
+
+            // Note: Z3 validation is async, use validateAsync() for Z3 support
+            if (options.z3) {
+                result.z3 = { 
+                    available: false, 
+                    message: 'Use validateAsync() for Z3 formal verification' 
+                };
+            }
+
+            return result;
         }
 
         // For larger documents, use pure JS validation
         const jsValidation = this._validatePureJS(source, densityResult);
 
-        return {
+        const result = {
             valid: jsValidation.valid,
             tier: tierResult.tier,
             tierValue: tierResult.tierValue,
@@ -279,6 +293,240 @@ const AISP = {
             mode: 'js',
             docSize: bytes.length
         };
+
+        // Note: Z3 validation is async, use validateAsync() for Z3 support
+        if (options.z3) {
+            result.z3 = { 
+                available: false, 
+                message: 'Use validateAsync() for Z3 formal verification' 
+            };
+        }
+
+        return result;
+    },
+
+    /**
+     * Validate AISP document with async Z3, relational, and temporal analysis support
+     * @param {string} source - AISP source code
+     * @param {object} [options] - Validation options
+     * @param {boolean} [options.strict] - Use strict WASM validation (limited to 1KB)
+     * @param {boolean} [options.z3] - Enable Z3 formal verification
+     * @param {boolean} [options.relational] - Enable Level 4 relational logic analysis
+     * @param {boolean} [options.temporal] - Enable Level 5 temporal logic analysis
+     * @returns {Promise<object>} Validation result
+     */
+    async validateAsync(source, options = {}) {
+        // First run normal validation
+        const result = this.validate(source, { ...options, z3: false });
+        
+        // Add Z3 validation if requested and document is valid
+        if (options.z3 && result.valid) {
+            await this._addZ3Validation(source, result, options);
+        }
+        
+        // Add relational analysis if requested and document is valid
+        if (options.relational && result.valid) {
+            await this._addRelationalAnalysis(source, result, options);
+        }
+        
+        // Add temporal analysis if requested and document is valid
+        if (options.temporal && result.valid) {
+            await this._addTemporalAnalysis(source, result, options);
+        }
+        
+        return result;
+    },
+
+    /**
+     * Add Z3 formal verification to validation result
+     * @private
+     */
+    async _addZ3Validation(source, result, options) {
+        try {
+            const z3Result = await validateWithZ3(source, options);
+            
+            result.z3 = {
+                available: z3Result.z3Available,
+                satisfiable: z3Result.satisfiable,
+                constructs: z3Result.constructs || 0,
+                runtime: z3Result.runtime || 0
+            };
+            
+            if (!z3Result.valid) {
+                result.z3.error = z3Result.error;
+                result.z3.warning = z3Result.warning;
+            }
+            
+            if (options.debug) {
+                result.z3.smtlib = z3Result.smtlib;
+            }
+            
+            // Z3 validation failure doesn't invalidate the document,
+            // but we note it for transparency
+            if (z3Result.satisfiable === false) {
+                result.z3.inconsistent = true;
+            }
+            
+        } catch (error) {
+            result.z3 = {
+                available: false,
+                error: `Z3 integration error: ${error.message}`
+            };
+        }
+    },
+
+    /**
+     * Add Level 4 relational logic analysis to validation result
+     * @private
+     */
+    async _addRelationalAnalysis(source, result, options) {
+        try {
+            const analyzer = new RelationalAnalyzer();
+            const relationalResult = await analyzer.analyze(source, options);
+            
+            result.relational = {
+                level: relationalResult.level,
+                name: relationalResult.name,
+                runtime: relationalResult.runtime,
+                rules: relationalResult.rules,
+                dependencies: relationalResult.dependencies,
+                metrics: relationalResult.metrics,
+                complexity: relationalResult.complexity,
+                completeness: relationalResult.completeness
+            };
+            
+            // Include detailed analysis in debug mode
+            if (options.debug) {
+                result.relational.dependencyGraph = relationalResult.dependencyGraph;
+                result.relational.consistencyChains = relationalResult.consistencyChains;
+                result.relational.invariants = relationalResult.invariants;
+            }
+            
+            // Add depth measurement
+            result.relational.depth = this._calculateLogicDepth(relationalResult);
+            
+        } catch (error) {
+            result.relational = {
+                available: false,
+                error: `Relational analysis error: ${error.message}`
+            };
+        }
+    },
+
+    /**
+     * Add Level 5 temporal logic analysis to validation result
+     * @private
+     */
+    async _addTemporalAnalysis(source, result, options) {
+        try {
+            const analyzer = new TemporalAnalyzer();
+            const temporalResult = await analyzer.analyze(source, options);
+            
+            result.temporal = {
+                level: temporalResult.level,
+                name: temporalResult.name,
+                runtime: temporalResult.runtime,
+                stateModel: {
+                    states: temporalResult.stateModel.states.length,
+                    transitions: temporalResult.stateModel.transitions.length,
+                    stateSpace: temporalResult.stateModel.stateSpace
+                },
+                properties: temporalResult.properties.length,
+                modelChecking: temporalResult.modelCheckingResults,
+                consistency: temporalResult.consistencyAnalysis,
+                complexity: temporalResult.temporalComplexity,
+                metrics: temporalResult.metrics
+            };
+            
+            // Include detailed analysis in debug mode
+            if (options.debug) {
+                result.temporal.detailedStateModel = temporalResult.stateModel;
+                result.temporal.detailedProperties = temporalResult.properties;
+                result.temporal.relationalFoundation = temporalResult.relationalFoundation;
+            }
+            
+            // Update depth measurement to Level 5
+            result.temporal.depth = this._calculateTemporalLogicDepth(temporalResult);
+            
+        } catch (error) {
+            result.temporal = {
+                available: false,
+                error: `Temporal analysis error: ${error.message}`
+            };
+        }
+    },
+
+    /**
+     * Calculate logic measurement depth including temporal analysis
+     * @private
+     */
+    _calculateTemporalLogicDepth(temporalResult) {
+        let depth = 5; // Level 5 temporal logic achieved
+        
+        // Verify Level 5 indicators
+        const hasTemporalOperators = temporalResult.properties.length > 0;
+        const hasStateModel = temporalResult.stateModel.states.length > 0;
+        const hasModelChecking = temporalResult.modelCheckingResults.verified + 
+                                 temporalResult.modelCheckingResults.violated > 0;
+        
+        if (!hasTemporalOperators || !hasStateModel || !hasModelChecking) {
+            depth = 4; // Fall back to Level 4 if temporal analysis incomplete
+        }
+        
+        return {
+            level: depth,
+            maxLevel: 7,
+            percentage: (depth / 7 * 100).toFixed(1) + '%',
+            description: this._getDepthDescription(depth),
+            indicators: {
+                temporalOperators: hasTemporalOperators,
+                stateModel: hasStateModel,
+                modelChecking: hasModelChecking
+            }
+        };
+    },
+
+    /**
+     * Calculate logic measurement depth from relational analysis
+     * @private
+     */
+    _calculateLogicDepth(relationalResult) {
+        let depth = 3; // Base level (we have syntactic + structural + basic semantic)
+        
+        // Level 4 indicators
+        if (relationalResult.dependencies > 0) depth = 4;
+        if (relationalResult.consistencyChains?.length > 0) depth = 4;
+        if (relationalResult.invariants?.length > 0) depth = 4;
+        
+        // Future level indicators (placeholder)
+        // if (hasTemporalOperators) depth = 5;
+        // if (hasGameTheoreticRules) depth = 6;
+        // if (hasHigherOrderLogic) depth = 7;
+        
+        return {
+            level: depth,
+            maxLevel: 7,
+            percentage: (depth / 7 * 100).toFixed(1) + '%',
+            description: this._getDepthDescription(depth)
+        };
+    },
+
+    /**
+     * Get human-readable description of logic depth level
+     * @private  
+     */
+    _getDepthDescription(level) {
+        const descriptions = {
+            1: 'Surface Syntax',
+            2: 'Structural Logic', 
+            3: 'Basic Semantic Logic',
+            4: 'Relational Logic',
+            5: 'Temporal Logic',
+            6: 'Game-Theoretic Logic',
+            7: 'Higher-Order Logic'
+        };
+        
+        return descriptions[level] || 'Unknown';
     },
 
     /**
@@ -387,5 +635,5 @@ const AISP = {
 };
 
 export default AISP;
-export const { init, validate, isValid, getDensity, getTier, validateFile, debug, debugFile, setMaxDocSize } = AISP;
+export const { init, validate, validateAsync, isValid, getDensity, getTier, validateFile, debug, debugFile, setMaxDocSize } = AISP;
 export { calculateSemanticDensity, calculatePureDensity, getTierFromDelta, AISP_SYMBOLS, SUPPORTED_EXTENSIONS, SIZE_LIMITS };
