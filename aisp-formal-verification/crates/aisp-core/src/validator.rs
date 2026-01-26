@@ -9,6 +9,7 @@ use crate::parser_new::*;
 use crate::semantic::*;
 use crate::z3_integration::*;
 use crate::tri_vector_validation::*;
+use crate::enhanced_z3_verification::*;
 use crate::{MAX_DOCUMENT_SIZE, AISP_VERSION};
 use std::time::{Duration, Instant};
 
@@ -31,6 +32,8 @@ pub struct ValidationConfig {
     pub z3_timeout: Duration,
     /// Enable tri-vector signal validation
     pub enable_trivector_validation: bool,
+    /// Enable enhanced Z3 verification
+    pub enable_enhanced_z3: bool,
 }
 
 impl Default for ValidationConfig {
@@ -44,6 +47,7 @@ impl Default for ValidationConfig {
             enable_formal_verification: false,
             z3_timeout: Duration::from_secs(30),
             enable_trivector_validation: true,
+            enable_enhanced_z3: Z3VerificationFacade::is_available(),
         }
     }
 }
@@ -85,6 +89,8 @@ pub struct ValidationResult {
     pub formal_verification: Option<FormalVerificationResult>,
     /// Tri-vector validation results
     pub trivector_validation: Option<TriVectorValidationResult>,
+    /// Enhanced Z3 verification results
+    pub enhanced_z3_verification: Option<EnhancedVerificationResult>,
     /// All warnings collected
     pub warnings: Vec<AispWarning>,
     /// Error details (if validation failed)
@@ -112,6 +118,7 @@ impl ValidationResult {
             semantic_analysis: None,
             formal_verification: None,
             trivector_validation: None,
+            enhanced_z3_verification: None,
             warnings: Vec::new(),
             error: Some(error),
         }
@@ -126,6 +133,7 @@ impl ValidationResult {
         ast: Option<AispDocument>,
         formal_verification: Option<FormalVerificationResult>,
         trivector_validation: Option<TriVectorValidationResult>,
+        enhanced_z3_verification: Option<EnhancedVerificationResult>,
     ) -> Self {
         Self {
             valid: analysis.valid,
@@ -145,6 +153,7 @@ impl ValidationResult {
             semantic_analysis: Some(analysis.clone()),
             formal_verification,
             trivector_validation,
+            enhanced_z3_verification,
             warnings: analysis.warnings,
             error: None,
         }
@@ -284,6 +293,22 @@ impl AispValidator {
             None
         };
 
+        // Perform enhanced Z3 verification if enabled
+        let enhanced_z3_verification = if self.config.enable_enhanced_z3 {
+            match self.perform_enhanced_z3_verification(&document, trivector_validation.as_ref()) {
+                Ok(z3_result) => Some(z3_result),
+                Err(err) => {
+                    // Add warning for enhanced Z3 verification failure
+                    analysis.warnings.push(AispWarning::warning(
+                        format!("Enhanced Z3 verification failed: {}", err)
+                    ));
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
         // Create result
         let ast = if self.config.include_ast {
             Some(document)
@@ -299,6 +324,7 @@ impl AispValidator {
             ast,
             formal_verification,
             trivector_validation,
+            enhanced_z3_verification,
         );
 
         // Apply timing configuration
@@ -428,6 +454,16 @@ impl AispValidator {
         );
 
         trivector_validator.validate_document(document)
+    }
+
+    /// Perform enhanced Z3 verification
+    fn perform_enhanced_z3_verification(
+        &self,
+        document: &AispDocument,
+        trivector_result: Option<&TriVectorValidationResult>,
+    ) -> AispResult<EnhancedVerificationResult> {
+        let mut z3_facade = Z3VerificationFacade::new()?;
+        z3_facade.verify_document(document, trivector_result)
     }
 }
 
