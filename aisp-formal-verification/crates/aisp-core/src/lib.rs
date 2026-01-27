@@ -6,7 +6,6 @@
 pub mod ast;
 pub mod parser_new;
 pub mod relational_new;
-pub mod semantic;
 pub mod temporal_new;
 pub mod validator;
 pub mod z3_integration;
@@ -111,6 +110,9 @@ pub mod reference_integration_test;
 pub mod grammar;
 pub mod parser;
 pub mod testing;
+
+// Deep verification architecture (Phase 2)
+pub mod semantic;
 
 // Test fixtures and utilities are now handled inline in each module
 
