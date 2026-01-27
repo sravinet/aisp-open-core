@@ -107,6 +107,11 @@ pub mod reference_validator;
 // Reference.md comprehensive integration testing
 pub mod reference_integration_test;
 
+// Security hardening components (Pest parser migration)
+pub mod grammar;
+pub mod parser;
+pub mod testing;
+
 // Test fixtures and utilities are now handled inline in each module
 
 pub use ast::*;
