@@ -1,0 +1,36 @@
+AISP5.1.WorkingTest@2026-01-27
+
+meta {
+  domain = "formal_validation_test"
+  version = "1.0.0"
+  description = "Functional formal validation test"
+}
+
+types {
+  UserRole = enum { admin, user, guest }
+  AccessLevel = int
+}
+
+functions {
+  getAccessLevel(role: UserRole) -> AccessLevel {
+    if (role == admin) return 5
+    if (role == user) return 3  
+    return 1
+  }
+  
+  hasPermission(role: UserRole, required: AccessLevel) -> bool {
+    return getAccessLevel(role) >= required
+  }
+}
+
+rules {
+  rule admin_has_max_access {
+    forall r: UserRole => 
+      (r == admin) -> (getAccessLevel(r) == 5)
+  }
+  
+  rule permission_hierarchy {
+    forall r: UserRole =>
+      hasPermission(r, 1) == true
+  }
+}

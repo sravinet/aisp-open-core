@@ -1,0 +1,26 @@
+AISP5.1.SimpleTest@2026-01-27
+
+meta {
+  domain = "simple_test"
+  version = "1.0.0"
+  description = "Basic validation test document"
+}
+
+types {
+  UserID = string
+  Status = enum { active, inactive }
+}
+
+functions {
+  getUserStatus(user: UserID) -> Status {
+    if (user == "admin") return active
+    return inactive
+  }
+}
+
+rules {
+  rule admin_always_active {
+    forall u: UserID => 
+      (u == "admin") -> (getUserStatus(u) == active)
+  }
+}
