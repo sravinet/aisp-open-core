@@ -203,12 +203,12 @@ mod z3_backend {
             let solver = Solver::new(&context);
             
             // Configure solver for AISP verification
-            solver.set_params(&context, &[
-                ("timeout", "30000"),      // 30 second timeout
-                ("model", "true"),         // Generate models
-                ("proof", "true"),         // Generate proofs
-                ("unsat_core", "true"),    // Generate unsat cores
-            ]);
+            let params = z3::Params::new(&context);
+            params.set_u32("timeout", 30000);      // 30 second timeout
+            params.set_bool("model", true);        // Generate models
+            params.set_bool("proof", true);        // Generate proofs
+            params.set_bool("unsat_core", true);   // Generate unsat cores
+            solver.set_params(&params);
 
             Ok(Self {
                 context,
@@ -233,9 +233,9 @@ mod z3_backend {
         pub fn set_timeout(&mut self, timeout: Duration) {
             self.timeout = timeout;
             let timeout_ms = timeout.as_millis() as u32;
-            self.solver.set_params(&self.context, &[
-                ("timeout", &timeout_ms.to_string()),
-            ]);
+            let params = z3::Params::new(&self.context);
+            params.set_u32("timeout", timeout_ms);
+            self.solver.set_params(&params);
         }
 
         /// Perform formal verification of AISP document
@@ -363,9 +363,9 @@ mod z3_backend {
             match type_expr {
                 TypeExpression::Basic(basic_type) => {
                     match basic_type {
-                        BasicType::Boolean => Ok(ast::Bool::new(&self.context)),
-                        BasicType::Integer => Ok(ast::Int::new(&self.context)),
-                        BasicType::Natural => Ok(ast::Int::new(&self.context)), // ℕ ⊆ ℤ
+                        BasicType::Boolean => Ok(ast::Bool::new_const(&self.context, "_bool")),
+                        BasicType::Integer => Ok(ast::Int::new_const(&self.context, "_int")),
+                        BasicType::Natural => Ok(ast::Int::new_const(&self.context, "_nat")), // ℕ ⊆ ℤ
                         BasicType::Real => Ok(ast::Real::new(&self.context)),
                         BasicType::String => Ok(ast::String::new(&self.context)),
                     }
