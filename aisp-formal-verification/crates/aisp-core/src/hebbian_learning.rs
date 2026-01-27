@@ -15,8 +15,7 @@
 //! and maintain stable knowledge acquisition patterns.
 
 use crate::{
-    ast::*,
-    parser::robust_parser::AispDocument,
+    ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock, *},
     error::*,
     semantic::DeepVerificationResult,
 };

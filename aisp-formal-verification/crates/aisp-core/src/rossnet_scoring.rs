@@ -14,8 +14,7 @@
 //! of AISP implementations across different domains and contexts.
 
 use crate::{
-    ast::*,
-    parser::robust_parser::AispDocument,
+    ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock, *},
     error::*,
     semantic::DeepVerificationResult,
 };
@@ -457,7 +456,9 @@ impl RossNetValidator {
             if let AispBlock::Rules(rules_block) = block {
                 for rule in &rules_block.rules {
                     total_expressions += 1;
-                    if self.expression_has_temporal_operators(&rule.expression) {
+                    // Note: canonical rules are strings, not structured expressions
+                    // Use simple heuristic for temporal operators
+                    if rule.raw_text.contains('□') || rule.raw_text.contains('◊') || rule.raw_text.contains('X') {
                         temporal_operators += 1;
                     }
                 }
@@ -472,26 +473,10 @@ impl RossNetValidator {
         }
     }
 
-    /// Check if expression contains temporal operators
-    fn expression_has_temporal_operators(&self, expr: &LogicalExpression) -> bool {
-        match expr {
-            LogicalExpression::Temporal { .. } => true,
-            LogicalExpression::Binary { left, right, .. } => {
-                self.expression_has_temporal_operators(left) || 
-                self.expression_has_temporal_operators(right)
-            }
-            LogicalExpression::Unary { operand, .. } => {
-                self.expression_has_temporal_operators(operand)
-            }
-            LogicalExpression::Application { arguments, .. } => {
-                arguments.iter().any(|arg| self.expression_has_temporal_operators(arg))
-            }
-            LogicalExpression::Membership { element, set } => {
-                self.expression_has_temporal_operators(element) || 
-                self.expression_has_temporal_operators(set)
-            }
-            _ => false,
-        }
+    /// Check if rule string contains temporal operators (simplified heuristic)
+    fn rule_has_temporal_operators(&self, rule: &str) -> bool {
+        rule.contains('□') || rule.contains('◊') || rule.contains('X') ||
+        rule.contains("always") || rule.contains("eventually") || rule.contains("next")
     }
 
     /// Calculate domain compatibility percentage
@@ -565,7 +550,7 @@ impl RossNetValidator {
         for block in &document.blocks {
             if let AispBlock::Meta(meta_block) = block {
                 let context_entries = meta_block.entries.iter()
-                    .filter(|(key, _)| key.contains("context") || key.contains("adapt"))
+                    .filter(|(_, entry)| entry.key.contains("context") || entry.key.contains("adapt"))
                     .count();
                 
                 let total_entries = meta_block.entries.len();
@@ -643,7 +628,7 @@ impl RossNetValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::{DocumentHeader, DocumentMetadata, Span, Position};
+    use crate::ast::canonical::{DocumentHeader, DocumentMetadata, Span};
 
     fn create_test_document() -> AispDocument {
         AispDocument {

@@ -13,8 +13,7 @@
 //! that preserve their intended behavior over extended periods.
 
 use crate::{
-    ast::*,
-    parser::robust_parser::AispDocument,
+    ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock, *},
     error::*,
     semantic::DeepVerificationResult,
 };
@@ -391,14 +390,14 @@ impl AntiDriftValidator {
         }
         
         // Detect drift based on delta changes
-        if semantic_result.delta < 0.5 {
+        if semantic_result.delta() < 0.5 {
             let incident = DriftIncident {
                 id: "semantic_density_drift".to_string(),
                 drift_type: DriftType::Simplification,
-                severity: 1.0 - semantic_result.delta,
+                severity: 1.0 - semantic_result.delta(),
                 temporal_position: 1.0,
                 affected_elements: vec!["semantic_density".to_string()],
-                change_magnitude: 1.0 - semantic_result.delta,
+                change_magnitude: 1.0 - semantic_result.delta(),
             };
             incidents.push(incident);
         }
@@ -458,7 +457,7 @@ impl AntiDriftValidator {
                     let mut complexity_sum = 0.0;
                     let mut function_count = 0;
                     
-                    for (name, function) in &functions_block.functions {
+                    for (i, function) in functions_block.functions.iter().enumerate() {
                         let complexity = self.calculate_function_complexity(function);
                         complexity_sum += complexity;
                         function_count += 1;
@@ -466,21 +465,21 @@ impl AntiDriftValidator {
                         // Detect overly complex or overly simple functions
                         if complexity > 0.8 {
                             let incident = DriftIncident {
-                                id: format!("function_complexity_drift_{}", name),
+                                id: format!("function_complexity_drift_{}", i),
                                 drift_type: DriftType::Complexification,
                                 severity: complexity - 0.8,
                                 temporal_position: 1.0,
-                                affected_elements: vec![name.clone()],
+                                affected_elements: vec![function.name.clone()],
                                 change_magnitude: complexity,
                             };
                             incidents.push(incident);
                         } else if complexity < 0.2 {
                             let incident = DriftIncident {
-                                id: format!("function_simplicity_drift_{}", name),
+                                id: format!("function_simplicity_drift_{}", i),
                                 drift_type: DriftType::Simplification,
                                 severity: 0.2 - complexity,
                                 temporal_position: 1.0,
-                                affected_elements: vec![name.clone()],
+                                affected_elements: vec![function.name.clone()],
                                 change_magnitude: complexity,
                             };
                             incidents.push(incident);
@@ -614,7 +613,7 @@ impl AntiDriftValidator {
         self.stats.stability_calculations += 1;
         
         // Semantic consistency (inverse of ambiguity)
-        let semantic_consistency = 1.0 - semantic_result.ambiguity.min(1.0);
+        let semantic_consistency = 1.0 - semantic_result.ambiguity().min(1.0);
         
         // Behavioral predictability (inverse of drift frequency)
         let behavioral_predictability = if drift_patterns.classification.drift_frequency > 0.0 {
@@ -624,7 +623,7 @@ impl AntiDriftValidator {
         };
         
         // Meaning preservation (based on delta)
-        let meaning_preservation = semantic_result.delta.min(1.0);
+        let meaning_preservation = semantic_result.delta().min(1.0);
         
         // Temporal stability (inverse of drift velocity)
         let temporal_stability = if drift_patterns.trends.drift_velocity > 0.0 {
