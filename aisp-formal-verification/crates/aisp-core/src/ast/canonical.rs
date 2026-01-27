@@ -288,7 +288,7 @@ pub enum ConstantValue {
 }
 
 /// Binary logical operators
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum BinaryOperator {
     /// Definition (≜)
     Definition,
@@ -325,7 +325,7 @@ pub enum BinaryOperator {
 }
 
 /// Unary logical operators
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum UnaryOperator {
     /// Negation (¬)
     Not,
@@ -334,7 +334,7 @@ pub enum UnaryOperator {
 }
 
 /// Temporal operators for temporal logic
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TemporalOperator {
     /// Always/Globally (□, G)
     Always,

@@ -697,7 +697,7 @@ impl RobustAispParser {
 
     /// Find balanced delimiter pairs
     fn find_balanced_delimiter(&self, text: &str, open: char, close: char) -> Option<usize> {
-        let mut depth = 0;
+        let mut depth = 0i32;
         let mut start_found = false;
 
         for (i, ch) in text.char_indices() {
@@ -800,14 +800,14 @@ impl RobustAispParser {
     }
 
     fn calculate_nesting_depth(&self, input: &str) -> usize {
-        let mut depth = 0;
-        let mut max_depth = 0;
+        let mut depth = 0i32;
+        let mut max_depth = 0usize;
 
         for ch in input.chars() {
             match ch {
                 '{' | '⟨' | '(' => {
                     depth += 1;
-                    max_depth = max_depth.max(depth);
+                    max_depth = max_depth.max(depth as usize);
                 }
                 '}' | '⟩' | ')' => {
                     depth = depth.saturating_sub(1);
