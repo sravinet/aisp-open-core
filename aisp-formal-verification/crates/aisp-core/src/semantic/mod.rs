@@ -5,15 +5,21 @@ pub mod deep_verifier;
 pub mod behavioral_verifier;
 pub mod cross_validator;
 pub mod verification_pipeline;
+pub mod pipeline;
 
 pub use deep_verifier::{
     DeepSemanticVerifier,
     DeepVerificationResult,
     TypeSystemAnalyzer,
     LogicConsistencyChecker,
+    DependencyGraphAnalyzer,
+    MathematicalCorrectnessEngine,
     DeceptionDetector,
     SecurityAssessment,
     ThreatLevel,
+    VerificationDetails,
+    CoverageMetrics,
+    PerformanceMetrics,
 };
 
 pub use behavioral_verifier::{
@@ -129,11 +135,28 @@ impl DeepVerificationResult {
     }
 
     pub fn relational_analysis(&self) -> Option<MockRelationalAnalysis> {
-        Some(MockRelationalAnalysis {})
+        Some(MockRelationalAnalysis {
+            consistency_score: self.logic_consistency_score,
+            constraint_analysis: MockConstraintAnalysis {
+                constraints: vec!["type_consistency".to_string(), "logical_constraints".to_string()],
+                satisfied: vec!["type_consistency".to_string()],
+            },
+            conflict_analysis: MockConflictAnalysis {
+                conflicts: vec![],
+            },
+        })
     }
 
     pub fn temporal_analysis(&self) -> Option<MockTemporalAnalysis> {
-        Some(MockTemporalAnalysis {})
+        Some(MockTemporalAnalysis {
+            consistency_score: self.logic_consistency_score,
+            formula_analysis: MockFormulaAnalysis {
+                formulas: vec!["temporal_formula_1".to_string(), "temporal_formula_2".to_string()],
+            },
+            pattern_analysis: MockPatternAnalysis {
+                patterns: vec!["pattern_1".to_string()],
+            },
+        })
     }
 
     pub fn symbol_stats(&self) -> MockSymbolStats {
@@ -150,10 +173,39 @@ pub struct MockTypeAnalysis {
 }
 
 #[derive(Debug, Clone)]
-pub struct MockRelationalAnalysis {}
+pub struct MockRelationalAnalysis {
+    pub consistency_score: f64,
+    pub constraint_analysis: MockConstraintAnalysis,
+    pub conflict_analysis: MockConflictAnalysis,
+}
 
 #[derive(Debug, Clone)]
-pub struct MockTemporalAnalysis {}
+pub struct MockTemporalAnalysis {
+    pub consistency_score: f64,
+    pub formula_analysis: MockFormulaAnalysis,
+    pub pattern_analysis: MockPatternAnalysis,
+}
+
+#[derive(Debug, Clone)]
+pub struct MockConstraintAnalysis {
+    pub constraints: Vec<String>,
+    pub satisfied: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct MockConflictAnalysis {
+    pub conflicts: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct MockFormulaAnalysis {
+    pub formulas: Vec<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct MockPatternAnalysis {
+    pub patterns: Vec<String>,
+}
 
 #[derive(Debug, Clone)]
 pub struct MockSymbolStats {
