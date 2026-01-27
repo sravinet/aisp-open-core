@@ -145,7 +145,7 @@ impl AispParser {
     /// Parse functions block
     fn parse_functions_block(&mut self) -> AispResult<FunctionsBlock> {
         let (start_line, _) = self.lexer.position_info();
-        let mut functions = HashMap::new();
+        let mut functions = Vec::new();
         
         while !self.lexer.check('}') && !self.lexer.is_at_end() {
             self.lexer.skip_whitespace_and_comments();
@@ -163,19 +163,17 @@ impl AispParser {
             let (line, column) = self.lexer.position_info();
             let span = Span::new(line, 1, line, column);
             
-            functions.insert(
-                name.clone(),
-                FunctionDefinition {
-                    name: name.clone(),
-                    lambda,
-                    span: Some(span),
-                },
-            );
+            functions.push(FunctionDefinition {
+                name: name.clone(),
+                lambda,
+                raw_text: format!("{}≜λ", name),
+                span: Some(span),
+            });
         }
         
         let (end_line, end_column) = self.lexer.position_info();
         Ok(FunctionsBlock {
-            functions: vec![],
+            functions,
             raw_functions: vec![],
             span: Some(Span::new(start_line, 1, end_line, end_column)),
         })

@@ -3,7 +3,7 @@
 //! This module handles parsing logical rules, quantifiers, lambda expressions,
 //! and other logical constructs used in Rules and Functions blocks.
 
-use crate::ast::{
+use crate::ast::canonical::{
     LogicalRule, Quantifier, QuantifierKind, LogicalExpression, 
     LambdaExpression, Span
 };
@@ -32,7 +32,8 @@ impl LogicParser {
         Ok(LogicalRule {
             quantifier,
             expression,
-            span: Span::new(start_line, 1, end_line, end_column),
+            raw_text: "parsed_rule".to_string(), // TODO: Capture actual raw text
+            span: Some(Span::new(start_line, 1, end_line, end_column)),
         })
     }
 
@@ -62,7 +63,7 @@ impl LogicParser {
             kind,
             variable,
             domain,
-            span: Span::new(start_line, 1, end_line, end_column),
+            span: Some(Span::new(start_line, 1, end_line, end_column)),
         })
     }
 
@@ -140,7 +141,7 @@ impl LogicParser {
         Ok(LambdaExpression {
             parameters,
             body,
-            span: Span::new(start_line, 1, end_line, end_column),
+            span: Some(Span::new(start_line, 1, end_line, end_column)),
         })
     }
 }
