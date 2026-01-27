@@ -12,6 +12,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub struct MathematicalFoundationsResult {
     pub ambiguity_verified: bool,
+    pub calculated_ambiguity: f64,
     pub token_efficiency: TokenEfficiencyResult,
     pub mathematical_proofs: Vec<String>,
     pub smt_certificates: Vec<String>,
@@ -98,6 +99,7 @@ impl<'a> AmbiguityVerifier<'a> {
         
         Ok(MathematicalFoundationsResult {
             ambiguity_verified,
+            calculated_ambiguity: semantic_result.ambiguity,
             token_efficiency,
             mathematical_proofs,
             smt_certificates,

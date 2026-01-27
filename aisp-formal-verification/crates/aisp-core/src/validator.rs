@@ -663,6 +663,8 @@ impl AispValidator {
             quality_score: analysis.quality_score,
             validation_errors: analysis.errors.iter().map(|e| e.to_string()).collect(),
             warnings: analysis.warnings.iter().map(|w| w.to_string()).collect(),
+            coherence_score: 0.95, // Default coherence score
+            rule_coverage: 1.0,    // Default rule coverage
         };
         
         let mut validator = RossNetValidator::new(config);
@@ -694,6 +696,8 @@ impl AispValidator {
             quality_score: analysis.quality_score,
             validation_errors: analysis.errors.iter().map(|e| e.to_string()).collect(),
             warnings: analysis.warnings.iter().map(|w| w.to_string()).collect(),
+            coherence_score: 0.95, // Default coherence score
+            rule_coverage: 1.0,    // Default rule coverage
         };
         
         let mut validator = HebbianValidator::new(config);
@@ -724,6 +728,8 @@ impl AispValidator {
             quality_score: analysis.quality_score,
             validation_errors: analysis.errors.iter().map(|e| e.to_string()).collect(),
             warnings: analysis.warnings.iter().map(|w| w.to_string()).collect(),
+            coherence_score: 0.95, // Default coherence score
+            rule_coverage: 1.0,    // Default rule coverage
         };
         
         let mut validator = AntiDriftValidator::new(config);

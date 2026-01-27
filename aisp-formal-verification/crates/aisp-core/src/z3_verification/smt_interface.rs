@@ -233,7 +233,7 @@ impl SmtInterface {
                 }
             } else if line.starts_with("(assert") {
                 let assertion_content = self.extract_assertion_content(line)?;
-                if let Ok(assertion) = self.parse_assertion(assertion_content, ctx, &constants) {
+                if let Ok(assertion) = self.parse_assertion(&assertion_content, ctx, &constants) {
                     solver.assert(&assertion);
                 } else {
                     return Err(format!("Failed to parse assertion: {}", line));
@@ -260,12 +260,12 @@ impl SmtInterface {
     }
     
     /// Extract assertion content
-    fn extract_assertion_content(&self, line: &str) -> Result<&str, String> {
+    fn extract_assertion_content(&self, line: &str) -> Result<String, String> {
         if let Some(start) = line.find("(assert ") {
             let content_start = start + 8;
             if let Some(content) = line.get(content_start..) {
                 let content = content.trim_end_matches(')');
-                Ok(content.trim())
+                Ok(content.trim().to_string())
             } else {
                 Err("Empty assertion".to_string())
             }

@@ -317,7 +317,7 @@ impl EnhancedZ3Verifier {
                 // Parse assertion and add to solver
                 // This is simplified - real implementation would parse the full expression
                 let assertion_content = self.extract_assertion_content(line)?;
-                if let Ok(assertion) = self.parse_assertion(assertion_content, ctx) {
+                if let Ok(assertion) = self.parse_assertion(&assertion_content, ctx) {
                     solver.assert(&assertion);
                 } else {
                     return Err(format!("Failed to parse assertion: {}", line));
@@ -333,13 +333,13 @@ impl EnhancedZ3Verifier {
     
     /// Extract assertion content from SMT line
     #[cfg(feature = "z3-verification")]
-    fn extract_assertion_content(&self, line: &str) -> Result<&str, String> {
+    fn extract_assertion_content(&self, line: &str) -> Result<String, String> {
         if let Some(start) = line.find("(assert ") {
             let content_start = start + 8;
             if let Some(content) = line.get(content_start..) {
                 // Remove trailing parenthesis
                 let content = content.trim_end_matches(')');
-                Ok(content.trim())
+                Ok(content.trim().to_string())
             } else {
                 Err("Empty assertion".to_string())
             }

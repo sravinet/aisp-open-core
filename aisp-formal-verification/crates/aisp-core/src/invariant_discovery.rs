@@ -162,19 +162,30 @@ mod tests {
     #[test]
     fn test_quick_vs_comprehensive_analysis() {
         let mut types = HashMap::new();
-        types.insert("Value".to_string(), TypeExpression::Basic(BasicType::Natural));
+        types.insert("Value".to_string(), TypeDefinition {
+            name: "Value".to_string(),
+            type_expr: TypeExpression::Basic(BasicType::Natural),
+            span: Span::default(),
+        });
 
         let document = AispDocument {
             header: DocumentHeader {
                 version: "5.1".to_string(),
                 name: "AnalysisTest".to_string(),
                 date: "2026-01-26".to_string(),
+                metadata: None,
+            },
+            metadata: DocumentMetadata {
+                domain: None,
+                protocol: None,
             },
             blocks: vec![
                 AispBlock::Types(TypesBlock {
                     definitions: types,
+                    span: Span::default(),
                 }),
             ],
+            span: Span::default(),
         };
 
         // Quick analysis
@@ -196,19 +207,30 @@ mod tests {
     #[test]
     fn test_evidence_tracking() {
         let mut types = HashMap::new();
-        types.insert("Counter".to_string(), TypeExpression::Basic(BasicType::Natural));
+        types.insert("Counter".to_string(), TypeDefinition {
+            name: "Counter".to_string(),
+            type_expr: TypeExpression::Basic(BasicType::Natural),
+            span: Span::default(),
+        });
 
         let document = AispDocument {
             header: DocumentHeader {
                 version: "5.1".to_string(),
                 name: "EvidenceTest".to_string(),
                 date: "2026-01-26".to_string(),
+                metadata: None,
+            },
+            metadata: DocumentMetadata {
+                domain: None,
+                protocol: None,
             },
             blocks: vec![
                 AispBlock::Types(TypesBlock {
                     definitions: types,
+                    span: Span::default(),
                 }),
             ],
+            span: Span::default(),
         };
 
         let mut discovery = InvariantDiscovery::new();
