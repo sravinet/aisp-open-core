@@ -988,10 +988,10 @@ mod tests {
             execution_results: Vec::new(),
             security_assessment: crate::semantic::behavioral_verifier::BehavioralSecurityAssessment {
                 threat_level: crate::semantic::behavioral_verifier::ThreatLevel::Medium,
-                risk_factors: Vec::new(),
+                attack_surface_size: 0.3,
+                vulnerability_count: 0,
                 security_score: 0.5,
-                compliance_status: crate::semantic::behavioral_verifier::ComplianceStatus { compliant: true, violations: Vec::new() },
-                mitigation_recommendations: Vec::new(),
+                compliance_level: crate::semantic::behavioral_verifier::ComplianceLevel::PartiallyCompliant,
             },
             violations: Vec::new(),
             recommendations: Vec::new(),

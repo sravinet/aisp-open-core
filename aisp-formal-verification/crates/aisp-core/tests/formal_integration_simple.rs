@@ -309,7 +309,7 @@ fn test_comprehensive_formal_validation() {
     
     // Should have comprehensive analysis
     if let Some(semantic_analysis) = &result.semantic_analysis {
-        assert!(!semantic_analysis.warnings.is_empty() || result.warnings.is_empty(), 
+        assert!(!semantic_analysis.warnings().is_empty() || result.warnings.is_empty(),
             "Should have analysis results");
     }
 }

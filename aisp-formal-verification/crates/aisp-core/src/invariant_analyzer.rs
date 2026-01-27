@@ -242,52 +242,13 @@ mod tests {
     use std::{collections::HashMap, time::Duration};
 
     fn create_test_document() -> AispDocument {
-        let mut types = HashMap::new();
-        types.insert("Natural".to_string(), TypeDefinition {
-            name: "Natural".to_string(),
-            type_expr: TypeExpression::Basic(BasicType::Natural),
-            span: crate::ast::Span {
-                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                end: crate::ast::Position { line: 1, column: 10, offset: 10 },
-            },
-        });
-        types.insert("Status".to_string(), TypeDefinition {
-            name: "Status".to_string(),
-            type_expr: TypeExpression::Enumeration(vec![
-                "Active".to_string(),
-                "Inactive".to_string(),
-            ]),
-            span: crate::ast::Span {
-                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                end: crate::ast::Position { line: 1, column: 10, offset: 10 },
-            },
-        });
-
-        AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: "TestDoc".to_string(),
-                date: "2026-01-26".to_string(),
-                metadata: None,
-            },
-            metadata: DocumentMetadata {
-                domain: None,
-                protocol: None,
-            },
-            blocks: vec![
-                AispBlock::Types(TypesBlock {
-                    definitions: types,
-                    span: crate::ast::Span {
-                        start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                        end: crate::ast::Position { line: 1, column: 10, offset: 10 },
-                    },
-                }),
-            ],
-            span: crate::ast::Span {
-                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                end: crate::ast::Position { line: 10, column: 1, offset: 100 },
-            },
-        }
+        let mut doc = crate::ast::canonical::create_document("TestDoc", "5.1", "2026-01-26");
+        doc.add_block(crate::ast::canonical::create_types_block(vec![
+            "Natural≜ℕ".to_string(),
+            "Status≜{Active,Inactive}".to_string(),
+        ]));
+        doc.parse_structured_data();
+        doc
     }
 
     #[test]

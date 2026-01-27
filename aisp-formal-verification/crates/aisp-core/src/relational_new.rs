@@ -419,8 +419,8 @@ mod tests {
     use super::*;
     use crate::ast::canonical::Span;
 
-    fn create_test_span() -> Span {
-        Span::new(1, 1, 1, 10)
+    fn create_test_span() -> Option<Span> {
+        Some(Span::new(1, 1, 1, 10))
     }
 
     #[test]
@@ -477,23 +477,12 @@ mod tests {
 
         let types_block = TypesBlock {
             definitions: type_definitions,
+            raw_definitions: Vec::new(),
             span: create_test_span(),
         };
 
-        let doc = AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: "test".to_string(),
-                date: "2026-01-26".to_string(),
-                metadata: None,
-            },
-            metadata: DocumentMetadata {
-                domain: None,
-                protocol: None,
-            },
-            blocks: vec![AispBlock::Types(types_block)],
-            span: create_test_span(),
-        };
+        let mut doc = crate::ast::canonical::create_document("test", "5.1", "2026-01-26");
+        doc.blocks.push(AispBlock::Types(types_block));
 
         analyzer.build_type_environment(&doc, &external_types)?;
         

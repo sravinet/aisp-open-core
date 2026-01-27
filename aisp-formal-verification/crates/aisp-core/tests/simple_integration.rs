@@ -7,15 +7,15 @@ use aisp_core::{AispValidator, ValidationConfig, ValidationResult, QualityTier};
 
 /// Helper to assert validation results
 fn assert_valid_document(result: ValidationResult, expected_tier: QualityTier) {
-    assert!(result.is_valid, "Document should be valid but got errors: {:?}", result.errors);
-    assert_eq!(result.quality_tier, expected_tier, 
-        "Expected quality tier {:?} but got {:?}", expected_tier, result.quality_tier);
+    assert!(result.valid, "Document should be valid but got error: {:?}", result.error);
+    assert_eq!(result.tier, expected_tier,
+        "Expected quality tier {:?} but got {:?}", expected_tier, result.tier);
     assert!(result.delta >= 0.5, "Delta should be reasonable: {}", result.delta);
 }
 
 fn assert_invalid_document(result: ValidationResult) {
-    assert!(!result.is_valid, "Document should be invalid but was valid");
-    assert!(!result.errors.is_empty(), "Invalid document should have errors");
+    assert!(!result.valid, "Document should be invalid but was valid");
+    assert!(result.error.is_some(), "Invalid document should have an error");
 }
 
 #[test]
@@ -194,7 +194,7 @@ fn test_validation_config_options() {
     assert_valid_document(result, QualityTier::Silver);
     
     // Verify timing information is included when requested
-    assert!(result.timing.is_some(), "Timing information should be present");
+    assert!(result.total_time.is_some(), "Timing information should be present");
 }
 
 #[test]
@@ -270,9 +270,9 @@ fn test_validation_performance() {
         "Validation took too long: {}ms", duration.as_millis());
     
     // Timing information should be available
-    if let Some(timing) = result.timing {
-        assert!(timing.total_time_ms < 5000, 
-            "Reported timing too high: {}ms", timing.total_time_ms);
+    if let Some(total_time) = result.total_time {
+        assert!(total_time.as_millis() < 5000,
+            "Reported timing too high: {}ms", total_time.as_millis());
     }
 }
 

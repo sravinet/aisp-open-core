@@ -350,9 +350,10 @@ mod tests {
             },
             blocks: vec![AispBlock::Types(TypesBlock {
                 definitions: type_definitions,
-                span: Span::new(1, 1, 3, 1),
+                raw_definitions: Vec::new(),
+                span: Some(Span::new(1, 1, 3, 1)),
             })],
-            span: Span::new(1, 1, 10, 1),
+            span: Some(Span::new(1, 1, 10, 1)),
         }
     }
 
