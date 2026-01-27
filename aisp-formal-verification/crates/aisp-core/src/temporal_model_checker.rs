@@ -3,7 +3,7 @@
 //! This module provides model checking capabilities for temporal logic properties,
 //! including state space exploration, path analysis, and property verification.
 
-use crate::ast::*;
+use crate::ast::canonical::{CanonicalAispDocument as AispDocument, *};
 use crate::error::*;
 use crate::temporal_logic_solver::{StateSpace, StateNode, StateTransition, ExecutionTrace};
 use std::collections::{HashMap, HashSet, VecDeque};

@@ -128,7 +128,7 @@ impl VerificationMethods {
         };
         
         let mut validator = RossNetValidator::new(config);
-        validator.validate_document(document, analysis)
+        validator.validate_rossnet_scoring(document, analysis)
     }
 
     /// Perform Hebbian learning validation
@@ -138,15 +138,15 @@ impl VerificationMethods {
         analysis: &DeepVerificationResult,
     ) -> AispResult<HebbianValidationResult> {
         let config = HebbianConfig {
-            learning_rate: if self.config.strict_mode { 0.001 } else { 0.01 },
-            max_epochs: if self.config.strict_mode { 1000 } else { 100 },
-            convergence_threshold: if self.config.strict_mode { 1e-6 } else { 1e-4 },
-            enable_synaptic_plasticity: true,
-            min_confidence_threshold: if self.config.strict_mode { 0.95 } else { 0.8 },
+            target_penalty_ratio: 10.0,
+            penalty_ratio_tolerance: if self.config.strict_mode { 0.1 } else { 0.2 },
+            min_learning_rate: if self.config.strict_mode { 0.001 } else { 0.01 },
+            max_learning_rate: if self.config.strict_mode { 0.1 } else { 0.5 },
+            max_weight_update: 1.0,
         };
         
         let mut validator = HebbianValidator::new(config);
-        validator.validate_hebbian_constraints(document, analysis)
+        validator.validate_hebbian_learning(document, analysis)
     }
 
     /// Perform anti-drift protocol validation
@@ -156,16 +156,15 @@ impl VerificationMethods {
         analysis: &DeepVerificationResult,
     ) -> AispResult<AntiDriftValidationResult> {
         let config = AntiDriftConfig {
-            max_allowed_drift: if self.config.strict_mode { 0.001 } else { 0.01 },
-            drift_detection_window: Duration::from_secs(if self.config.strict_mode { 30 } else { 60 }),
-            correction_threshold: if self.config.strict_mode { 0.95 } else { 0.85 },
-            enable_predictive_correction: self.config.strict_mode,
-            temporal_stability_weight: 0.6,
-            semantic_consistency_weight: 0.4,
+            max_drift_velocity: if self.config.strict_mode { 0.001 } else { 0.01 },
+            severity_threshold: if self.config.strict_mode { 0.95 } else { 0.85 },
+            min_stability_score: if self.config.strict_mode { 0.95 } else { 0.8 },
+            analysis_time_window: Duration::from_secs(if self.config.strict_mode { 30 } else { 60 }),
+            max_analysis_time: Duration::from_secs(300),
         };
         
         let mut validator = AntiDriftValidator::new(config);
-        validator.validate_anti_drift_protocol(document, analysis)
+        validator.validate_anti_drift(document, analysis)
     }
 }
 
