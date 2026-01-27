@@ -44,8 +44,8 @@ impl<'a> AmbiguityVerifier<'a> {
     ) -> AispResult<MathematicalFoundationsResult> {
         // Calculate actual parse counts from semantic analysis
         let unique_parses = 1.0; // Simplified: AISP should have unique interpretation
-        let total_parses = if semantic_result.ambiguity > 0.0 { 
-            1.0 / (1.0 - semantic_result.ambiguity)
+        let total_parses = if semantic_result.ambiguity() > 0.0 { 
+            1.0 / (1.0 - semantic_result.ambiguity())
         } else { 
             1.0 
         };
@@ -99,7 +99,7 @@ impl<'a> AmbiguityVerifier<'a> {
         
         Ok(MathematicalFoundationsResult {
             ambiguity_verified,
-            calculated_ambiguity: semantic_result.ambiguity,
+            calculated_ambiguity: semantic_result.ambiguity(),
             token_efficiency,
             mathematical_proofs,
             smt_certificates,
@@ -109,9 +109,9 @@ impl<'a> AmbiguityVerifier<'a> {
     fn calculate_token_efficiency(&self, semantic_result: &DeepVerificationResult) -> TokenEfficiencyResult {
         // Simplified token efficiency calculation
         // In a real implementation, this would analyze token compression vs semantic preservation
-        let efficiency_score = if semantic_result.ambiguity < 0.02 { 0.95 } else { 0.60 };
+        let efficiency_score = if semantic_result.ambiguity() < 0.02 { 0.95 } else { 0.60 };
         let meets_spec = efficiency_score > 0.80;
-        let compression_ratio = 1.0 / (1.0 + semantic_result.ambiguity);
+        let compression_ratio = 1.0 / (1.0 + semantic_result.ambiguity());
         
         TokenEfficiencyResult {
             efficiency_score,
@@ -124,12 +124,12 @@ impl<'a> AmbiguityVerifier<'a> {
 /// Verify AISP token efficiency according to reference.md specifications
 pub fn verify_token_efficiency(semantic_result: &DeepVerificationResult) -> TokenEfficiencyResult {
     // Calculate efficiency based on ambiguity and coherence
-    let base_efficiency = semantic_result.coherence_score;
-    let ambiguity_penalty = semantic_result.ambiguity * 2.0; // Penalty factor
+    let base_efficiency = semantic_result.overall_confidence; // Use overall_confidence instead of missing coherence_score
+    let ambiguity_penalty = semantic_result.ambiguity() * 2.0; // Penalty factor
     let efficiency_score = (base_efficiency - ambiguity_penalty).max(0.0).min(1.0);
     
-    let meets_spec = efficiency_score > 0.80 && semantic_result.ambiguity < 0.02;
-    let compression_ratio = semantic_result.rule_coverage / (1.0 + semantic_result.ambiguity);
+    let meets_spec = efficiency_score > 0.80 && semantic_result.ambiguity() < 0.02;
+    let compression_ratio = semantic_result.overall_confidence / (1.0 + semantic_result.ambiguity()); // Use overall_confidence instead of missing rule_coverage
     
     TokenEfficiencyResult {
         efficiency_score,
