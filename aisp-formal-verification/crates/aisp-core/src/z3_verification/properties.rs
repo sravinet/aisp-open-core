@@ -345,21 +345,19 @@ impl PropertyVerifier {
         let solver = Solver::new(&ctx);
         
         // Configure solver for AISP verification
-        solver.set_params(&ctx, &[
-            ("timeout", &self.config.query_timeout_ms.to_string()),
-            ("model", &"true".to_string()),
-            ("proof", &"true".to_string()),
-        ]);
+        solver.set("timeout", self.config.query_timeout_ms);
+        solver.set("model", true);
+        solver.set("proof", true);
 
         // Declare AISP-specific sorts
-        let vector_sort = Sort::uninterpreted(&ctx, "Vector");
-        let real_sort = ctx.real_sort();
+        let vector_sort = Sort::uninterpreted(&ctx, Symbol::String("Vector".to_string()));
+        let real_sort = Sort::real(&ctx);
         
         // Declare functions referenced in formula
-        let dot_product = FuncDecl::new(&ctx, "dot_product", 
+        let dot_product = FuncDecl::new(&ctx, Symbol::String("dot_product".to_string()), 
                                       &[&vector_sort, &vector_sort], &real_sort);
-        let in_space = FuncDecl::new(&ctx, "in_space", 
-                                   &[&vector_sort, &ctx.string_sort()], &ctx.bool_sort());
+        let in_space = FuncDecl::new(&ctx, Symbol::String("in_space".to_string()), 
+                                   &[&vector_sort, &Sort::string(&ctx)], &Sort::bool(&ctx));
 
         // Parse and assert the SMT formula
         match self.parse_and_assert_formula(&ctx, &solver, formula) {
@@ -398,13 +396,13 @@ impl PropertyVerifier {
         // In a complete implementation, this would parse the full SMT-LIB formula
         
         // Create variables for the orthogonality check
-        let v1 = ctx.named_real_const("v1_x"); // Simplified: just use real components
-        let v2 = ctx.named_real_const("v2_x");
+        let v1 = ast::Real::new_const(&ctx, "v1_x"); // Simplified: just use real components
+        let v2 = ast::Real::new_const(&ctx, "v2_x");
         
         // Assert dot product constraint: v1 * v2 = 0 for orthogonal vectors
         let dot_product = v1.mul(&[&v2]);
-        let zero = ctx.from_real(0, 1);
-        let orthogonality_constraint = dot_product._eq(&zero);
+        let zero = ast::Real::from_real(&ctx, 0, 1);
+        let orthogonality_constraint = dot_product.eq(&zero);
         
         // For verification, we check the negation - if unsat, then property holds
         let negated_constraint = orthogonality_constraint.not();
