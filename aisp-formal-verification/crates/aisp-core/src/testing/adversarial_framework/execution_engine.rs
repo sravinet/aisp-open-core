@@ -73,7 +73,7 @@ impl AttackExecutionEngine {
         test_suite.unicode_confusion_tests.iter().map(|attack| {
             let start_time = Instant::now();
             let parse_result = self.parser.parse(&attack.malicious_payload);
-            let security_report = self.unicode_registry.analyze_security(&attack.malicious_payload);
+            let security_report = self.unicode_registry.generate_security_report(&attack.malicious_payload);
             let parsing_time = start_time.elapsed();
 
             let success = self.evaluate_unicode_attack_success(&security_report, &parse_result);

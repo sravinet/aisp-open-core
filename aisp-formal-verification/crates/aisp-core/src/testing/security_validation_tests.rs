@@ -68,7 +68,7 @@ impl ParserSecurityTestSuite {
         failed_tests += unicode_results.iter().filter(|r| !**r).count();
 
         // Run adversarial testing
-        let adversarial_report = self.adversarial_suite.run_security_assessment(&self.parser);
+        let adversarial_report = crate::testing::adversarial_framework::run_adversarial_security_assessment();
         total_tests += adversarial_report.total_attacks;
         bypass_attempts = adversarial_report.total_attacks;
         successful_bypasses = adversarial_report.bypasses_achieved;
@@ -392,7 +392,7 @@ impl ParserSecurityTestSuite {
     /// Generate security compliance report
     pub fn generate_compliance_report(&self) -> SecurityComplianceReport {
         let test_results = self.run_comprehensive_security_tests();
-        let adversarial_report = self.adversarial_suite.run_security_assessment(&self.parser);
+        let adversarial_report = crate::testing::adversarial_framework::run_adversarial_security_assessment();
         
         SecurityComplianceReport {
             timestamp: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string(),
