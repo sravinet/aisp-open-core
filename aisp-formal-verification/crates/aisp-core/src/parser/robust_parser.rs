@@ -667,13 +667,16 @@ impl RobustAispParser {
                 // Find matching closing delimiter
                 let search_start = start + pattern.len();
                 if let Some(end) = self.find_block_end(input, search_start, block_type) {
-                    boundaries.push(BlockBoundary {
-                        block_type: block_type.to_string(),
-                        start_pos: start,
-                        end_pos: end,
-                        content: input[start..=end].to_string(),
-                        is_well_formed: self.validate_block_structure(&input[start..=end]),
-                    });
+                    // Use safe Unicode-aware string slicing
+                    if let Some(content) = self.safe_slice(input, start, end + 1) {
+                        boundaries.push(BlockBoundary {
+                            block_type: block_type.to_string(),
+                            start_pos: start,
+                            end_pos: end,
+                            content: content.to_string(),
+                            is_well_formed: self.validate_block_structure(&content),
+                        });
+                    }
                 }
             }
         }
@@ -681,10 +684,42 @@ impl RobustAispParser {
         boundaries.sort_by_key(|b| b.start_pos);
         boundaries
     }
+    
+    /// Safe Unicode-aware string slicing that respects character boundaries
+    fn safe_slice<'a>(&self, input: &'a str, start: usize, end: usize) -> Option<&'a str> {
+        // Convert byte positions to character positions
+        let chars: Vec<(usize, char)> = input.char_indices().collect();
+        
+        // Find character boundary positions
+        let start_char_pos = chars.iter().find(|(pos, _)| *pos >= start).map(|(pos, _)| *pos)?;
+        let end_char_pos = chars.iter().rev().find(|(pos, _)| *pos < end).map(|(pos, _)| *pos + 1).unwrap_or(input.len());
+        
+        // Ensure positions are within bounds and at character boundaries
+        if start_char_pos <= end_char_pos && input.is_char_boundary(start_char_pos) && input.is_char_boundary(end_char_pos) {
+            Some(&input[start_char_pos..end_char_pos])
+        } else {
+            None
+        }
+    }
 
     /// Find the end of a block based on balanced delimiters
     fn find_block_end(&self, input: &str, start: usize, block_type: &str) -> Option<usize> {
-        let remaining = &input[start..];
+        // Use safe Unicode-aware slicing to get remaining text
+        let remaining = if start < input.len() && input.is_char_boundary(start) {
+            &input[start..]
+        } else {
+            // Find the next character boundary if start is not valid
+            let chars: Vec<(usize, char)> = input.char_indices().collect();
+            let safe_start = chars.iter()
+                .find(|(pos, _)| *pos >= start)
+                .map(|(pos, _)| *pos)
+                .unwrap_or(input.len());
+            
+            if safe_start >= input.len() {
+                return None;
+            }
+            &input[safe_start..]
+        };
         
         if block_type == "Epsilon" {
             // Evidence blocks use ⟨ ⟩ delimiters
