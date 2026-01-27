@@ -607,10 +607,10 @@ impl CrossValidationChecker {
         semantic_results: &DeepVerificationResult,
         behavioral_results: &BehavioralVerificationResult,
     ) -> ComplianceVerification {
-        let semantic_compliant = matches!(semantic_results.security_assessment.compliance_level, 
-            crate::semantic::deep_verifier::ComplianceLevel::FullyCompliant | 
-            crate::semantic::deep_verifier::ComplianceLevel::ExceedsCompliance);
-        let behavioral_compliant = matches!(behavioral_results.security_assessment.compliance_level,
+        let semantic_compliant = matches!(semantic_results.security_assessment.compliance_status, 
+            crate::semantic::deep_verifier::ComplianceStatus::FullyCompliant | 
+            crate::semantic::deep_verifier::ComplianceStatus::ExceedsCompliance);
+        let behavioral_compliant = matches!(behavioral_results.security_assessment.compliance_status,
             crate::semantic::behavioral_verifier::ComplianceLevel::FullyCompliant |
             crate::semantic::behavioral_verifier::ComplianceLevel::ExceedsCompliance);
         let compliant = semantic_compliant && behavioral_compliant;
