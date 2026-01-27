@@ -219,7 +219,8 @@ impl TemporalOperatorAnalyzer {
         errors: &mut Vec<AispError>,
         warnings: &mut Vec<AispWarning>,
     ) {
-        for (function_name, function) in &functions_block.functions {
+        for function in &functions_block.functions {
+            let function_name = &function.name;
             let function_text = self.extract_function_text(&function.lambda);
             
             let operators = self.extract_operators_from_text(

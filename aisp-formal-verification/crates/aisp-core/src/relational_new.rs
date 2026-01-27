@@ -225,7 +225,7 @@ impl RelationalAnalyzer {
                                         param, func_name, param_type
                                     ),
                                     severity: ViolationSeverity::Critical,
-                                    location: Some(func_def.span.clone()),
+                                    location: func_def.span.clone(),
                                 });
                                 violation_id += 1;
                             }
@@ -246,7 +246,7 @@ impl RelationalAnalyzer {
                                 types: error.types,
                                 description: format!("Rule {}: {}", i, error.description),
                                 severity: ViolationSeverity::Major,
-                                location: Some(rule.span.clone()),
+                                location: rule.span.clone(),
                             });
                             violation_id += 1;
                         }
@@ -292,7 +292,7 @@ impl RelationalAnalyzer {
                         ],
                         explanation,
                         proof: None,
-                        location: rules_block.rules.get(rule_a).map(|r| r.span.clone()),
+                        location: rules_block.rules.get(rule_a).and_then(|r| r.span.clone()),
                     });
                     contradiction_id += 1;
                 }

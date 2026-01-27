@@ -3,7 +3,7 @@
 //! This module provides a comprehensive temporal analysis system that integrates
 //! operator analysis, pattern detection, logic solving, and model checking.
 
-use crate::ast::*;
+use crate::ast::canonical::{CanonicalAispDocument as AispDocument, *};
 use crate::error::*;
 use crate::temporal_operator_analyzer::{TemporalOperatorAnalyzer, OperatorValidationResult};
 use crate::temporal_pattern_detector::{TemporalPatternDetector, PatternAnalysisResult};

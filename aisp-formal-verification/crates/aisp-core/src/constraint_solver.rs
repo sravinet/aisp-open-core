@@ -172,7 +172,8 @@ impl ConstraintSolver {
     fn extract_function_constraints(&mut self, document: &AispDocument) {
         for block in &document.blocks {
             if let AispBlock::Functions(functions_block) = block {
-                for (name, function) in &functions_block.functions {
+                for function in &functions_block.functions {
+                    let name = &function.name;
                     // Create function application constraints
                     for param in &function.lambda.parameters {
                         let constraint = Constraint {

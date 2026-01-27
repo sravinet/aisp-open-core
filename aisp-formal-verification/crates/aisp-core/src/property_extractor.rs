@@ -82,8 +82,8 @@ impl PropertyExtractor {
         // Extract function definitions
         for block in &doc.blocks {
             if let AispBlock::Functions(funcs_block) = block {
-                for (name, func_def) in &funcs_block.functions {
-                    self.function_env.insert(name.clone(), func_def.lambda.clone());
+                for func_def in &funcs_block.functions {
+                    self.function_env.insert(func_def.name.clone(), func_def.lambda.clone());
                 }
             }
         }
@@ -158,7 +158,8 @@ impl PropertyExtractor {
 
     /// Extract function correctness properties
     fn extract_function_properties(&mut self, funcs_block: &FunctionsBlock) -> AispResult<()> {
-        for (func_name, func_def) in &funcs_block.functions {
+        for func_def in &funcs_block.functions {
+            let func_name = &func_def.name;
             // Generate function well-definedness property
             let well_defined = ExtractedProperty {
                 id: self.factory.next_property_id(),
