@@ -56,9 +56,20 @@ impl Z3VerificationFacade {
         })
     }
     
-    /// REMOVED: No disabled facade - Z3 is mandatory
-    // pub fn new_disabled() -> Self { REMOVED - graceful degradation not supported }
-    
+    /// Create disabled facade for testing without Z3
+    /// Note: Verification operations will return stub results
+    pub fn new_disabled() -> Self {
+        Self {
+            smt_interface: SmtInterface::new_disabled(),
+            verification_stats: FacadeStats {
+                document_verifications: 0,
+                total_properties_checked: 0,
+                successful_verifications: 0,
+                failed_verifications: 0,
+            },
+        }
+    }
+
     /// Verify AISP document with comprehensive analysis
     pub fn verify_document(
         &mut self,
@@ -228,38 +239,26 @@ impl Default for Z3VerificationFacade {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::canonical::{CanonicalAispDocument as AispDocument, DocumentHeader, DocumentMetadata, Span};
-    
+    use crate::ast::canonical::{self, CanonicalAispDocument as AispDocument};
+    use std::collections::HashMap;
+
     fn create_test_document() -> AispDocument {
-        AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: "test".to_string(),
-                date: "2026-01-26".to_string(),
-                metadata: None,
-            },
-            metadata: DocumentMetadata {
-                domain: Some("test".to_string()),
-                protocol: None,
-            },
-            blocks: vec![],
-            span: Some(Span {
-                start: 0,
-                end: 0,
-                line: 1,
-                column: 1,
-            }),
-        }
+        canonical::create_document("test", "5.1", "2026-01-26")
     }
-    
+
     fn create_test_tri_vector_result() -> TriVectorValidationResult {
         TriVectorValidationResult {
-            vh_dimension: 768,
-            vl_dimension: 512,
-            vs_dimension: 256,
-            orthogonality_verified: true,
-            mathematical_consistency: true,
-            validation_details: "Test validation".to_string(),
+            valid: true,
+            signal: None,
+            orthogonality_results: HashMap::new(),
+            safety_isolation: crate::tri_vector_validation::SafetyIsolationResult {
+                isolated: true,
+                isolation_score: 1.0,
+                boundary_violations: vec![],
+            },
+            proof_certificates: vec![],
+            errors: vec![],
+            warnings: vec![],
         }
     }
     
@@ -438,25 +437,8 @@ mod tests {
         {
             let mut facade = Z3VerificationFacade::new().expect("Z3 should be available for this test");
             
-            let invalid_document = AispDocument {
-                header: DocumentHeader {
-                    version: "4.0".to_string(), // Invalid version
-                    name: "test".to_string(),
-                    date: "2026-01-26".to_string(),
-                    metadata: None,
-                },
-                metadata: DocumentMetadata {
-                    domain: Some("test".to_string()),
-                    protocol: None,
-                },
-                blocks: vec![], // Empty blocks
-                span: Span {
-                    start: 1,
-                    end: 1,
-                    line: 1,
-                    column: 1,
-                },
-            };
+            let mut invalid_document = canonical::create_document("test", "4.0", "2026-01-26");
+            invalid_document.blocks = vec![]; // Empty blocks
             
             let result = facade.verify_document(&invalid_document, None);
             assert!(result.is_ok());
