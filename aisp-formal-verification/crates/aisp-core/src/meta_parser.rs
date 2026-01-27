@@ -39,7 +39,7 @@ impl MetaParser {
                     MetaEntry { 
                         key: constraint_key, 
                         value: MetaValue::Constraint(constraint), 
-                        span 
+                        span: Some(span) 
                     },
                 );
             } else {
@@ -67,7 +67,7 @@ impl MetaParser {
                 
                 entries.insert(
                     key.clone(),
-                    MetaEntry { key, value, span },
+                    MetaEntry { key, value, span: Some(span) },
                 );
             }
             
@@ -78,7 +78,8 @@ impl MetaParser {
         let (end_line, end_column) = lexer.position_info();
         Ok(MetaBlock {
             entries,
-            span: Span::new(start_line, 1, end_line, end_column),
+            raw_entries: vec![],
+            span: Some(Span::new(start_line, 1, end_line, end_column)),
         })
     }
 

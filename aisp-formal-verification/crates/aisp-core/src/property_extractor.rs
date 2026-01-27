@@ -5,8 +5,8 @@
 
 use crate::ast::canonical::*;
 // Type alias for backward compatibility
-pub use CanonicalAispDocument as AispDocument;
-pub use CanonicalAispBlock as AispBlock;
+type AispDocument = CanonicalAispDocument;
+type AispBlock = CanonicalAispBlock;
 use crate::error::*;
 use crate::property_types::*;
 use crate::formula_converter::FormulaConverter;

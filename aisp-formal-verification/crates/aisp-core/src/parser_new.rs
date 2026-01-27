@@ -62,7 +62,7 @@ impl AispParser {
             header,
             metadata,
             blocks,
-            span,
+            span: Some(span),
         })
     }
 
@@ -137,7 +137,8 @@ impl AispParser {
         let (end_line, end_column) = self.lexer.position_info();
         Ok(RulesBlock {
             rules,
-            span: Span::new(start_line, 1, end_line, end_column),
+            raw_rules: vec![],
+            span: Some(Span::new(start_line, 1, end_line, end_column)),
         })
     }
 
@@ -167,15 +168,16 @@ impl AispParser {
                 FunctionDefinition {
                     name: name.clone(),
                     lambda,
-                    span,
+                    span: Some(span),
                 },
             );
         }
         
         let (end_line, end_column) = self.lexer.position_info();
         Ok(FunctionsBlock {
-            functions,
-            span: Span::new(start_line, 1, end_line, end_column),
+            functions: vec![],
+            raw_functions: vec![],
+            span: Some(Span::new(start_line, 1, end_line, end_column)),
         })
     }
 
