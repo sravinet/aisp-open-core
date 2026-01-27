@@ -371,7 +371,7 @@ pub trait FormalSemantics {
     type Domain;
     
     /// Interpret an AISP document in the semantic domain
-    fn interpret(&self, document: &AispDocument) -> AispResult<Self::Domain>;
+    fn interpret(&self, document: &CanonicalAispDocument) -> AispResult<Self::Domain>;
     
     /// Check if a semantic interpretation is valid
     fn is_valid(&self, domain: &Self::Domain) -> bool;
@@ -404,7 +404,7 @@ impl Default for AispSemantics {
 impl FormalSemantics for AispSemantics {
     type Domain = SemanticDomain;
     
-    fn interpret(&self, document: &AispDocument) -> AispResult<Self::Domain> {
+    fn interpret(&self, document: &CanonicalAispDocument) -> AispResult<Self::Domain> {
         // Extract semantic components from AST
         let document_sem = self.interpret_document(document)?;
         let types = self.interpret_types(document)?;
@@ -449,7 +449,7 @@ impl AispSemantics {
     }
     
     /// Interpret document metadata
-    fn interpret_document(&self, document: &AispDocument) -> AispResult<DocumentSemantics> {
+    fn interpret_document(&self, document: &CanonicalAispDocument) -> AispResult<DocumentSemantics> {
         // Extract metadata from Meta block
         let version = SemanticVersion {
             major: 5,
@@ -467,7 +467,7 @@ impl AispSemantics {
     }
     
     /// Interpret type system
-    fn interpret_types(&self, document: &AispDocument) -> AispResult<TypeSystem> {
+    fn interpret_types(&self, document: &CanonicalAispDocument) -> AispResult<TypeSystem> {
         let mut base_types = HashSet::new();
         base_types.insert(BaseType::Natural);
         base_types.insert(BaseType::Boolean);
@@ -481,7 +481,7 @@ impl AispSemantics {
     }
     
     /// Interpret logical system
-    fn interpret_logic(&self, document: &AispDocument) -> AispResult<LogicalSystem> {
+    fn interpret_logic(&self, document: &CanonicalAispDocument) -> AispResult<LogicalSystem> {
         Ok(LogicalSystem {
             formulas: vec![],
             quantifier_domains: HashMap::new(),
@@ -491,7 +491,7 @@ impl AispSemantics {
     }
     
     /// Interpret function system
-    fn interpret_functions(&self, document: &AispDocument) -> AispResult<FunctionSystem> {
+    fn interpret_functions(&self, document: &CanonicalAispDocument) -> AispResult<FunctionSystem> {
         Ok(FunctionSystem {
             functions: HashMap::new(),
             type_inference: HashMap::new(),
@@ -500,7 +500,7 @@ impl AispSemantics {
     }
     
     /// Interpret evidence system
-    fn interpret_evidence(&self, document: &AispDocument) -> AispResult<EvidenceSystem> {
+    fn interpret_evidence(&self, document: &CanonicalAispDocument) -> AispResult<EvidenceSystem> {
         Ok(EvidenceSystem {
             quality_metrics: QualityMetrics {
                 delta: 0.85,

@@ -356,7 +356,7 @@ impl SoundnessChecker {
     }
     
     /// Verify soundness proof against test cases
-    pub fn verify_proof_with_tests(&self, proof: &SoundnessProof, test_documents: &[AispDocument]) -> AispResult<VerificationResult> {
+    pub fn verify_proof_with_tests(&self, proof: &SoundnessProof, test_documents: &[CanonicalAispDocument]) -> AispResult<VerificationResult> {
         let mut valid_documents = 0;
         let mut invalid_documents = 0;
         let mut false_positives = Vec::new();
