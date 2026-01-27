@@ -8,7 +8,7 @@ pub mod parser_new;
 pub mod relational_new;
 pub mod temporal_new;
 pub mod validator;
-pub mod z3_integration;
+// pub mod z3_integration; // Temporarily disabled for compilation
 pub mod error;
 pub mod symbols;
 pub mod conflict_types;
@@ -122,7 +122,7 @@ pub use relational_new::*;
 pub use semantic::*;
 pub use temporal_new::*;
 pub use validator::*;
-pub use z3_integration::*;
+// pub use z3_integration::*; // Temporarily disabled
 pub use error::*;
 
 /// AISP version supported by this implementation

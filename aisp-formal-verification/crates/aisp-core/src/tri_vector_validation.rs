@@ -7,7 +7,7 @@
 use crate::{
     ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock, *},
     error::*,
-    z3_integration::*,
+    // z3_integration::*, // Temporarily disabled
 };
 use std::collections::{HashMap, HashSet};
 

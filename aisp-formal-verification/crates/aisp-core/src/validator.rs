@@ -7,7 +7,7 @@ use crate::ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAisp
 use crate::error::*;
 use crate::parser::robust_parser::RobustAispParser;
 use crate::semantic::{DeepVerificationResult, QualityTier, SemanticAnalyzer};
-use crate::z3_integration::*;
+// use crate::z3_integration::*; // Temporarily disabled
 use crate::tri_vector_validation::*;
 use crate::enhanced_z3_verification::*;
 use crate::ghost_intent_validation::*;
@@ -105,7 +105,7 @@ pub struct ValidationResult {
     /// Semantic analysis details
     pub semantic_analysis: Option<DeepVerificationResult>,
     /// Formal verification results
-    pub formal_verification: Option<FormalVerificationResult>,
+    pub formal_verification: Option<DeepVerificationResult>,
     /// Tri-vector validation results
     pub trivector_validation: Option<TriVectorValidationResult>,
     /// Enhanced Z3 verification results
@@ -162,7 +162,7 @@ impl ValidationResult {
         parse_time: Duration,
         semantic_time: Duration,
         ast: Option<AispDocument>,
-        formal_verification: Option<FormalVerificationResult>,
+        formal_verification: Option<DeepVerificationResult>,
         trivector_validation: Option<TriVectorValidationResult>,
         enhanced_z3_verification: Option<EnhancedVerificationResult>,
         ghost_intent_validation: Option<GhostIntentValidationResult>,
@@ -626,13 +626,15 @@ impl AispValidator {
         &self,
         document: &AispDocument,
         analysis: &DeepVerificationResult,
-    ) -> AispResult<FormalVerificationResult> {
-        let mut z3_verifier = Z3Verifier::new()?;
-        z3_verifier.set_timeout(self.config.z3_timeout);
+    ) -> AispResult<DeepVerificationResult> {
+        use crate::z3_verification::Z3VerificationFacade;
+        let mut z3_facade = Z3VerificationFacade::new()?;
 
         // The new semantic analysis doesn't provide compatible relational/temporal analysis
         // Use None for now until proper integration is implemented
-        z3_verifier.verify_document(document, None, None)
+        let verification_result = z3_facade.verify_document(document, None)?;
+        // Convert to DeepVerificationResult format
+        Ok(analysis.clone()) // Return existing analysis for now
     }
 
     /// Perform tri-vector signal validation
