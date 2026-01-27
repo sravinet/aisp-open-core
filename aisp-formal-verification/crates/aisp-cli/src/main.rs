@@ -392,12 +392,24 @@ async fn validate_single_file(cli: &Cli, file: &Path) -> Result<CliValidationRes
     }
 
     if let Some(formal) = &validation_result.formal_verification {
+        // DeepVerificationResult has different fields - adapt accordingly
+        let verified_count = formal.verification_details.verified_components.len();
+        let failed_count = formal.verification_details.failed_verifications.len();
+        let total_components = verified_count + failed_count;
+
+        let status = if formal.overall_confidence > 0.9 {
+            "AllVerified".to_string()
+        } else if formal.overall_confidence > 0.5 {
+            "PartiallyVerified".to_string()
+        } else {
+            "VerificationFailed".to_string()
+        };
+
         cli_result.formal_verification = Some(FormalSummary {
-            status: format!("{:?}", formal.status),
-            properties_checked: formal.properties.len(),
-            properties_proven: formal.properties.iter()
-                .filter(|p| p.status == PropertyStatus::Proven).count(),
-            verification_time_ms: formal.stats.total_time.as_millis() as u64,
+            status,
+            properties_checked: total_components,
+            properties_proven: verified_count,
+            verification_time_ms: formal.verification_details.performance_metrics.verification_time_ms,
         });
     }
 

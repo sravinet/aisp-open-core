@@ -45,7 +45,7 @@ impl SmtInterface {
         let z3_available = true;
         #[cfg(not(feature = "z3-verification"))]
         let z3_available = false;
-        
+
         Self {
             z3_available,
             config: SmtConfig {
@@ -61,7 +61,7 @@ impl SmtInterface {
             },
         }
     }
-    
+
     /// Create disabled SMT interface (for testing without Z3)
     pub fn new_disabled() -> Self {
         Self {
@@ -79,35 +79,35 @@ impl SmtInterface {
             },
         }
     }
-    
+
     /// Verify SMT formula with comprehensive validation
     pub fn verify_smt_formula(&mut self, formula: &str) -> AispResult<PropertyResult> {
-        let start = Instant::now();
+        let _start = Instant::now();
         self.stats.queries_executed += 1;
-        
+
         if self.config.verbose {
             eprintln!("SMT Formula:\n{}", formula);
         }
-        
+
         // Validate syntax first
         if let Err(syntax_error) = self.validate_smt_syntax(formula) {
             self.stats.syntax_errors += 1;
             return Ok(PropertyResult::Error(format!("Syntax error: {}", syntax_error)));
         }
-        
+
         if !self.z3_available && self.config.require_z3 {
-            return Err(AispError::ValidationError {
-                message: "Z3 verification required but not available. Compile with --features z3-verification".to_string(),
-            });
+            return Err(AispError::validation_error(
+                "Z3 verification required but not available. Compile with --features z3-verification".to_string(),
+            ));
         }
-        
+
         #[cfg(feature = "z3-verification")]
         {
             if self.z3_available {
                 return self.execute_z3_query(formula);
             }
         }
-        
+
         // Fallback for disabled mode
         if !self.config.require_z3 {
             Ok(PropertyResult::Unknown)
@@ -115,88 +115,76 @@ impl SmtInterface {
             Ok(PropertyResult::Error("Z3 not available".to_string()))
         }
     }
-    
+
     /// Validate SMT-LIB syntax comprehensively
     fn validate_smt_syntax(&self, formula: &str) -> Result<(), String> {
         let mut paren_count = 0;
         let mut has_check_sat = false;
         let mut declared_symbols = HashSet::new();
         let mut used_symbols = HashSet::new();
-        
+
         for (line_no, line) in formula.lines().enumerate() {
             let line = line.trim();
             if line.is_empty() || line.starts_with(";;") {
                 continue;
             }
-            
+
             // Count parentheses
             paren_count += line.chars().filter(|&c| c == '(').count() as i32;
             paren_count -= line.chars().filter(|&c| c == ')').count() as i32;
-            
+
             if paren_count < 0 {
                 return Err(format!("Line {}: Unmatched closing parenthesis", line_no + 1));
             }
-            
+
             // Track declarations and usage
             if line.contains("declare-const") || line.contains("declare-fun") || line.contains("declare-sort") {
                 if let Some(symbol) = self.extract_declared_symbol(line) {
                     declared_symbols.insert(symbol);
                 }
             }
-            
+
             if line.contains("assert") {
                 self.extract_used_symbols(line, &mut used_symbols);
             }
-            
+
             if line.contains("check-sat") {
                 has_check_sat = true;
             }
         }
-        
+
         if paren_count != 0 {
             return Err(format!("Unbalanced parentheses: {} unclosed", paren_count));
         }
-        
+
         if !has_check_sat {
             return Err("Missing (check-sat) command".to_string());
         }
-        
+
         // Check undeclared symbols
         for symbol in &used_symbols {
             if !declared_symbols.contains(symbol) && !self.is_builtin(symbol) {
                 return Err(format!("Undeclared symbol: {}", symbol));
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Execute Z3 query with proper error handling
     #[cfg(feature = "z3-verification")]
     fn execute_z3_query(&mut self, formula: &str) -> AispResult<PropertyResult> {
         let cfg = Config::new();
         let ctx = Context::new(&cfg);
         let solver = Solver::new(&ctx);
-        
-        // Configure solver
-        solver.set_params(&ctx, &[
-            ("timeout", &self.config.timeout_ms.to_string()),
-            ("model", "true"),
-            ("proof", "false"),
-        ]);
-        
+
         // Parse and execute SMT commands
         match self.parse_and_execute_smt(formula, &ctx, &solver) {
             Ok(sat_result) => {
                 match sat_result {
                     SatResult::Sat => {
                         self.stats.disproven_properties += 1;
-                        // Generate counterexample
-                        if let Ok(counterexample) = self.generate_counterexample(&ctx, &solver) {
-                            Ok(PropertyResult::Disproven)
-                        } else {
-                            Ok(PropertyResult::Disproven)
-                        }
+                        Ok(PropertyResult::Disproven)
                     }
                     SatResult::Unsat => {
                         self.stats.proven_properties += 1;
@@ -208,25 +196,25 @@ impl SmtInterface {
             Err(e) => Ok(PropertyResult::Error(format!("Z3 error: {}", e))),
         }
     }
-    
+
     /// Parse and execute SMT commands
     #[cfg(feature = "z3-verification")]
-    fn parse_and_execute_smt(&self, formula: &str, ctx: &Context, solver: &Solver) -> Result<SatResult, String> {
+    fn parse_and_execute_smt<'ctx>(&self, formula: &str, ctx: &'ctx Context, solver: &Solver<'ctx>) -> Result<SatResult, String> {
         let lines: Vec<&str> = formula.lines().collect();
-        let mut constants: HashMap<String, ast::Real> = HashMap::new();
-        
+        let mut constants: HashMap<String, ast::Real<'ctx>> = HashMap::new();
+
         for line in lines {
             let line = line.trim();
             if line.is_empty() || line.starts_with(";;") {
                 continue;
             }
-            
+
             // Parse commands
             if line.starts_with("(declare-const") {
                 let (name, sort) = self.parse_declare_const(line)?;
                 match sort.as_str() {
                     "Real" => {
-                        let const_real = ast::Real::new_const(ctx, &name);
+                        let const_real = ast::Real::new_const(ctx, name.as_str());
                         constants.insert(name, const_real);
                     }
                     _ => return Err(format!("Unsupported sort: {}", sort)),
@@ -242,10 +230,10 @@ impl SmtInterface {
                 return Ok(solver.check());
             }
         }
-        
+
         Ok(SatResult::Unknown)
     }
-    
+
     /// Parse declare-const command
     #[cfg(feature = "z3-verification")]
     fn parse_declare_const(&self, line: &str) -> Result<(String, String), String> {
@@ -258,7 +246,7 @@ impl SmtInterface {
             Err("Invalid declare-const format".to_string())
         }
     }
-    
+
     /// Extract assertion content
     fn extract_assertion_content(&self, line: &str) -> Result<String, String> {
         if let Some(start) = line.find("(assert ") {
@@ -273,14 +261,14 @@ impl SmtInterface {
             Err("Invalid assertion format".to_string())
         }
     }
-    
+
     /// Parse assertion into Z3 AST
     #[cfg(feature = "z3-verification")]
-    fn parse_assertion(&self, content: &str, ctx: &Context, constants: &HashMap<String, ast::Real>) -> Result<ast::Bool, String> {
+    fn parse_assertion<'ctx>(&self, content: &str, ctx: &'ctx Context, constants: &HashMap<String, ast::Real<'ctx>>) -> Result<ast::Bool<'ctx>, String> {
         if content.starts_with("(") && content.ends_with(")") {
             let inner = &content[1..content.len()-1];
             let parts: Vec<&str> = inner.split_whitespace().collect();
-            
+
             if parts.len() == 3 {
                 match parts[0] {
                     "<" => {
@@ -289,51 +277,21 @@ impl SmtInterface {
                             return Ok(lhs.lt(&rhs));
                         }
                     }
-                    "=" => {
+                    ">" => {
                         if let (Some(lhs), Ok(rhs_val)) = (constants.get(parts[1]), parts[2].parse::<f64>()) {
                             let rhs = ast::Real::from_real(ctx, (rhs_val * 1000000.0) as i32, 1000000);
-                            return Ok(lhs._eq(&rhs));
+                            return Ok(lhs.gt(&rhs));
                         }
                     }
                     _ => {}
                 }
             }
         }
-        
+
         // Fallback: create a simple true assertion
         Ok(ast::Bool::from_bool(ctx, true))
     }
-    
-    /// Generate counterexample when property is disproven
-    #[cfg(feature = "z3-verification")]
-    fn generate_counterexample(&self, ctx: &Context, solver: &Solver) -> Result<CounterexampleModel, String> {
-        if solver.check() == SatResult::Sat {
-            if let Some(model) = solver.get_model() {
-                let mut variable_assignments = HashMap::new();
-                let function_interpretations = HashMap::new();
-                
-                // Extract variable assignments
-                for decl in model.get_const_decls() {
-                    let name = decl.name().to_string();
-                    if let Some(value) = model.get_const_interp(&decl) {
-                        variable_assignments.insert(name, value.to_string());
-                    }
-                }
-                
-                Ok(CounterexampleModel {
-                    variable_assignments,
-                    function_interpretations,
-                    evaluation_trace: vec![],
-                    witness_values: HashMap::new(),
-                })
-            } else {
-                Err("Model generation failed despite SAT result".to_string())
-            }
-        } else {
-            Err("Cannot generate counterexample: formula not satisfiable".to_string())
-        }
-    }
-    
+
     /// Extract declared symbol from line
     fn extract_declared_symbol(&self, line: &str) -> Option<String> {
         let tokens: Vec<&str> = line.split_whitespace().collect();
@@ -343,20 +301,20 @@ impl SmtInterface {
             None
         }
     }
-    
+
     /// Extract used symbols from assertion
     fn extract_used_symbols(&self, line: &str, used: &mut HashSet<String>) {
         let words: Vec<&str> = line.split_whitespace().collect();
         for word in words {
             let clean = word.trim_matches(|c: char| "()=<>+-*/".contains(c));
-            if !clean.is_empty() && 
+            if !clean.is_empty() &&
                !clean.chars().all(|c| c.is_numeric() || c == '.') &&
                !self.is_builtin(clean) {
                 used.insert(clean.to_string());
             }
         }
     }
-    
+
     /// Check if symbol is SMT-LIB builtin
     fn is_builtin(&self, symbol: &str) -> bool {
         matches!(symbol,
@@ -367,12 +325,12 @@ impl SmtInterface {
             "true" | "false" | "sat" | "unsat" | "unknown" | "^"
         )
     }
-    
+
     /// Get interface statistics
     pub fn get_stats(&self) -> &SmtStats {
         &self.stats
     }
-    
+
     /// Check Z3 availability
     pub fn is_z3_available(&self) -> bool {
         self.z3_available
@@ -388,126 +346,126 @@ impl Default for SmtInterface {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_smt_interface_creation() {
         let interface = SmtInterface::new();
-        
+
         #[cfg(feature = "z3-verification")]
         assert!(interface.is_z3_available());
-        
+
         #[cfg(not(feature = "z3-verification"))]
         assert!(!interface.is_z3_available());
     }
-    
+
     #[test]
     fn test_disabled_interface() {
         let interface = SmtInterface::new_disabled();
         assert!(!interface.is_z3_available());
         assert!(!interface.config.require_z3);
     }
-    
+
     #[test]
     fn test_syntax_validation() {
         let interface = SmtInterface::new_disabled();
-        
+
         // Valid formula
         let valid = "(declare-const x Real)\n(assert (> x 0.0))\n(check-sat)";
         assert!(interface.validate_smt_syntax(valid).is_ok());
-        
+
         // Invalid - unbalanced parentheses
         let invalid_parens = "(declare-const x Real\n(assert (> x 0.0))\n(check-sat)";
         assert!(interface.validate_smt_syntax(invalid_parens).is_err());
-        
+
         // Invalid - missing check-sat
         let missing_check = "(declare-const x Real)\n(assert (> x 0.0))";
         assert!(interface.validate_smt_syntax(missing_check).is_err());
-        
+
         // Invalid - undeclared symbol
         let undeclared = "(assert (> y 0.0))\n(check-sat)";
         assert!(interface.validate_smt_syntax(undeclared).is_err());
     }
-    
+
     #[test]
     fn test_symbol_extraction() {
         let interface = SmtInterface::new_disabled();
-        
+
         assert_eq!(interface.extract_declared_symbol("(declare-const x Real)"), Some("x".to_string()));
         assert_eq!(interface.extract_declared_symbol("(declare-fun f (Int) Bool)"), Some("f".to_string()));
         assert_eq!(interface.extract_declared_symbol("(assert (> x 0))"), None);
     }
-    
+
     #[test]
     fn test_builtin_detection() {
         let interface = SmtInterface::new_disabled();
-        
+
         assert!(interface.is_builtin("assert"));
         assert!(interface.is_builtin("Real"));
         assert!(interface.is_builtin("+"));
         assert!(interface.is_builtin("check-sat"));
-        
+
         assert!(!interface.is_builtin("my_variable"));
         assert!(!interface.is_builtin("custom_function"));
     }
-    
+
     #[test]
     fn test_assertion_content_extraction() {
         let interface = SmtInterface::new_disabled();
-        
+
         let line = "(assert (> x 0.0))";
         let content = interface.extract_assertion_content(line);
         assert_eq!(content.unwrap(), "(> x 0.0)");
-        
+
         let invalid_line = "not an assertion";
         assert!(interface.extract_assertion_content(invalid_line).is_err());
     }
-    
+
     #[test]
     fn test_symbol_usage_extraction() {
         let interface = SmtInterface::new_disabled();
         let mut used_symbols = HashSet::new();
-        
+
         interface.extract_used_symbols("(assert (> x y))", &mut used_symbols);
-        
+
         assert!(used_symbols.contains("x"));
         assert!(used_symbols.contains("y"));
         assert!(!used_symbols.contains("assert"));
         assert!(!used_symbols.contains(">"));
     }
-    
+
     #[test]
     fn test_smt_formula_verification() {
         let mut interface = SmtInterface::new_disabled();
-        
-        let valid_formula = 
+
+        let valid_formula =
             "(declare-const x Real)\n\
              (assert (> x 0.0))\n\
              (check-sat)";
-        
+
         let result = interface.verify_smt_formula(valid_formula);
         assert!(result.is_ok());
-        
+
         // With disabled interface, should return Unknown
         assert_eq!(result.unwrap(), PropertyResult::Unknown);
-        
+
         let stats = interface.get_stats();
         assert_eq!(stats.queries_executed, 1);
         assert_eq!(stats.syntax_errors, 0);
     }
-    
+
     #[test]
     fn test_syntax_error_tracking() {
         let mut interface = SmtInterface::new_disabled();
-        
+
         let invalid_formula = "(invalid syntax";
         let result = interface.verify_smt_formula(invalid_formula);
         assert!(result.is_ok());
-        
+
         match result.unwrap() {
             PropertyResult::Error(_) => assert!(true),
             _ => panic!("Expected syntax error"),
         }
-        
+
         assert_eq!(interface.get_stats().syntax_errors, 1);
     }
 }
