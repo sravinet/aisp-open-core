@@ -1,0 +1,363 @@
+// AISP 5.1 Grammar Definition for Robust Parsing
+// Security-hardened with error recovery and adversarial input resistance
+
+WHITESPACE = _{ " " | "\t" | "\n" | "\r" }
+COMMENT = _{ "//" ~ (!"\n" ~ ANY)* }
+
+// Top-level document structure with error recovery
+aisp_document = { 
+    SOI ~ 
+    header ~ 
+    domain_protocol_decl? ~
+    aisp_blocks ~ 
+    EOI 
+}
+
+// Header with version, identifier, and date
+header = { "𝔸" ~ version ~ "." ~ identifier ~ "@" ~ date }
+version = { ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
+identifier = { (ASCII_ALPHANUMERIC | "-" | "_" | ".")+ }
+date = { ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
+
+// Domain and protocol declarations with Greek letters
+domain_protocol_decl = { 
+    (gamma_decl ~ rho_decl?) | 
+    (rho_decl ~ gamma_decl?) 
+}
+gamma_decl = { "γ" ~ "≔" ~ domain_path }
+rho_decl = { "ρ" ~ "≔" ~ "⟨" ~ tag_list ~ "⟩" }
+domain_path = { (ASCII_ALPHANUMERIC | "." | "-" | "_")+ }
+tag_list = { tag ~ ("," ~ tag)* }
+tag = { (ASCII_ALPHANUMERIC | "-" | "_")+ }
+
+// AISP block structure with error recovery
+aisp_blocks = { aisp_block* }
+aisp_block = { 
+    omega_block | 
+    sigma_block | 
+    gamma_block | 
+    lambda_block | 
+    chi_block | 
+    epsilon_block |
+    malformed_block  // Error recovery
+}
+
+// Ω (Omega) - Meta block
+omega_block = { 
+    "⟦" ~ "Ω" ~ ":" ~ "Meta" ~ "⟧" ~ "{" ~ 
+    meta_entries ~ 
+    "}" 
+}
+meta_entries = { meta_entry* }
+meta_entry = { 
+    (forall_constraint | meta_assignment) ~ ";"?
+}
+forall_constraint = { 
+    "∀" ~ variable ~ "∈" ~ type_expr ~ ":" ~ logical_expr 
+}
+meta_assignment = { 
+    identifier ~ "≜" ~ string_literal 
+}
+
+// Σ (Sigma) - Types block  
+sigma_block = { 
+    "⟦" ~ "Σ" ~ ":" ~ "Types" ~ "⟧" ~ "{" ~ 
+    type_definitions ~ 
+    "}" 
+}
+type_definitions = { type_definition* }
+type_definition = { 
+    identifier ~ "≜" ~ type_expression ~ ";"?
+}
+
+// Type expressions with mathematical notation
+type_expression = { 
+    union_type | 
+    intersection_type |
+    function_type |
+    set_type |
+    tuple_type |
+    constrained_type |
+    basic_type |
+    vector_type
+}
+
+union_type = { type_term ~ ("|" ~ type_term)+ }
+intersection_type = { type_term ~ ("∩" ~ type_term)+ }
+function_type = { type_term ~ "→" ~ type_term }
+set_type = { "{" ~ type_term ~ ("|" ~ constraint)? ~ "}" }
+tuple_type = { "⟨" ~ type_field_list ~ "⟩" }
+constrained_type = { type_term ~ constraint }
+vector_type = { type_term ~ ("⊕" ~ type_term)+ }
+
+type_field_list = { type_field ~ ("," ~ type_field)* }
+type_field = { identifier ~ ":" ~ type_expression }
+type_term = { 
+    "(" ~ type_expression ~ ")" |
+    basic_type |
+    identifier |
+    unicode_type_symbol
+}
+
+// Mathematical type symbols
+basic_type = { 
+    "ℕ" | "ℝ" | "ℂ" | "ℚ" | "ℤ" |  // Number types
+    "𝕊" |                          // String type  
+    "𝔹" |                          // Boolean type
+    "Any"                          // Any type
+}
+
+unicode_type_symbol = { 
+    "ℝ" ~ ASCII_DIGIT+ ~ (":" ~ identifier)? |
+    "ℕ" ~ ASCII_DIGIT+ |
+    "𝔹" ~ ASCII_DIGIT+
+}
+
+// Γ (Gamma) - Rules block
+gamma_block = { 
+    "⟦" ~ "Γ" ~ ":" ~ "Rules" ~ "⟧" ~ "{" ~ 
+    rule_definitions ~ 
+    "}" 
+}
+rule_definitions = { rule_definition* }
+rule_definition = { 
+    (logical_rule | constraint_rule) ~ ";"?
+}
+
+logical_rule = { 
+    quantified_expr |
+    logical_expr
+}
+
+quantified_expr = { 
+    quantifier ~ variable ~ (":" ~ type_expr)? ~ ":" ~ logical_expr
+}
+quantifier = { "∀" | "∃" }
+
+// Λ (Lambda) - Functions block
+lambda_block = { 
+    "⟦" ~ "Λ" ~ ":" ~ ("Funcs" | "Functions") ~ "⟧" ~ "{" ~ 
+    function_definitions ~ 
+    "}" 
+}
+function_definitions = { function_definition* }
+function_definition = { 
+    identifier ~ "≜" ~ lambda_expression ~ ";"?
+}
+
+lambda_expression = { 
+    "λ" ~ parameter_list ~ "." ~ function_body |
+    function_body
+}
+parameter_list = { 
+    parameter ~ ("," ~ parameter)* |
+    parameter
+}
+parameter = { 
+    identifier ~ (":" ~ type_expression)? 
+}
+
+function_body = { 
+    conditional_expr |
+    pattern_match_expr |
+    mathematical_expr |
+    identifier |
+    literal
+}
+
+conditional_expr = { 
+    "if" ~ logical_expr ~ "then" ~ function_body ~ "else" ~ function_body |
+    logical_expr ~ "→" ~ function_body ~ ("|" ~ logical_expr ~ "→" ~ function_body)*
+}
+
+pattern_match_expr = { 
+    "(" ~ pattern_case ~ ("|" ~ pattern_case)* ~ ")"
+}
+pattern_case = { 
+    pattern ~ "→" ~ function_body 
+}
+
+// Χ (Chi) - Errors block
+chi_block = { 
+    "⟦" ~ "Χ" ~ ":" ~ "Errors" ~ "⟧" ~ "{" ~ 
+    error_definitions ~ 
+    "}" 
+}
+error_definitions = { error_definition* }
+error_definition = { 
+    identifier ~ "≜" ~ error_condition ~ ";"?
+}
+error_condition = { 
+    logical_expr |
+    comparison_expr
+}
+
+// Ε (Epsilon) - Evidence block
+epsilon_block = { 
+    "⟦" ~ "Ε" ~ (":" ~ "Evidence")? ~ "⟧" ~ "⟨" ~ 
+    evidence_entries ~ 
+    "⟩" 
+}
+evidence_entries = { evidence_entry* }
+evidence_entry = { 
+    evidence_assignment |
+    evidence_proof
+}
+evidence_assignment = { 
+    evidence_symbol ~ "≜" ~ evidence_value ~ ";"?
+}
+evidence_proof = { 
+    "⊢" ~ proof_claim ~ (":" ~ proof_details)? ~ ";"?
+}
+
+evidence_symbol = { 
+    "δ" | "|𝔅|" | "φ" | "τ" | identifier
+}
+evidence_value = { 
+    number |
+    fraction |
+    quality_tier |
+    string_literal
+}
+
+quality_tier = { 
+    "◊" ~ "⁺"* |
+    "◊" ~ "⁻"*
+}
+
+// Mathematical and logical expressions
+mathematical_expr = { 
+    comparison_expr
+}
+
+comparison_expr = { 
+    additive_expr ~ (comparison_op ~ additive_expr)*
+}
+comparison_op = { 
+    "≤" | "≥" | "<" | ">" | "≡" | "≠" | "=" | "≈" |
+    "∈" | "∉" | "⊆" | "⊇" | "∩" | "∪"
+}
+
+additive_expr = { 
+    multiplicative_expr ~ (("+" | "-" | "⊕" | "⊗") ~ multiplicative_expr)*
+}
+multiplicative_expr = { 
+    power_expr ~ (("*" | "/" | "×" | "÷") ~ power_expr)*
+}
+power_expr = { 
+    unary_expr ~ ("^" ~ unary_expr)*
+}
+unary_expr = { 
+    ("¬" | "-" | "+")* ~ primary_expr
+}
+
+primary_expr = { 
+    "(" ~ mathematical_expr ~ ")" |
+    function_call |
+    set_expr |
+    abs_expr |
+    number |
+    identifier |
+    unicode_symbol
+}
+
+function_call = { 
+    identifier ~ "(" ~ argument_list? ~ ")"
+}
+argument_list = { 
+    mathematical_expr ~ ("," ~ mathematical_expr)*
+}
+
+set_expr = { 
+    "{" ~ set_element_list? ~ "}" |
+    "[" ~ range_expr ~ "]"
+}
+set_element_list = { 
+    mathematical_expr ~ ("," ~ mathematical_expr)*
+}
+range_expr = { 
+    mathematical_expr ~ "," ~ mathematical_expr
+}
+
+abs_expr = { 
+    "|" ~ mathematical_expr ~ "|"
+}
+
+// Logical expressions
+logical_expr = { 
+    implication_expr
+}
+implication_expr = { 
+    disjunction_expr ~ ("→" ~ disjunction_expr)*
+}
+disjunction_expr = { 
+    conjunction_expr ~ ("∨" ~ conjunction_expr)*
+}
+conjunction_expr = { 
+    negation_expr ~ ("∧" ~ negation_expr)*
+}
+negation_expr = { 
+    "¬"* ~ logical_primary
+}
+logical_primary = { 
+    "(" ~ logical_expr ~ ")" |
+    comparison_expr |
+    "⊤" | "⊥" |
+    identifier
+}
+
+// Constraints and patterns
+constraint = { 
+    logical_expr
+}
+pattern = { 
+    identifier |
+    literal |
+    "(" ~ pattern ~ ")"
+}
+
+// Unicode mathematical symbols
+unicode_symbol = { 
+    "∀" | "∃" | "∈" | "∉" | "∩" | "∪" | "⊆" | "⊇" | 
+    "≡" | "≠" | "≤" | "≥" | "≈" |
+    "→" | "←" | "↔" | "⊕" | "⊗" | "⊘" |
+    "λ" | "δ" | "φ" | "ε" | "π" | "ρ" | "τ" | "γ" |
+    "ℕ" | "ℝ" | "ℂ" | "ℚ" | "ℤ" | "𝕊" | "𝔹" |
+    "◊" | "⊤" | "⊥" | "∞"
+}
+
+// Primitives
+variable = { identifier }
+type_expr = { type_expression }
+logical_expr = { logical_expr }
+constraint_rule = { logical_expr }
+proof_claim = { identifier ~ (":" ~ identifier)* }
+proof_details = { identifier ~ ("-" ~ identifier)* }
+
+identifier = { 
+    (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-")* 
+}
+
+number = { 
+    ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? ~ (("e" | "E") ~ ("+" | "-")? ~ ASCII_DIGIT+)?
+}
+
+fraction = { 
+    ASCII_DIGIT+ ~ "/" ~ ASCII_DIGIT+
+}
+
+string_literal = { 
+    "\"" ~ (!"\"" ~ ANY)* ~ "\""
+}
+
+literal = { 
+    number |
+    string_literal |
+    "true" | "false" |
+    unicode_symbol
+}
+
+// Error recovery for malformed blocks
+malformed_block = { 
+    "⟦" ~ (!"⟧" ~ ANY)* ~ ("⟧" | &EOI)
+}
