@@ -14,8 +14,9 @@
 
 use crate::{
     ast::*,
+    parser::robust_parser::AispDocument,
     error::*,
-    semantic::SemanticAnalysisResult,
+    semantic::DeepVerificationResult,
 };
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -300,7 +301,7 @@ impl AntiDriftValidator {
     }
 
     /// Validate anti-drift protocols for AISP document
-    pub fn validate_anti_drift(&mut self, document: &AispDocument, semantic_result: &SemanticAnalysisResult) -> AispResult<AntiDriftValidationResult> {
+    pub fn validate_anti_drift(&mut self, document: &AispDocument, semantic_result: &DeepVerificationResult) -> AispResult<AntiDriftValidationResult> {
         let start_time = Instant::now();
         
         // Analyze drift patterns
@@ -333,7 +334,7 @@ impl AntiDriftValidator {
     }
 
     /// Analyze drift patterns in AISP document
-    fn analyze_drift_patterns(&mut self, document: &AispDocument, semantic_result: &SemanticAnalysisResult) -> AispResult<DriftPatterns> {
+    fn analyze_drift_patterns(&mut self, document: &AispDocument, semantic_result: &DeepVerificationResult) -> AispResult<DriftPatterns> {
         let mut incidents = Vec::new();
         
         // Detect drift from semantic analysis
@@ -359,32 +360,32 @@ impl AntiDriftValidator {
     }
 
     /// Detect semantic drift from analysis results
-    fn detect_semantic_drift(&mut self, _document: &AispDocument, semantic_result: &SemanticAnalysisResult) -> AispResult<Vec<DriftIncident>> {
+    fn detect_semantic_drift(&mut self, _document: &AispDocument, semantic_result: &DeepVerificationResult) -> AispResult<Vec<DriftIncident>> {
         let mut incidents = Vec::new();
         self.stats.temporal_samples += 1;
         
         // Create drift measurement
         let measurement = DriftMeasurement {
             timestamp: 1.0, // Normalized timestamp
-            magnitude: semantic_result.ambiguity,
+            magnitude: semantic_result.ambiguity(),
             elements: vec!["semantic_analysis".to_string()],
         };
         
         self.drift_history.push(measurement);
         
         // Detect drift based on ambiguity levels
-        if semantic_result.ambiguity > 0.02 {
+        if semantic_result.ambiguity() > 0.02 {
             let incident = DriftIncident {
                 id: "semantic_ambiguity_drift".to_string(),
-                drift_type: if semantic_result.ambiguity > 0.1 {
+                drift_type: if semantic_result.ambiguity() > 0.1 {
                     DriftType::AbruptChange
                 } else {
                     DriftType::GradualShift
                 },
-                severity: semantic_result.ambiguity.min(1.0),
+                severity: semantic_result.ambiguity().min(1.0),
                 temporal_position: 1.0,
                 affected_elements: vec!["semantic_content".to_string()],
-                change_magnitude: semantic_result.ambiguity,
+                change_magnitude: semantic_result.ambiguity(),
             };
             incidents.push(incident);
         }
@@ -609,7 +610,7 @@ impl AntiDriftValidator {
     }
 
     /// Calculate stability metrics
-    fn calculate_stability_metrics(&mut self, _document: &AispDocument, semantic_result: &SemanticAnalysisResult, drift_patterns: &DriftPatterns) -> AispResult<StabilityMetrics> {
+    fn calculate_stability_metrics(&mut self, _document: &AispDocument, semantic_result: &DeepVerificationResult, drift_patterns: &DriftPatterns) -> AispResult<StabilityMetrics> {
         self.stats.stability_calculations += 1;
         
         // Semantic consistency (inverse of ambiguity)
@@ -800,8 +801,8 @@ mod tests {
         }
     }
 
-    fn create_stable_semantic_result() -> SemanticAnalysisResult {
-        SemanticAnalysisResult {
+    fn create_stable_semantic_result() -> DeepVerificationResult {
+        DeepVerificationResult {
             delta: 0.9,
             ambiguity: 0.01,
             completeness: 0.95,
@@ -812,8 +813,8 @@ mod tests {
         }
     }
 
-    fn create_drifted_semantic_result() -> SemanticAnalysisResult {
-        SemanticAnalysisResult {
+    fn create_drifted_semantic_result() -> DeepVerificationResult {
+        DeepVerificationResult {
             delta: 0.3,
             ambiguity: 0.15,
             completeness: 0.6,

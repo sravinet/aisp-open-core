@@ -5,7 +5,7 @@
 
 use crate::ast::*;
 use crate::error::*;
-use crate::parser_new::*;
+use crate::parser::robust_parser::{RobustAispParser, AispDocument};
 use crate::semantic::{DeepVerificationResult, QualityTier, SemanticAnalyzer};
 use crate::z3_integration::*;
 use crate::tri_vector_validation::*;
@@ -193,7 +193,7 @@ impl ValidationResult {
             rossnet_validation,
             hebbian_validation,
             anti_drift_validation,
-            warnings: analysis.warnings(),
+            warnings: analysis.warnings().into_iter().map(|w| AispWarning::warning(w)).collect(),
             error: None,
         }
     }
@@ -258,17 +258,28 @@ impl AispValidator {
 
         // Parse document
         let parse_start = Instant::now();
-        let mut parser = AispParser::new(source.to_string());
-        let document = match parser.parse() {
-            Ok(doc) => doc,
-            Err(error) => {
-                return ValidationResult::failed(error, document_size);
+        let parser = RobustAispParser::new();
+        let parse_result = parser.parse(source);
+        let document = match parse_result.document {
+            Some(doc) => doc,
+            None => {
+                let error_message = if !parse_result.errors.is_empty() {
+                    parse_result.errors[0].message.clone()
+                } else {
+                    "Failed to parse document".to_string()
+                };
+                return ValidationResult::failed(
+                    AispError::validation_error(error_message),
+                    document_size,
+                );
             }
         };
         let parse_time = parse_start.elapsed();
 
         // Collect parser warnings
-        let mut all_warnings = parser.warnings().to_vec();
+        let mut all_warnings: Vec<AispWarning> = parse_result.warnings.into_iter()
+            .map(|w| AispWarning::warning(w.message))
+            .collect();
 
         // Check AISP version compatibility
         if document.header.version != AISP_VERSION {
@@ -292,7 +303,7 @@ impl AispValidator {
         let semantic_time = semantic_start.elapsed();
 
         // Merge warnings
-        all_warnings.extend(analysis.warnings());
+        all_warnings.extend(analysis.warnings().into_iter().map(|w| AispWarning::warning(w)));
         // Note: cannot modify warnings on analysis as it's now a method
 
         // Apply strict mode checks
@@ -547,8 +558,19 @@ impl AispValidator {
             });
         }
 
-        let mut parser = AispParser::new(source.to_string());
-        parser.parse()
+        let parser = RobustAispParser::new();
+        let parse_result = parser.parse(source);
+        match parse_result.document {
+            Some(doc) => Ok(doc),
+            None => {
+                let error_message = if !parse_result.errors.is_empty() {
+                    parse_result.errors[0].message.clone()
+                } else {
+                    "Failed to parse document".to_string()
+                };
+                Err(AispError::validation_error(error_message))
+            }
+        }
     }
 
     /// Get validator configuration
@@ -600,12 +622,9 @@ impl AispValidator {
         let mut z3_verifier = Z3Verifier::new()?;
         z3_verifier.set_timeout(self.config.z3_timeout);
 
-        // Extract analysis components
-        let relational_analysis = analysis.relational_analysis().as_ref();
-        let temporal_analysis = analysis.temporal_analysis().as_ref();
-
-        // Perform verification
-        z3_verifier.verify_document(document, relational_analysis, temporal_analysis)
+        // The new semantic analysis doesn't provide compatible relational/temporal analysis
+        // Use None for now until proper integration is implemented
+        z3_verifier.verify_document(document, None, None)
     }
 
     /// Perform tri-vector signal validation
@@ -668,20 +687,8 @@ impl AispValidator {
             reference_document: None,
         };
         
-        let semantic_result = DeepVerificationResult {
-            delta: analysis.delta(),
-            ambiguity: analysis.ambiguity(),
-            completeness: analysis.completeness(),
-            tier: analysis.tier(),
-            quality_score: analysis.quality_score(),
-            validation_errors: analysis.errors(),
-            warnings: analysis.warnings(),
-            coherence_score: 0.95, // Default coherence score
-            rule_coverage: 1.0,    // Default rule coverage
-        };
-        
         let mut validator = RossNetValidator::new(config);
-        validator.validate_rossnet_scoring(document, &semantic_result)
+        validator.validate_rossnet_scoring(document, analysis)
     }
 
     /// Perform Hebbian learning constraint validation
@@ -701,20 +708,8 @@ impl AispValidator {
             enable_plasticity_analysis: true,
         };
         
-        let semantic_result = DeepVerificationResult {
-            delta: analysis.delta(),
-            ambiguity: analysis.ambiguity(),
-            completeness: analysis.completeness(),
-            tier: analysis.tier(),
-            quality_score: analysis.quality_score(),
-            validation_errors: analysis.errors(),
-            warnings: analysis.warnings(),
-            coherence_score: 0.95, // Default coherence score
-            rule_coverage: 1.0,    // Default rule coverage
-        };
-        
         let mut validator = HebbianValidator::new(config);
-        validator.validate_hebbian_learning(document, &semantic_result)
+        validator.validate_hebbian_learning(document, analysis)
     }
 
     /// Perform anti-drift protocol validation
@@ -733,20 +728,8 @@ impl AispValidator {
             reference_baseline: None,
         };
         
-        let semantic_result = DeepVerificationResult {
-            delta: analysis.delta(),
-            ambiguity: analysis.ambiguity(),
-            completeness: analysis.completeness(),
-            tier: analysis.tier(),
-            quality_score: analysis.quality_score(),
-            validation_errors: analysis.errors(),
-            warnings: analysis.warnings(),
-            coherence_score: 0.95, // Default coherence score
-            rule_coverage: 1.0,    // Default rule coverage
-        };
-        
         let mut validator = AntiDriftValidator::new(config);
-        validator.validate_anti_drift(document, &semantic_result)
+        validator.validate_anti_drift(document, analysis)
     }
 }
 

@@ -15,8 +15,9 @@
 
 use crate::{
     ast::*,
+    parser::robust_parser::AispDocument,
     error::*,
-    semantic::SemanticAnalysisResult,
+    semantic::DeepVerificationResult,
 };
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -167,7 +168,7 @@ impl RossNetValidator {
     }
 
     /// Validate RossNet scoring for AISP document
-    pub fn validate_rossnet_scoring(&mut self, document: &AispDocument, semantic_result: &SemanticAnalysisResult) -> AispResult<RossNetValidationResult> {
+    pub fn validate_rossnet_scoring(&mut self, document: &AispDocument, semantic_result: &DeepVerificationResult) -> AispResult<RossNetValidationResult> {
         let start_time = Instant::now();
         
         // Calculate similarity score (sim)
@@ -209,7 +210,7 @@ impl RossNetValidator {
     }
 
     /// Calculate similarity metrics (sim component)
-    fn calculate_similarity_metrics(&mut self, document: &AispDocument, semantic_result: &SemanticAnalysisResult) -> AispResult<SimilarityMetrics> {
+    fn calculate_similarity_metrics(&mut self, document: &AispDocument, semantic_result: &DeepVerificationResult) -> AispResult<SimilarityMetrics> {
         // Calculate semantic vector distance
         let semantic_distance = self.calculate_semantic_distance(document, semantic_result)?;
         
@@ -233,7 +234,7 @@ impl RossNetValidator {
     }
 
     /// Calculate fitness metrics (fit component)
-    fn calculate_fitness_metrics(&mut self, document: &AispDocument, semantic_result: &SemanticAnalysisResult) -> AispResult<FitnessMetrics> {
+    fn calculate_fitness_metrics(&mut self, document: &AispDocument, semantic_result: &DeepVerificationResult) -> AispResult<FitnessMetrics> {
         // Calculate behavioral adaptation
         let behavioral_adaptation = self.calculate_behavioral_adaptation(document)?;
         
@@ -257,7 +258,7 @@ impl RossNetValidator {
     }
 
     /// Calculate affinity metrics (aff component)
-    fn calculate_affinity_metrics(&mut self, document: &AispDocument, _semantic_result: &SemanticAnalysisResult) -> AispResult<AffinityMetrics> {
+    fn calculate_affinity_metrics(&mut self, document: &AispDocument, _semantic_result: &DeepVerificationResult) -> AispResult<AffinityMetrics> {
         // Calculate domain compatibility
         let domain_compatibility = self.calculate_domain_compatibility(document)?;
         
@@ -281,7 +282,7 @@ impl RossNetValidator {
     }
 
     /// Calculate semantic vector distance
-    fn calculate_semantic_distance(&mut self, document: &AispDocument, semantic_result: &SemanticAnalysisResult) -> AispResult<f64> {
+    fn calculate_semantic_distance(&mut self, document: &AispDocument, semantic_result: &DeepVerificationResult) -> AispResult<f64> {
         let cache_key = format!("semantic_{}", document.header.name);
         
         if let Some(&cached_distance) = self.similarity_cache.get(&cache_key) {
@@ -292,8 +293,8 @@ impl RossNetValidator {
         self.stats.cache_misses += 1;
         
         // Calculate semantic distance based on delta and ambiguity
-        let distance = if semantic_result.delta > 0.0 {
-            1.0 - semantic_result.ambiguity.min(1.0)
+        let distance = if semantic_result.delta() > 0.0 {
+            1.0 - semantic_result.ambiguity().min(1.0)
         } else {
             0.0
         };
@@ -399,9 +400,9 @@ impl RossNetValidator {
     }
 
     /// Calculate performance efficiency ratio
-    fn calculate_performance_efficiency(&self, document: &AispDocument, semantic_result: &SemanticAnalysisResult) -> AispResult<f64> {
+    fn calculate_performance_efficiency(&self, document: &AispDocument, semantic_result: &DeepVerificationResult) -> AispResult<f64> {
         // Base efficiency on delta (semantic density)
-        let delta_efficiency = semantic_result.delta.min(1.0);
+        let delta_efficiency = semantic_result.delta().min(1.0);
         
         // Factor in document size efficiency
         let size_factor = match document.blocks.len() {
@@ -664,8 +665,8 @@ mod tests {
         }
     }
 
-    fn create_test_semantic_result() -> SemanticAnalysisResult {
-        SemanticAnalysisResult {
+    fn create_test_semantic_result() -> DeepVerificationResult {
+        DeepVerificationResult {
             delta: 0.8,
             ambiguity: 0.01,
             completeness: 0.9,

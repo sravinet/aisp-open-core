@@ -16,8 +16,9 @@
 
 use crate::{
     ast::*,
+    parser::robust_parser::AispDocument,
     error::*,
-    semantic::SemanticAnalysisResult,
+    semantic::DeepVerificationResult,
 };
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -211,7 +212,7 @@ impl HebbianValidator {
     }
 
     /// Validate Hebbian learning constraints for AISP document
-    pub fn validate_hebbian_learning(&mut self, document: &AispDocument, semantic_result: &SemanticAnalysisResult) -> AispResult<HebbianValidationResult> {
+    pub fn validate_hebbian_learning(&mut self, document: &AispDocument, semantic_result: &DeepVerificationResult) -> AispResult<HebbianValidationResult> {
         let start_time = Instant::now();
         
         // Extract and analyze learning patterns
@@ -240,7 +241,7 @@ impl HebbianValidator {
     }
 
     /// Analyze learning patterns in AISP document
-    fn analyze_learning_patterns(&mut self, document: &AispDocument, semantic_result: &SemanticAnalysisResult) -> AispResult<HebbianPatterns> {
+    fn analyze_learning_patterns(&mut self, document: &AispDocument, semantic_result: &DeepVerificationResult) -> AispResult<HebbianPatterns> {
         let mut episodes = Vec::new();
         
         // Extract learning episodes from rules and functions
@@ -315,7 +316,7 @@ impl HebbianValidator {
     }
 
     /// Extract learning episodes from evidence block
-    fn extract_episodes_from_evidence(&mut self, document: &AispDocument, semantic_result: &SemanticAnalysisResult) -> AispResult<Vec<LearningEpisode>> {
+    fn extract_episodes_from_evidence(&mut self, document: &AispDocument, semantic_result: &DeepVerificationResult) -> AispResult<Vec<LearningEpisode>> {
         let mut episodes = Vec::new();
         
         for block in &document.blocks {
@@ -324,7 +325,7 @@ impl HebbianValidator {
                 let episode = LearningEpisode {
                     id: "evidence_overall".to_string(),
                     outcome: self.classify_evidence_outcome(evidence_block, semantic_result)?,
-                    weight_change: semantic_result.delta.min(1.0),
+                    weight_change: semantic_result.delta().min(1.0),
                     temporal_position: 0,
                     associated_element: "evidence".to_string(),
                 };
@@ -363,11 +364,11 @@ impl HebbianValidator {
     }
 
     /// Classify learning outcome for evidence block
-    fn classify_evidence_outcome(&self, _evidence_block: &EvidenceBlock, semantic_result: &SemanticAnalysisResult) -> AispResult<LearningOutcome> {
+    fn classify_evidence_outcome(&self, _evidence_block: &EvidenceBlock, semantic_result: &DeepVerificationResult) -> AispResult<LearningOutcome> {
         // Base classification on semantic analysis results
-        if semantic_result.delta >= 0.7 && semantic_result.ambiguity < 0.02 {
+        if semantic_result.delta() >= 0.7 && semantic_result.ambiguity() < 0.02 {
             Ok(LearningOutcome::Success)
-        } else if semantic_result.delta < 0.3 || semantic_result.ambiguity > 0.1 {
+        } else if semantic_result.delta() < 0.3 || semantic_result.ambiguity() > 0.1 {
             Ok(LearningOutcome::Failure)
         } else {
             Ok(LearningOutcome::Neutral)
@@ -700,8 +701,8 @@ mod tests {
         }
     }
 
-    fn create_test_semantic_result() -> SemanticAnalysisResult {
-        SemanticAnalysisResult {
+    fn create_test_semantic_result() -> DeepVerificationResult {
+        DeepVerificationResult {
             delta: 0.8,
             ambiguity: 0.01,
             completeness: 0.9,
