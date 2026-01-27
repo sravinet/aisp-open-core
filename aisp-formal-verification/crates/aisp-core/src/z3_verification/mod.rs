@@ -61,7 +61,7 @@ pub fn create_configured_verifier(
 
 /// Quick verification function for AISP documents
 pub fn quick_verify(
-    document: &crate::ast::AispDocument,
+    document: &crate::ast::canonical::CanonicalAispDocument,
     tri_vector_result: Option<&crate::tri_vector_validation::TriVectorValidationResult>,
 ) -> crate::error::AispResult<EnhancedVerificationResult> {
     let mut facade = create_z3_facade()?;

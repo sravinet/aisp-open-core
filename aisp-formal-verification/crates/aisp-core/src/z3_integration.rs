@@ -5,7 +5,7 @@
 
 #[cfg(feature = "z3-verification")]
 mod z3_backend {
-    use crate::ast::*;
+    use crate::ast::canonical::{CanonicalAispDocument as AispDocument, *};
     use crate::error::*;
     use crate::relational_new::*;
     use crate::temporal_new::TemporalAnalysisResult;
@@ -620,7 +620,7 @@ pub use z3_backend::*;
 // Provide stub implementation when Z3 is not available
 #[cfg(not(feature = "z3-verification"))]
 mod stub {
-    use crate::ast::*;
+    use crate::ast::canonical::{CanonicalAispDocument as AispDocument, *};
     use crate::error::*;
     use crate::relational_new::*;
     use crate::temporal_new::TemporalAnalysisResult;

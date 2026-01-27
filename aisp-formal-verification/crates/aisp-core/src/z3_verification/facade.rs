@@ -5,7 +5,7 @@
 
 use super::smt_interface::SmtInterface;
 use super::types::*;
-use crate::{ast::*, error::*, tri_vector_validation::*};
+use crate::{ast::canonical::{CanonicalAispDocument as AispDocument, *}, error::*, tri_vector_validation::*};
 use std::collections::HashMap;
 
 /// Z3 verification facade with genuine verification requirements

@@ -248,6 +248,17 @@ pub enum RecommendationPriority {
     Long_term,
 }
 
+impl std::fmt::Display for RecommendationPriority {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RecommendationPriority::Immediate => write!(f, "Immediate"),
+            RecommendationPriority::Short_term => write!(f, "Short-term"),
+            RecommendationPriority::Medium_term => write!(f, "Medium-term"),
+            RecommendationPriority::Long_term => write!(f, "Long-term"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ImplementationEffort {
     Low,

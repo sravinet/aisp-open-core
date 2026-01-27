@@ -58,14 +58,14 @@ impl ParserSecurityTestSuite {
         // Run basic security tests
         let basic_results = self.run_basic_security_tests();
         total_tests += basic_results.len();
-        passed_tests += basic_results.iter().filter(|r| *r).count();
-        failed_tests += basic_results.iter().filter(|r| !*r).count();
+        passed_tests += basic_results.iter().filter(|r| **r).count();
+        failed_tests += basic_results.iter().filter(|r| !**r).count();
 
         // Run Unicode security tests
         let unicode_results = self.run_unicode_security_tests();
         total_tests += unicode_results.len();
-        passed_tests += unicode_results.iter().filter(|r| *r).count();
-        failed_tests += unicode_results.iter().filter(|r| !*r).count();
+        passed_tests += unicode_results.iter().filter(|r| **r).count();
+        failed_tests += unicode_results.iter().filter(|r| !**r).count();
 
         // Run adversarial testing
         let adversarial_report = self.adversarial_suite.run_security_assessment(&self.parser);
