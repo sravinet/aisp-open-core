@@ -3,9 +3,9 @@
 //! Provides the primary API for validating AISP documents with
 //! comprehensive error handling and performance optimizations.
 
-use crate::ast::*;
+use crate::ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock, IntoCanonical};
 use crate::error::*;
-use crate::parser::robust_parser::{RobustAispParser, AispDocument};
+use crate::parser::robust_parser::RobustAispParser;
 use crate::semantic::{DeepVerificationResult, QualityTier, SemanticAnalyzer};
 use crate::z3_integration::*;
 use crate::tri_vector_validation::*;
@@ -260,8 +260,12 @@ impl AispValidator {
         let parse_start = Instant::now();
         let parser = RobustAispParser::new();
         let parse_result = parser.parse(source);
-        let document = match parse_result.document {
-            Some(doc) => doc,
+        let mut document = match parse_result.document {
+            Some(robust_doc) => {
+                let mut canonical = robust_doc.into_canonical();
+                canonical.parse_structured_data(); // Convert raw strings to structured data
+                canonical
+            }
             None => {
                 let error_message = if !parse_result.errors.is_empty() {
                     parse_result.errors[0].message.clone()
@@ -561,7 +565,11 @@ impl AispValidator {
         let parser = RobustAispParser::new();
         let parse_result = parser.parse(source);
         match parse_result.document {
-            Some(doc) => Ok(doc),
+            Some(robust_doc) => {
+                let mut canonical = robust_doc.into_canonical();
+                canonical.parse_structured_data(); // Convert raw strings to structured data
+                Ok(canonical)
+            }
             None => {
                 let error_message = if !parse_result.errors.is_empty() {
                     parse_result.errors[0].message.clone()

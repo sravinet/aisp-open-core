@@ -2,7 +2,7 @@
 // Implements ADR-023: Deep Verification Architecture for Semantic Security
 // Phase 2 of Security Hardening Implementation Roadmap
 
-use crate::parser::robust_parser::{AispDocument, AispBlock};
+use crate::ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock, *};
 use crate::error::{AispError, AispResult};
 use std::collections::{HashMap, HashSet};
 use std::fmt;

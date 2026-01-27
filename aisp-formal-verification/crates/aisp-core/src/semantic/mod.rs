@@ -67,7 +67,7 @@ impl SemanticAnalyzer {
         }
     }
 
-    pub fn analyze(&mut self, document: &crate::parser::robust_parser::AispDocument) -> crate::error::AispResult<DeepVerificationResult> {
+    pub fn analyze(&mut self, document: &crate::ast::canonical::CanonicalAispDocument) -> crate::error::AispResult<DeepVerificationResult> {
         self.verifier.verify_document(document)
     }
 }
