@@ -929,20 +929,11 @@ mod tests {
     #[test]
     fn test_cross_validation_workflow() {
         let mut checker = CrossValidationChecker::new();
-        let document = AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: "test".to_string(),
-                date: "2026-01-27".to_string(),
-                metadata: None,
-            },
-            metadata: DocumentMetadata { domain: None, protocol: None },
-            blocks: vec![AispBlock::Meta(MetaBlock { entries: vec!["Vision≜\\\"Test\\\"".to_string()] })],
-        };
+        let document = crate::ast::canonical::create_document("test", "5.1", "2026-01-27");
 
         let result = checker.cross_validate(&document);
         assert!(result.is_ok());
-        
+
         let validation = result.unwrap();
         assert!(validation.overall_consistency_score >= 0.0);
         assert!(validation.overall_consistency_score <= 1.0);

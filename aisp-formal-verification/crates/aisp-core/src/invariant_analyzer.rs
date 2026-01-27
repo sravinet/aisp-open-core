@@ -332,48 +332,18 @@ mod tests {
     fn test_structural_analysis_config() {
         let mut config = InvariantDiscoveryConfig::default();
         config.enable_structural_analysis = false;
-        
-        let mut analyzer = InvariantAnalyzer::new(config);
-        
-        // Create document with only generic types (not natural or enum)
-        let mut types = HashMap::new();
-        types.insert("CustomType".to_string(), TypeDefinition {
-            name: "CustomType".to_string(),
-            type_expr: TypeExpression::Basic(BasicType::Boolean),
-            span: crate::ast::Span {
-                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                end: crate::ast::Position { line: 1, column: 10, offset: 10 },
-            },
-        });
 
-        let document = AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: "TestDoc".to_string(),
-                date: "2026-01-26".to_string(),
-                metadata: None,
-            },
-            metadata: DocumentMetadata {
-                domain: None,
-                protocol: None,
-            },
-            blocks: vec![
-                AispBlock::Types(TypesBlock {
-                    definitions: types,
-                    span: crate::ast::Span {
-                        start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                        end: crate::ast::Position { line: 1, column: 10, offset: 10 },
-                    },
-                }),
-            ],
-            span: crate::ast::Span {
-                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                end: crate::ast::Position { line: 10, column: 1, offset: 100 },
-            },
-        };
-        
+        let mut analyzer = InvariantAnalyzer::new(config);
+
+        // Create document with only generic types (not natural or enum)
+        let mut document = crate::ast::canonical::create_document("TestDoc", "5.1", "2026-01-26");
+        document.add_block(crate::ast::canonical::create_types_block(vec![
+            "CustomType≜𝔹".to_string(),
+        ]));
+        document.parse_structured_data();
+
         let result = analyzer.analyze(&document).unwrap();
-        
+
         // Should not discover generic type invariants when structural analysis is disabled
         let has_generic_invariant = result.iter()
             .any(|inv| inv.id.contains("generic_type"));
