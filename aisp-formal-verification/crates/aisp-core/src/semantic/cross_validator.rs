@@ -217,6 +217,18 @@ impl CrossValidationChecker {
         }
     }
 
+    /// Create checker with strict validation for enterprise use
+    pub fn with_strict_validation() -> Self {
+        Self {
+            semantic_verifier: DeepSemanticVerifier::with_enhanced_security(),
+            behavioral_verifier: BehavioralVerifier::new_strict(),
+            consistency_analyzer: ConsistencyAnalyzer::new(),
+            conflict_resolver: ConflictResolver::new(),
+            verification_orchestrator: VerificationOrchestrator::new(),
+            validation_cache: ValidationCache::new(),
+        }
+    }
+
     /// Run comprehensive cross-validation with multi-layer verification
     pub fn cross_validate(&mut self, document: &AispDocument) -> AispResult<CrossValidationResult> {
         let validation_start = Instant::now();
@@ -375,7 +387,8 @@ impl CrossValidationChecker {
 
         // Check for security assessment disparities
         let semantic_threat_level_score: f64 = match semantic_results.security_assessment.threat_level {
-            ThreatLevel::Minimal => 1.0,
+            ThreatLevel::None => 1.0,
+            ThreatLevel::Minimal => 0.95,
             ThreatLevel::Low => 0.8,
             ThreatLevel::Medium => 0.6,
             ThreatLevel::High => 0.3,
