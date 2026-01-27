@@ -11,7 +11,7 @@ pub mod trivector_verification;
 
 use crate::ast::{AispDocument, AispBlock};
 use crate::error::{AispResult};
-use crate::semantic::{SemanticAnalysisResult};
+use crate::semantic::{DeepVerificationResult};
 use crate::z3_verification::{PropertyResult, Z3VerificationFacade};
 
 use std::collections::HashMap;
@@ -79,7 +79,7 @@ impl ReferenceValidator {
     pub fn validate_document(
         &mut self,
         document: &AispDocument,
-        semantic_result: &SemanticAnalysisResult,
+        semantic_result: &DeepVerificationResult,
     ) -> AispResult<ReferenceValidationResult> {
         let start_time = Instant::now();
         
@@ -122,7 +122,7 @@ impl ReferenceValidator {
     fn verify_mathematical_foundations(
         &mut self,
         document: &AispDocument,
-        semantic_result: &SemanticAnalysisResult,
+        semantic_result: &DeepVerificationResult,
     ) -> AispResult<MathematicalFoundationsResult> {
         let mut ambiguity_verifier = AmbiguityVerifier::new(&mut self.z3_verifier);
         ambiguity_verifier.verify_ambiguity_calculation("", semantic_result)
@@ -131,7 +131,7 @@ impl ReferenceValidator {
     fn verify_trivector_orthogonality(
         &mut self,
         document: &AispDocument,
-        semantic_result: &SemanticAnalysisResult,
+        semantic_result: &DeepVerificationResult,
     ) -> AispResult<TriVectorOrthogonalityResult> {
         let mut trivector_verifier = TriVectorVerifier::new(&mut self.z3_verifier);
         trivector_verifier.verify_orthogonality(document, semantic_result)
@@ -233,8 +233,8 @@ mod tests {
         }
     }
     
-    fn create_test_semantic_result() -> SemanticAnalysisResult {
-        SemanticAnalysisResult {
+    fn create_test_semantic_result() -> DeepVerificationResult {
+        DeepVerificationResult {
             type_assignments: HashMap::new(),
             constraints: vec![],
             ambiguity: 0.01, // Low ambiguity

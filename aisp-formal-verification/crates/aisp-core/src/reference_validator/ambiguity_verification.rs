@@ -4,7 +4,7 @@
 //! Ambig≜λD.1-|Parse_u(D)|/|Parse_t(D)| < 0.02
 
 use crate::error::AispResult;
-use crate::semantic::SemanticAnalysisResult;
+use crate::semantic::DeepVerificationResult;
 use crate::z3_verification::{PropertyResult, Z3VerificationFacade};
 use std::collections::HashMap;
 
@@ -40,7 +40,7 @@ impl<'a> AmbiguityVerifier<'a> {
     pub fn verify_ambiguity_calculation(
         &mut self,
         _source: &str,
-        semantic_result: &SemanticAnalysisResult,
+        semantic_result: &DeepVerificationResult,
     ) -> AispResult<MathematicalFoundationsResult> {
         // Calculate actual parse counts from semantic analysis
         let unique_parses = 1.0; // Simplified: AISP should have unique interpretation
@@ -106,7 +106,7 @@ impl<'a> AmbiguityVerifier<'a> {
         })
     }
     
-    fn calculate_token_efficiency(&self, semantic_result: &SemanticAnalysisResult) -> TokenEfficiencyResult {
+    fn calculate_token_efficiency(&self, semantic_result: &DeepVerificationResult) -> TokenEfficiencyResult {
         // Simplified token efficiency calculation
         // In a real implementation, this would analyze token compression vs semantic preservation
         let efficiency_score = if semantic_result.ambiguity < 0.02 { 0.95 } else { 0.60 };
@@ -122,7 +122,7 @@ impl<'a> AmbiguityVerifier<'a> {
 }
 
 /// Verify AISP token efficiency according to reference.md specifications
-pub fn verify_token_efficiency(semantic_result: &SemanticAnalysisResult) -> TokenEfficiencyResult {
+pub fn verify_token_efficiency(semantic_result: &DeepVerificationResult) -> TokenEfficiencyResult {
     // Calculate efficiency based on ambiguity and coherence
     let base_efficiency = semantic_result.coherence_score;
     let ambiguity_penalty = semantic_result.ambiguity * 2.0; // Penalty factor
@@ -157,8 +157,8 @@ mod tests {
     use crate::z3_verification::Z3VerificationFacade;
     use std::collections::HashMap;
     
-    fn create_test_semantic_result(ambiguity: f64, coherence: f64) -> SemanticAnalysisResult {
-        SemanticAnalysisResult {
+    fn create_test_semantic_result(ambiguity: f64, coherence: f64) -> DeepVerificationResult {
+        DeepVerificationResult {
             type_assignments: HashMap::new(),
             constraints: vec![],
             ambiguity,

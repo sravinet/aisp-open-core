@@ -5,7 +5,7 @@
 
 use crate::ast::{AispDocument, AispBlock};
 use crate::error::AispResult;
-use crate::semantic::SemanticAnalysisResult;
+use crate::semantic::DeepVerificationResult;
 use crate::z3_verification::{PropertyResult, Z3VerificationFacade};
 
 /// Tri-vector orthogonality verification result
@@ -47,7 +47,7 @@ impl<'a> TriVectorVerifier<'a> {
     pub fn verify_orthogonality(
         &mut self,
         document: &AispDocument,
-        _semantic_result: &SemanticAnalysisResult,
+        _semantic_result: &DeepVerificationResult,
     ) -> AispResult<TriVectorOrthogonalityResult> {
         let mut certificates = Vec::new();
 
