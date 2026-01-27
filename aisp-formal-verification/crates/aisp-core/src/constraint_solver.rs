@@ -135,7 +135,7 @@ impl ConstraintSolver {
                                     set: name.clone(),
                                 },
                                 priority: ConstraintPriority::High,
-                                span: definition.span.clone(),
+                                span: definition.span.clone().unwrap_or_default(),
                             };
                             self.constraints.push(constraint);
                         }
@@ -159,7 +159,7 @@ impl ConstraintSolver {
                                 expression: self.extract_logical_expression(&rule.expression),
                             },
                             priority: ConstraintPriority::Medium,
-                            span: rule.span.clone(),
+                            span: rule.span.clone().unwrap_or_default(),
                         };
                         self.constraints.push(constraint);
                     }
@@ -185,7 +185,7 @@ impl ConstraintSolver {
                                 output: "result".to_string(),
                             },
                             priority: ConstraintPriority::Medium,
-                            span: function.span.clone(),
+                            span: function.span.clone().unwrap_or_default(),
                         };
                         self.constraints.push(constraint);
                     }
@@ -207,7 +207,7 @@ impl ConstraintSolver {
                                 expression: self.extract_logical_expression(logical_expr),
                             },
                             priority: ConstraintPriority::Critical,
-                            span: entry.span.clone(),
+                            span: entry.span.clone().unwrap_or_default(),
                         };
                         self.constraints.push(constraint);
                     }
@@ -226,7 +226,7 @@ impl ConstraintSolver {
             LogicalExpression::Application { .. } => "application_expr".to_string(),
             LogicalExpression::Membership { .. } => "membership_expr".to_string(),
             LogicalExpression::Temporal { .. } => "temporal_expr".to_string(),
-            // Note: Lambda is not in LogicalExpression enum, it's in LambdaExpression
+            LogicalExpression::Raw(text) => text.clone(),
         }
     }
 

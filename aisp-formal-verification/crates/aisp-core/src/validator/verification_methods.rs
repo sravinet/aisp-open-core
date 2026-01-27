@@ -143,6 +143,9 @@ impl VerificationMethods {
             min_learning_rate: if self.config.strict_mode { 0.001 } else { 0.01 },
             max_learning_rate: if self.config.strict_mode { 0.1 } else { 0.5 },
             max_weight_update: 1.0,
+            min_temporal_consistency: if self.config.strict_mode { 0.95 } else { 0.8 },
+            max_analysis_time: Duration::from_secs(60),
+            enable_plasticity_analysis: true,
         };
         
         let mut validator = HebbianValidator::new(config);
@@ -161,6 +164,8 @@ impl VerificationMethods {
             min_stability_score: if self.config.strict_mode { 0.95 } else { 0.8 },
             analysis_time_window: Duration::from_secs(if self.config.strict_mode { 30 } else { 60 }),
             max_analysis_time: Duration::from_secs(300),
+            enable_auto_correction: true,
+            reference_baseline: None,
         };
         
         let mut validator = AntiDriftValidator::new(config);

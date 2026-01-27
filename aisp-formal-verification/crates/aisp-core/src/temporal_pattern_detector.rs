@@ -3,7 +3,7 @@
 //! This module identifies and analyzes common temporal logic patterns
 //! such as safety, liveness, response, persistence, and fairness patterns.
 
-use crate::ast::*;
+use crate::ast::canonical::*;
 use crate::error::*;
 use crate::temporal_operator_analyzer::{TemporalOperator, OperatorInstance};
 use std::collections::HashMap;

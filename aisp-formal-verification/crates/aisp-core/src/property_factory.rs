@@ -3,7 +3,7 @@
 //! This module handles the creation of specific types of formal properties
 //! from AISP constructs like type definitions and function signatures.
 
-use crate::ast::*;
+use crate::ast::canonical::*;
 use crate::error::*;
 use crate::property_types::{PropertyFormula, FormulaStructure, AtomicFormula, Term, PropertyComplexity, ExtractedProperty, PropertyType, PropertyContext, SourceLocation};
 use crate::property_types::Quantifier as PropertyQuantifier;

@@ -62,6 +62,9 @@ pub enum TypeExpression {
         params: Vec<TypeExpression>,
         return_type: Box<TypeExpression>,
     },
+    // Legacy compatibility variants
+    Enumeration(Vec<String>),
+    Tuple(Vec<TypeExpression>),
 }
 
 /// Basic type enumeration

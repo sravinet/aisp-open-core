@@ -101,6 +101,7 @@ pub trait FromCanonical<T> {
 /// Convert security severity between different representations
 pub fn map_security_severity_to_canonical(severity: SecuritySeverity) -> MetaValue {
     match severity {
+        SecuritySeverity::Info => MetaValue::String("info".to_string()),
         SecuritySeverity::Low => MetaValue::String("low".to_string()),
         SecuritySeverity::Medium => MetaValue::String("medium".to_string()),
         SecuritySeverity::High => MetaValue::String("high".to_string()),
@@ -112,6 +113,7 @@ pub fn map_security_severity_to_canonical(severity: SecuritySeverity) -> MetaVal
 pub fn map_canonical_to_security_severity(meta_value: &MetaValue) -> SecuritySeverity {
     match meta_value {
         MetaValue::String(s) => match s.as_str() {
+            "info" => SecuritySeverity::Info,
             "low" => SecuritySeverity::Low,
             "medium" => SecuritySeverity::Medium,
             "high" => SecuritySeverity::High,
