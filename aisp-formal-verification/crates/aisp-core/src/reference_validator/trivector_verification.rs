@@ -3,7 +3,7 @@
 //! Implements formal mathematical verification of vector space orthogonality
 //! as specified in reference.md: V_H ∩ V_S ≡ ∅, V_L ∩ V_S ≡ ∅
 
-use crate::ast::{AispDocument, AispBlock};
+use crate::ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock};
 use crate::error::AispResult;
 use crate::semantic::DeepVerificationResult;
 use crate::z3_verification::{PropertyResult, Z3VerificationFacade};

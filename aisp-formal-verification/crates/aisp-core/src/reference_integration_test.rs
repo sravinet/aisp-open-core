@@ -5,9 +5,9 @@
 //! establishing a formal methods challenge suite.
 
 use crate::reference_validator::{ReferenceValidator, ComplianceLevel};
-use crate::parser_new::AispParser;
+use crate::parser::robust_parser::RobustAispParser;
 use crate::semantic::SemanticAnalyzer;
-use crate::ast::AispDocument;
+use crate::ast::canonical::{CanonicalAispDocument as AispDocument, *};
 use crate::error::AispResult;
 
 /// Reference.md Challenge Test Suite
@@ -30,11 +30,15 @@ impl ReferenceChallengeTestSuite {
         println!("================================================");
 
         // Parse the test document
-        let mut parser = AispParser::new(test_document.to_string());
-        let document = parser.parse()?;
+        let parser = RobustAispParser::new();
+        let parse_result = parser.parse(test_document);
+        let document = match parse_result.document {
+            Some(robust_doc) => robust_doc.into_canonical(),
+            None => return Err(crate::error::AispError::validation_error("Failed to parse test document")),
+        };
         
         // Run semantic analysis
-        let semantic_result = self.semantic_analyzer.analyze(&document, test_document)?;
+        let semantic_result = self.semantic_analyzer.analyze(&document)?;
         
         // Run comprehensive reference validation
         let validation_result = self.validator.validate_document(
@@ -146,9 +150,13 @@ impl ReferenceChallengeTestSuite {
 
     /// Generate a comprehensive challenge report
     pub fn generate_challenge_report(&mut self, test_document: &str) -> AispResult<String> {
-        let mut parser = AispParser::new(test_document.to_string());
-        let document = parser.parse()?;
-        let semantic_result = self.semantic_analyzer.analyze(&document, test_document)?;
+        let parser = RobustAispParser::new();
+        let parse_result = parser.parse(test_document);
+        let document = match parse_result.document {
+            Some(robust_doc) => robust_doc.into_canonical(),
+            None => return Err(crate::error::AispError::validation_error("Failed to parse test document")),
+        };
+        let semantic_result = self.semantic_analyzer.analyze(&document)?;
         let validation_result = self.validator.validate_document(
             &document,
             &semantic_result.to_result(),
@@ -380,9 +388,10 @@ mod tests {
         let mut suite = ReferenceChallengeTestSuite::new();
         let test_doc = create_reference_test_document();
         
-        let mut parser = AispParser::new(test_doc.clone());
-        let document = parser.parse().unwrap();
-        let semantic_result = suite.semantic_analyzer.analyze(&document, &test_doc).unwrap();
+        let parser = RobustAispParser::new();
+        let parse_result = parser.parse(&test_doc);
+        let document = parse_result.document.unwrap().into_canonical();
+        let semantic_result = suite.semantic_analyzer.analyze(&document).unwrap();
         
         // Ambiguity should be below 0.02 threshold per reference.md
         assert!(semantic_result.semantic_density <= 0.02 || semantic_result.semantic_density >= 0.98);

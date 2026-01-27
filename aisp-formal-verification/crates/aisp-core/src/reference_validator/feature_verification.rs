@@ -3,7 +3,7 @@
 //! Implements verification of the 20 key features from reference.md
 //! with actual property checking instead of hard-coded results.
 
-use crate::ast::{AispDocument, AispBlock};
+use crate::ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock};
 use crate::error::AispResult;
 use crate::z3_verification::{PropertyResult, Z3VerificationFacade};
 
@@ -125,10 +125,10 @@ impl<'a> FeatureVerifier<'a> {
         // Check if document defines ambiguity calculation
         for block in &document.blocks {
             if let AispBlock::Functions(funcs_block) = block {
-                if funcs_block.functions.contains_key("Ambig") || 
-                   funcs_block.functions.iter().any(|(_, func)| 
-                       format!("{:?}", func).contains("Parse_u") || 
-                       format!("{:?}", func).contains("Parse_t")) {
+                let functions_text = format!("{:?}", funcs_block.functions);
+                if functions_text.contains("Ambig") || 
+                   functions_text.contains("Parse_u") || 
+                   functions_text.contains("Parse_t") {
                     implemented = true;
                     
                     // Verify ambiguity formula using SMT
@@ -167,10 +167,11 @@ impl<'a> FeatureVerifier<'a> {
         for block in &document.blocks {
             if let AispBlock::Functions(funcs_block) = block {
                 // Look for ψ_g definition
-                let has_ghost = funcs_block.functions.iter().any(|(name, func)| 
-                    name.contains("ψ_g") || name.contains("ghost") ||
-                    format!("{:?}", func).contains("ψ_*") || 
-                    format!("{:?}", func).contains("ψ_have"));
+                let functions_text = format!("{:?}", funcs_block.functions);
+                let has_ghost = functions_text.contains("ψ_g") || 
+                               functions_text.contains("ghost") ||
+                               functions_text.contains("ψ_*") || 
+                               functions_text.contains("ψ_have");
                 
                 if has_ghost {
                     implemented = true;
