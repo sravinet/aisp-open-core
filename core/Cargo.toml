@@ -5,6 +5,15 @@ members = [
 ]
 resolver = "2"
 
+# Test profiles
+[profile.test]
+opt-level = 1
+debug = true
+overflow-checks = true
+
+[profile.test.package."*"]
+opt-level = 2
+
 # Workspace package defaults
 [workspace.package]
 version = "0.1.0"

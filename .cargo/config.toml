@@ -1,0 +1,35 @@
+# Canonical Cargo configuration for AISP Core
+[alias]
+# Production testing commands
+test-all = "test --workspace --all-features -- --test-threads=1"
+test-fast = "test --workspace --lib --bins"
+test-integration = "test --workspace --test '*integration*' --all-features"
+test-perf = "test --workspace --test '*performance*' --all-features --release"
+test-security = "test --workspace --test '*security*' --features security"
+
+# Development commands  
+check-all = "check --workspace --all-targets --all-features"
+fmt-all = "fmt --all"
+clippy-all = "clippy --workspace --all-targets --all-features -- -D warnings"
+build-release = "build --workspace --release --all-features"
+
+# Documentation commands
+doc-all = "doc --workspace --all-features --no-deps --open"
+doc-private = "doc --workspace --all-features --document-private-items"
+
+# Verification-specific commands
+verify = ["check", "--features", "verification"]
+verify-z3 = ["test", "--features", "z3-verification", "--", "--test-threads=1"]
+
+[build]
+# Use all available cores for parallel compilation
+jobs = -1
+
+[target.'cfg(unix)']
+# Unix-specific optimizations
+rustflags = ["-C", "target-cpu=native"]
+
+[env]
+# Set environment variables for testing
+RUST_BACKTRACE = "1"
+RUST_LOG = "debug"
