@@ -603,7 +603,7 @@ mod tests {
                 protocol: None,
             },
             blocks: vec![],
-            span: Span::new(1, 1, 1, 1),
+            span: Some(Span::new(1, 1, 1, 1)),
         };
 
         let result = analyzer.analyze_operators(&document);

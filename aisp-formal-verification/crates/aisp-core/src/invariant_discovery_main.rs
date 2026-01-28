@@ -4,7 +4,7 @@
 //! orchestrating the various components (analyzer, formulas, exporters).
 
 use crate::{
-    ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock, DocumentHeader, DocumentMetadata, TypesBlock, TypeExpression, BasicType},
+    ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock, DocumentHeader, DocumentMetadata, TypesBlock, TypeExpression, BasicType, TypeDefinition, Span},
     error::AispResult,
     invariant_types::{DiscoveredInvariant, InvariantDiscoveryConfig, DiscoveryStats},
     invariant_analyzer::InvariantAnalyzer,
@@ -135,18 +135,25 @@ impl Default for InvariantDiscovery {
 mod tests {
     use super::*;
     use crate::{
-        ast::{AispDocument, DocumentHeader, AispBlock, TypesBlock, TypeExpression},
         invariant_types::InvariantType,
     };
     use std::collections::HashMap;
 
     fn create_test_document() -> AispDocument {
         let mut types = HashMap::new();
-        types.insert("Counter".to_string(), TypeExpression::Basic(BasicType::Natural));
-        types.insert("Status".to_string(), TypeExpression::Enumeration(vec![
-            "Running".to_string(),
-            "Stopped".to_string(),
-        ]));
+        types.insert("Counter".to_string(), TypeDefinition {
+            name: "Counter".to_string(),
+            type_expr: TypeExpression::Basic(BasicType::Natural),
+            span: Some(Span::new(1, 1, 1, 10)),
+        });
+        types.insert("Status".to_string(), TypeDefinition {
+            name: "Status".to_string(),
+            type_expr: TypeExpression::Enumeration(vec![
+                "Running".to_string(),
+                "Stopped".to_string(),
+            ]),
+            span: Some(Span::new(2, 1, 2, 10)),
+        });
 
         AispDocument {
             header: DocumentHeader {
@@ -162,16 +169,11 @@ mod tests {
             blocks: vec![
                 AispBlock::Types(TypesBlock {
                     definitions: types,
-                    span: crate::ast::Span {
-                        start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                        end: crate::ast::Position { line: 1, column: 10, offset: 10 },
-                    },
+                    raw_definitions: Vec::new(),
+                    span: Some(Span::new(1, 1, 3, 1)),
                 }),
             ],
-            span: crate::ast::Span {
-                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                end: crate::ast::Position { line: 10, column: 1, offset: 100 },
-            },
+            span: Some(Span::new(1, 1, 10, 1)),
         }
     }
 
@@ -316,8 +318,11 @@ mod tests {
                 version: "5.1".to_string(),
                 name: "EmptyDoc".to_string(),
                 date: "2026-01-26".to_string(),
+                metadata: None,
             },
+            metadata: DocumentMetadata { domain: None, protocol: None },
             blocks: vec![],
+            span: None,
         };
         
         let result = discovery.discover_invariants(&document).unwrap();

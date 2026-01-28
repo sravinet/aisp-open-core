@@ -98,7 +98,7 @@ mod tests {
         config.enable_patterns = true;
         config.enable_structural_analysis = false;
 
-        let document = create_test_aisp_document("ConfigTest", HashMap::new(), false);
+        let document = create_test_aisp_document("ConfigTest", Vec::new(), false);
 
         let mut discovery = InvariantDiscovery::with_config(config);
         let invariants = discovery.discover_invariants(&document).unwrap();
