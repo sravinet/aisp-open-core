@@ -525,7 +525,7 @@ mod tests {
     fn test_security_test_suite_creation() {
         let suite = ParserSecurityTestSuite::new();
         // Should create successfully with security validation enabled
-        assert!(suite.parser.security_validation);
+        assert!(suite.parser.has_security_validation());
     }
 
     #[test]

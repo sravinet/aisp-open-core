@@ -109,7 +109,7 @@ mod integration_tests {
         };
 
         // Test that we can construct the types without errors
-        assert_eq!(constraint_result.status, VerificationStatus::Pass);
+        assert_eq!(constraint_result.status, VerificationStatus::Passed);
         
         println!("✅ Performance constraint analysis structure test passed!");
         Ok(())

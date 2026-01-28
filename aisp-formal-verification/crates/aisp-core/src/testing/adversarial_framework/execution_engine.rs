@@ -455,7 +455,14 @@ mod tests {
                 success: true,
                 bypass_achieved: true,
                 security_impact: SecuritySeverity::High,
-                parser_response: ParseResult::default(),
+                parser_response: ParseResult {
+                    document: None,
+                    errors: vec![],
+                    warnings: vec![],
+                    recovery_applied: false,
+                    partial_success: false,
+                    security_issues: vec![],
+                },
                 detection_triggered: false,
                 mitigation_effective: false,
                 performance_impact: PerformanceImpact {
@@ -472,7 +479,14 @@ mod tests {
     #[test]
     fn test_attack_evaluation_methods() {
         let engine = AttackExecutionEngine::new();
-        let result = ParseResult::default();
+        let result = ParseResult {
+            document: None,
+            errors: vec![],
+            warnings: vec![],
+            recovery_applied: false,
+            partial_success: false,
+            security_issues: vec![],
+        };
         
         // Test parse bypass evaluation
         assert!(!engine.evaluate_parse_bypass_success(&result, &ExpectedBehavior::ShouldReject));

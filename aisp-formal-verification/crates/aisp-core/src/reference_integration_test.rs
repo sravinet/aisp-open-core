@@ -394,6 +394,6 @@ mod tests {
         let semantic_result = suite.semantic_analyzer.analyze(&document).unwrap();
         
         // Ambiguity should be below 0.02 threshold per reference.md
-        assert!(semantic_result.semantic_density <= 0.02 || semantic_result.semantic_density >= 0.98);
+        assert!(semantic_result.ambiguity() <= 0.02 || semantic_result.semantic_score >= 0.98);
     }
 }

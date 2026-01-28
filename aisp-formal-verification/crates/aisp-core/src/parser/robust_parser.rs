@@ -319,6 +319,11 @@ impl RobustAispParser {
         self
     }
 
+    /// Check if security validation is enabled
+    pub fn has_security_validation(&self) -> bool {
+        self.security_validation
+    }
+
     /// Main parsing entry point with comprehensive error handling
     pub fn parse(&self, input: &str) -> ParseResult {
         // Pre-parse security validation
