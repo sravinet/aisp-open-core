@@ -158,15 +158,10 @@ mod tests {
     use std::collections::HashMap;
     
     fn create_test_semantic_result(ambiguity: f64, coherence: f64) -> DeepVerificationResult {
-        DeepVerificationResult {
-            type_assignments: HashMap::new(),
-            constraints: vec![],
-            ambiguity,
-            warnings: vec![],
-            errors: vec![],
-            rule_coverage: 1.0,
-            coherence_score: coherence,
-        }
+        let mut result = DeepVerificationResult::test_default();
+        result.overall_confidence = 1.0 - ambiguity; // Convert ambiguity to confidence
+        result.semantic_score = coherence;
+        result
     }
     
     #[test]
@@ -216,7 +211,7 @@ mod tests {
         let total_parses = 1.0;
         let calculated_ambiguity = 1.0 - (unique_parses / total_parses);
         
-        assert!((calculated_ambiguity - 0.02).abs() < 0.001);
+        assert!((calculated_ambiguity - 0.02_f64).abs() < 0.001);
         assert!(calculated_ambiguity < 0.02); // Should pass the 2% threshold
     }
     

@@ -360,8 +360,8 @@ mod tests {
         let ratio_vl = 512.0 / 1536.0; // ~33%
         let ratio_vs = 256.0 / 1536.0; // ~17%
         
-        assert!((ratio_vh - 0.5).abs() < 0.01);
-        assert!((ratio_vl - 0.333).abs() < 0.01);
-        assert!((ratio_vs - 0.167).abs() < 0.01);
+        assert!((ratio_vh - 0.5_f64).abs() < 0.01);
+        assert!((ratio_vl - 0.333_f64).abs() < 0.01);
+        assert!((ratio_vs - 0.167_f64).abs() < 0.01);
     }
 }

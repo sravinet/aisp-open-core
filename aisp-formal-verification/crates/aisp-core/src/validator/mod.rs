@@ -79,7 +79,7 @@ ambiguous_func ≜ λx.undefined_operation(x)
         let mut validator = AispValidator::new();
         
         // Test initial configuration
-        assert!(!validator.config.strict_mode);
+        assert!(!validator.config().strict_mode);
         
         // Update configuration
         let mut new_config = ValidationConfig::default();
@@ -88,8 +88,8 @@ ambiguous_func ≜ λx.undefined_operation(x)
         
         validator.configure(new_config);
         
-        assert!(validator.config.strict_mode);
-        assert_eq!(validator.config.z3_timeout, Duration::from_secs(60));
+        assert!(validator.config().strict_mode);
+        assert_eq!(validator.config().z3_timeout, Duration::from_secs(60));
     }
 
     #[test]

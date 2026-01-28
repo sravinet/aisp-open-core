@@ -232,15 +232,7 @@ mod tests {
     }
     
     fn create_test_semantic_result() -> DeepVerificationResult {
-        DeepVerificationResult {
-            type_assignments: HashMap::new(),
-            constraints: vec![],
-            ambiguity: 0.01, // Low ambiguity
-            warnings: vec![],
-            errors: vec![],
-            rule_coverage: 1.0,
-            coherence_score: 0.95,
-        }
+        DeepVerificationResult::test_default()
     }
     
     #[test]

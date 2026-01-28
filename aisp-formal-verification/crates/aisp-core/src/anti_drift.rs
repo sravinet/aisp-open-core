@@ -807,27 +807,14 @@ mod tests {
     }
 
     fn create_stable_semantic_result() -> DeepVerificationResult {
-        DeepVerificationResult {
-            delta: 0.9,
-            ambiguity: 0.01,
-            completeness: 0.95,
-            tier: QualityTier::Platinum,
-            quality_score: 0.95,
-            validation_errors: vec![],
-            warnings: vec![],
-        }
+        DeepVerificationResult::test_default()
     }
 
     fn create_drifted_semantic_result() -> DeepVerificationResult {
-        DeepVerificationResult {
-            delta: 0.3,
-            ambiguity: 0.15,
-            completeness: 0.6,
-            tier: QualityTier::Bronze,
-            quality_score: 0.4,
-            validation_errors: vec!["semantic_drift_detected".to_string()],
-            warnings: vec!["high_ambiguity".to_string()],
-        }
+        let mut result = DeepVerificationResult::test_default();
+        result.overall_confidence = 0.4; // Lower confidence for drifted result
+        result.semantic_score = 0.3;
+        result
     }
 
     #[test]

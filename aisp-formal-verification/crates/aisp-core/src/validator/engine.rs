@@ -47,6 +47,11 @@ impl AispValidator {
         self.config = config;
     }
 
+    /// Get reference to current configuration
+    pub fn config(&self) -> &ValidationConfig {
+        &self.config
+    }
+
     /// Validate AISP document from source text
     pub fn validate(&self, source: &str) -> ValidationResult {
         let start_time = Instant::now();
