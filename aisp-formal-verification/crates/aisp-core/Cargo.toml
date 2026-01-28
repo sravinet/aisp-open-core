@@ -9,12 +9,14 @@ homepage.workspace = true
 description = "Core AISP parsing and validation engine"
 
 [features]
-# Default build with MANDATORY Z3 verification (strict security)
+# Default build with MANDATORY Z3 verification (production-ready)
 default = ["verification"]
-# DEPRECATED: Use default instead (minimal builds no longer supported)
+# Minimal build with essential features only (DEPRECATED)
 minimal = ["std"] 
 # Full verification with Z3 (now the default)
 verification = ["std", "serde", "z3-verification", "regex", "unicode-normalization"]
+# Full verification alias for backward compatibility
+full = ["verification"]
 # Security hardening features
 security = ["regex", "unicode-normalization"]
 std = []
@@ -27,7 +29,7 @@ unicode-normalization = ["dep:unicode-normalization"]
 [dependencies]
 serde = { workspace = true, optional = true }
 thiserror.workspace = true
-z3 = { version = "0.11", optional = true }
+z3 = { version = "0.19.7", optional = true }
 uuid.workspace = true
 pest = "2.7"
 pest_derive = "2.7"
