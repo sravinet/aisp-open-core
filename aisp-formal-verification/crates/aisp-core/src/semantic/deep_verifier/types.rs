@@ -233,6 +233,47 @@ impl fmt::Display for DeepVerificationResult {
     }
 }
 
+impl DeepVerificationResult {
+    /// Create a test instance with basic values for test purposes
+    pub fn test_default() -> Self {
+        Self {
+            overall_confidence: 0.85,
+            semantic_score: 0.80,
+            type_safety_score: 0.90,
+            logic_consistency_score: 0.85,
+            mathematical_correctness_score: 0.80,
+            deception_risk_score: 0.1,
+            verification_details: VerificationDetails {
+                verified_components: vec![],
+                failed_verifications: vec![],
+                warnings: vec![],
+                coverage_metrics: CoverageMetrics {
+                    line_coverage: 0.85,
+                    branch_coverage: 0.80,
+                },
+                performance_metrics: PerformanceMetrics {
+                    verification_time_ms: 1000,
+                    memory_usage_mb: 100,
+                },
+            },
+            security_assessment: SecurityAssessment {
+                threat_level: ThreatLevel::Low,
+                vulnerability_count: 0,
+                attack_surface_analysis: AttackSurfaceAnalysis {
+                    surface_area: 0.1,
+                    vulnerabilities: vec![],
+                },
+                security_recommendations: vec![],
+                compliance_status: ComplianceStatus {
+                    compliant: true,
+                    missing_requirements: vec![],
+                },
+            },
+            recommendations: vec![],
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

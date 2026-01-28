@@ -707,15 +707,7 @@ mod tests {
     }
 
     fn create_test_semantic_result() -> DeepVerificationResult {
-        DeepVerificationResult {
-            delta: 0.8,
-            ambiguity: 0.01,
-            completeness: 0.9,
-            tier: QualityTier::Gold,
-            quality_score: 0.85,
-            validation_errors: vec![],
-            warnings: vec![],
-        }
+        DeepVerificationResult::test_default()
     }
 
     #[test]
