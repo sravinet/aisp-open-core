@@ -11,11 +11,11 @@ mod integration_tests {
     #[test]
     fn test_verification_status_types() -> AispResult<()> {
         // Test verification status enumeration
-        let status_pass = VerificationStatus::Pass;
-        let status_fail = VerificationStatus::Fail; 
-        let status_warning = VerificationStatus::Warning;
+        let status_pass = VerificationStatus::Passed;
+        let status_fail = VerificationStatus::Failed; 
+        let status_warning = VerificationStatus::PartiallyPassed;
 
-        assert_eq!(status_pass, VerificationStatus::Pass);
+        assert_eq!(status_pass, VerificationStatus::Passed);
         assert_ne!(status_pass, status_fail);
         assert_ne!(status_fail, status_warning);
 
