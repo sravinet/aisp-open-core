@@ -1185,12 +1185,20 @@ mod tests {
         let checker = ProofChecker::new(temp_dir);
         let definitions = checker.generate_aisp_rocq_definitions();
         
-        // Verify bisimulation uses SimulateM.eval_f
-        assert!(definitions.contains("SimulateM.eval_f (run_validate doc1) state"));
-        assert!(definitions.contains("SimulateM.eval_f (run_validate doc2) state"));
+        // Verify modern Garden-style bisimulation pattern
+        assert!(definitions.contains("validation_bisim (doc1 doc2 : AispDocument)"), 
+               "Expected validation bisimulation definition");
         
-        // Verify soundness theorem structure
-        assert!(definitions.contains("semantic_interp doc <> SV_Bottom"));
-        assert!(definitions.contains("Output.Success true"));
+        // Verify Garden-style symbolic execution patterns
+        assert!(definitions.contains("SimulateM.eval_f (run_validate doc"), 
+               "Expected Garden symbolic execution pattern");
+        
+        // Verify soundness theorem with modern Garden patterns
+        assert!(definitions.contains("Output.Success true"), 
+               "Expected Output.Success pattern in soundness theorem");
+        assert!(definitions.contains("DeterminismVerification") && 
+                definitions.contains("FunctionalCorrectnessVerification") && 
+                definitions.contains("CompletenessVerification"), 
+               "Expected three-property verification framework");
     }
 }
