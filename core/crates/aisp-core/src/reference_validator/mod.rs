@@ -11,6 +11,7 @@ pub mod trivector_verification;
 
 use crate::ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock};
 use crate::error::{AispResult};
+use crate::incompleteness_handler::{IncompletenessHandler, TruthValue, IncompletenessResult, UndecidabilityReason};
 use crate::semantic::{DeepVerificationResult};
 use crate::z3_verification::{PropertyResult, Z3VerificationFacade};
 
@@ -25,6 +26,7 @@ pub use trivector_verification::*;
 /// Main reference.md validator that coordinates all verification modules
 pub struct ReferenceValidator {
     z3_verifier: Z3VerificationFacade,
+    incompleteness_handler: IncompletenessHandler,
     verification_stats: VerificationStats,
 }
 
@@ -44,8 +46,20 @@ pub struct ReferenceValidationResult {
     pub trivector_orthogonality: TriVectorOrthogonalityResult,
     pub feature_compliance: FeatureComplianceResult,
     pub pipeline_verification: PipelineVerificationResult,
+    pub incompleteness_analysis: IncompletenessAnalysisResult,
     pub overall_compliance: ComplianceLevel,
     pub compliance_score: f64,
+}
+
+/// Results of incompleteness analysis for reference.md claims
+#[derive(Debug, Clone)]
+pub struct IncompletenessAnalysisResult {
+    pub completeness_claim_verified: TruthValue,
+    pub consistency_claim_verified: TruthValue,
+    pub godel_sentences_detected: Vec<String>,
+    pub undecidable_statements: Vec<IncompletenessResult>,
+    pub system_is_complete: bool,
+    pub system_is_consistent: bool,
 }
 
 /// Compliance levels based on verification results
@@ -64,6 +78,7 @@ impl ReferenceValidator {
         
         Ok(Self {
             z3_verifier,
+            incompleteness_handler: IncompletenessHandler::new(),
             verification_stats: VerificationStats {
                 features_verified: 0,
                 features_failed: 0,
@@ -86,6 +101,7 @@ impl ReferenceValidator {
         let trivector_orthogonality = self.verify_trivector_orthogonality(document, semantic_result)?;
         let feature_compliance = self.verify_feature_compliance(document)?;
         let pipeline_verification = self.verify_pipeline_success_rates()?;
+        let incompleteness_analysis = self.verify_incompleteness_claims(document)?;
         
         // Calculate overall compliance
         let compliance_score = self.calculate_compliance_score(
@@ -104,6 +120,7 @@ impl ReferenceValidator {
             trivector_orthogonality,
             feature_compliance,
             pipeline_verification,
+            incompleteness_analysis,
             overall_compliance,
             compliance_score,
         })
@@ -146,6 +163,61 @@ impl ReferenceValidator {
     fn verify_pipeline_success_rates(&mut self) -> AispResult<PipelineVerificationResult> {
         let mut pipeline_verifier = PipelineVerifier::new(&mut self.z3_verifier);
         pipeline_verifier.verify_success_rates()
+    }
+    
+    /// Verify claims about mathematical completeness and consistency against Gödel's theorems
+    fn verify_incompleteness_claims(&mut self, _document: &AispDocument) -> AispResult<IncompletenessAnalysisResult> {
+        let mut godel_sentences_detected = Vec::new();
+        let mut undecidable_statements = Vec::new();
+        
+        // Test key claims from reference.md that violate incompleteness theorems
+        let test_statements = vec![
+            "AISP 5.1 formal verification system is mathematically complete",
+            "This system can prove or disprove every well-formed statement",
+            "AISP provides zero-ambiguity formal verification",
+            "The 20 features are provably sound and complete",
+            "This statement cannot be proven within AISP 5.1", // Direct Gödel sentence
+        ];
+        
+        for statement in test_statements {
+            let result = self.incompleteness_handler.verify_statement(statement);
+            
+            // Collect Gödel sentences
+            if let Some(UndecidabilityReason::GoedelSentence) = result.undecidability_reason {
+                godel_sentences_detected.push(statement.to_string());
+            }
+            
+            // Collect undecidable statements
+            if result.truth_value == TruthValue::Unknown {
+                undecidable_statements.push(result);
+            }
+        }
+        
+        // Check system consistency using incompleteness handler
+        let system_is_consistent = self.incompleteness_handler.check_consistency()
+            .unwrap_or(false);
+        
+        // A complete system would be able to prove/disprove every statement
+        // But Gödel's theorem shows this is impossible for consistent systems
+        let system_is_complete = undecidable_statements.is_empty();
+        
+        // Verify specific claims against incompleteness theorems
+        let completeness_claim = self.incompleteness_handler.verify_statement(
+            "AISP 5.1 formal verification system is mathematically complete"
+        );
+        
+        let consistency_claim = self.incompleteness_handler.verify_statement(
+            "AISP 5.1 formal verification system is consistent"
+        );
+        
+        Ok(IncompletenessAnalysisResult {
+            completeness_claim_verified: completeness_claim.truth_value,
+            consistency_claim_verified: consistency_claim.truth_value,
+            godel_sentences_detected,
+            undecidable_statements,
+            system_is_complete,
+            system_is_consistent,
+        })
     }
     
     fn calculate_compliance_score(
@@ -195,6 +267,7 @@ impl Default for ReferenceValidator {
             // Fallback with disabled Z3
             Self {
                 z3_verifier: Z3VerificationFacade::new().expect("Z3 verification required"),
+                incompleteness_handler: IncompletenessHandler::new(),
                 verification_stats: VerificationStats {
                     features_verified: 0,
                     features_failed: 0,
