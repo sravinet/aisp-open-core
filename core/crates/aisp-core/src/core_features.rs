@@ -190,6 +190,11 @@ impl FourStateBindingVerifier {
         let interface_a = component_a.base_type.clone();
         let interface_b = component_b.base_type.clone();
         
+        // Identical types are always perfectly compatible
+        if interface_a == interface_b {
+            return Ok(CompatibilityLevel::Perfect);
+        }
+        
         Ok(self.socket_registry.compatibility_matrix
             .get(&(interface_a, interface_b))
             .cloned()
@@ -1211,7 +1216,12 @@ mod tests {
         let type_b = type_a.clone();
         
         let binding = verifier.verify_binding(&type_a, &type_b).unwrap();
-        assert!(matches!(binding, BindingState::Zero | BindingState::Adapt));
+        // For identical types, should be Zero (perfect compatibility) or Adapt (adaptation possible)
+        // Identical types should never have Crash (logical contradiction) or Null (socket mismatch)
+        assert!(
+            matches!(binding, BindingState::Zero | BindingState::Adapt),
+            "Expected Zero or Adapt for identical types, got: {:?}", binding
+        );
     }
 
     #[test]
