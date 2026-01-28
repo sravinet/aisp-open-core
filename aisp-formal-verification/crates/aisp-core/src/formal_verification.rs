@@ -1202,7 +1202,7 @@ mod tests {
         types.insert("Counter".to_string(), TypeDefinition {
             name: "Counter".to_string(),
             type_expr: TypeExpression::Basic(BasicType::Natural),
-            span: Span { start: 0, end: 0 },
+            span: Some(Span::new(0, 0, 1, 1)),
         });
 
         AispDocument {
@@ -1210,13 +1210,20 @@ mod tests {
                 version: "5.1".to_string(),
                 name: "TestDoc".to_string(),
                 date: "2026-01-26".to_string(),
+                metadata: None,
+            },
+            metadata: DocumentMetadata {
+                domain: None,
+                protocol: None,
             },
             blocks: vec![
                 AispBlock::Types(TypesBlock {
                     definitions: types,
-                    span: Span { start: 0, end: 0 },
+                    raw_definitions: vec!["Counter≜ℕ".to_string()],
+                    span: Some(Span::new(0, 0, 1, 1)),
                 }),
             ],
+            span: Some(Span::new(0, 0, 1, 1)),
         }
     }
 

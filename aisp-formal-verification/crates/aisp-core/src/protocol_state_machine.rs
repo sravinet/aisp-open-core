@@ -859,7 +859,7 @@ mod tests {
         types.insert("State".to_string(), TypeDefinition {
             name: "State".to_string(),
             type_expr: TypeExpression::Basic(BasicType::String),
-            span: Span { start: 0, end: 0 },
+            span: Some(Span::new(0, 0, 1, 1)),
         });
 
         AispDocument {
@@ -876,10 +876,10 @@ mod tests {
             blocks: vec![
                 AispBlock::Types(TypesBlock {
                     definitions: types,
-                    span: Span { start: 0, end: 0 },
+                    span: Some(Span::new(0, 0, 1, 1)),
                 }),
             ],
-            span: Span { start: 0, end: 0 },
+            span: Some(Span::new(0, 0, 1, 1)),
         }
     }
 

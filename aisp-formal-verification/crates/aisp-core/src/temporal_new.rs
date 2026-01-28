@@ -766,7 +766,7 @@ mod tests {
                 protocol: None,
             },
             blocks: Vec::new(),
-            span: Span::new(1, 1, 1, 1),
+            span: Some(Span::new(1, 1, 1, 1)),
         };
         
         let size = analyzer.estimate_document_size(&empty_doc);

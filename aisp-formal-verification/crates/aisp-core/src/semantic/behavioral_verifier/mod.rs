@@ -306,9 +306,12 @@ mod tests {
             metadata: DocumentMetadata { domain: None, protocol: None },
             blocks: vec![
                 AispBlock::Functions(FunctionsBlock {
-                    functions: vec!["test_func≜λx.x*2".to_string()],
+                    functions: vec![],
+                    raw_functions: vec!["test_func≜λx.x*2".to_string()],
+                    span: Some(Span::new(0, 0, 1, 1)),
                 })
             ],
+            span: Some(Span::new(0, 0, 1, 1)),
         };
 
         let result = verifier.verify_behavior(&document);

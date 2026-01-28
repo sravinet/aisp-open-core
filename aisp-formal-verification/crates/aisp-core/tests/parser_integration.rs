@@ -4,7 +4,7 @@
 //! parser and validator API.
 
 use aisp_core::{
-    ast::*,
+    ast::canonical::{CanonicalAispDocument as AispDocument, *},
     parser_new::AispParser,
     validator::{AispValidator, ValidationConfig},
     semantic::QualityTier,

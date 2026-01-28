@@ -130,6 +130,7 @@ mod tests {
             blocks: vec![
                 AispBlock::Types(TypesBlock {
                     definitions: types,
+                    raw_definitions: vec!["Value≜ℕ".to_string()],
                     span: Some(Span::new(0, 0, 1, 1)),
                 }),
             ],
@@ -175,6 +176,7 @@ mod tests {
             blocks: vec![
                 AispBlock::Types(TypesBlock {
                     definitions: types,
+                    raw_definitions: vec!["Counter≜ℕ".to_string()],
                     span: Some(Span::new(0, 0, 1, 1)),
                 }),
             ],

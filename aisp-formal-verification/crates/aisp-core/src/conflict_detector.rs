@@ -355,7 +355,7 @@ mod tests {
         let mut detector = ConflictDetector::new();
         
         use crate::constraint_solver::{Constraint, ConstraintType, ConstraintPriority};
-        use crate::ast::Span;
+        use crate::ast::canonical::Span;
         
         let constraint_analysis = ConstraintAnalysisResult {
             constraints: vec![

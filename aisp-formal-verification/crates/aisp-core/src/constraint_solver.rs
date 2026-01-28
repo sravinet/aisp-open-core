@@ -334,7 +334,7 @@ mod tests {
         type_definitions.insert("State".to_string(), TypeDefinition {
             name: "State".to_string(),
             type_expr: TypeExpression::Enumeration(vec!["A".to_string(), "B".to_string()]),
-            span: Span::new(1, 1, 1, 10),
+            span: Some(Span::new(1, 1, 1, 10)),
         });
 
         AispDocument {
@@ -380,7 +380,7 @@ mod tests {
                 set: "State".to_string(),
             },
             priority: ConstraintPriority::High,
-            span: Span::new(1, 1, 1, 10),
+            span: Some(Span::new(1, 1, 1, 10)),
         };
 
         // Without domain setup, should be unsatisfied
@@ -398,7 +398,7 @@ mod tests {
                 right: "y".to_string(),
             },
             priority: ConstraintPriority::High,
-            span: Span::new(1, 1, 1, 10),
+            span: Some(Span::new(1, 1, 1, 10)),
         };
         let c2 = Constraint {
             id: "neq".to_string(),
