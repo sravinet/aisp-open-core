@@ -7,7 +7,8 @@
 use crate::ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock};
 use crate::error::AispResult;
 use crate::semantic::DeepVerificationResult;
-use crate::vector_space_verifier::{VectorSpaceVerifier, OrthogonalityResult};
+use crate::vector_space_verifier::VectorSpaceVerifier;
+use crate::tri_vector_validation::OrthogonalityResult;
 use crate::z3_verification::{PropertyResult, Z3VerificationFacade};
 
 /// Tri-vector orthogonality verification result
@@ -71,21 +72,24 @@ impl<'a> TriVectorVerifier<'a> {
         let vl_vs_orthogonal = false; // Same issue applies
         let vh_vl_overlap_allowed = true; // This remains true per specification
         
-        // Add mathematical corrections
-        mathematical_corrections.extend(orthogonality_result.error_conditions);
+        // Add mathematical corrections based on orthogonality type
+        if let Some(counterexample) = &orthogonality_result.counterexample {
+            mathematical_corrections.push(counterexample.explanation.clone());
+        }
         
         // Generate corrected claims
         let corrected_claims = self.vector_verifier.generate_corrected_claims();
         
         // Zero vector analysis
-        let zero_vector_analysis = orthogonality_result.intersection_description;
+        let zero_vector_analysis = format!("Orthogonality between {} and {}", 
+            orthogonality_result.space1, orthogonality_result.space2);
         
         // Add certificate with explanation
         certificates.push("VECTOR_SPACE_THEORY_VIOLATION_DETECTED".to_string());
         certificates.push("MATHEMATICAL_CORRECTION_PROVIDED".to_string());
         
-        if let Some(proof) = orthogonality_result.mathematical_proof {
-            certificates.push(proof);
+        if let Some(proof) = &orthogonality_result.proof {
+            certificates.push(proof.mathematical_basis.clone());
         }
 
         Ok(TriVectorOrthogonalityResult {
