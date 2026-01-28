@@ -1557,24 +1557,11 @@ impl Default for ConcurrentBehaviorVerifier {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::*;
+    use crate::ast::canonical::{self, CanonicalAispDocument as AispDocument};
     use std::collections::HashMap;
 
     fn create_test_document() -> AispDocument {
-        AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: "TestConcurrent".to_string(),
-                date: "2026-01-26".to_string(),
-                metadata: None,
-            },
-            metadata: DocumentMetadata {
-                domain: Some("concurrent".to_string()),
-                protocol: Some("parallel".to_string()),
-            },
-            blocks: vec![],
-            span: Span { start: 0, end: 0 },
-        }
+        canonical::create_document("TestConcurrent", "5.1", "2026-01-26")
     }
 
     #[test]

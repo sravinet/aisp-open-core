@@ -628,26 +628,10 @@ impl RossNetValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::canonical::{DocumentHeader, DocumentMetadata, Span};
+    use crate::ast::canonical;
 
     fn create_test_document() -> AispDocument {
-        AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: "rossnet_test".to_string(),
-                date: "2026-01-26".to_string(),
-                metadata: None,
-            },
-            metadata: DocumentMetadata {
-                domain: Some("ai".to_string()),
-                protocol: Some("aisp".to_string()),
-            },
-            blocks: vec![],
-            span: Span {
-                start: Position { line: 1, column: 1, offset: 0 },
-                end: Position { line: 1, column: 1, offset: 0 },
-            },
-        }
+        canonical::create_document("rossnet_test", "5.1", "2026-01-26")
     }
 
     fn create_test_semantic_result() -> DeepVerificationResult {

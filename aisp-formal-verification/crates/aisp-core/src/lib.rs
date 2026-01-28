@@ -67,7 +67,7 @@ pub mod formal_verification;
 pub mod protocol_state_machine;
 pub mod concurrent_behavior_verifier;
 pub mod resource_utilization_analyzer;
-pub mod performance_constraint_verifier;
+pub mod performance_verification;
 
 // Formal methods and remediation components  
 pub mod formal_semantics;
