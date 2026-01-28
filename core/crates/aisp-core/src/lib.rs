@@ -98,6 +98,13 @@ pub mod ghost_intent_validation;
 // RossNet scoring validation
 pub mod rossnet_scoring;
 
+// Complete AISP 5.1 Architecture Implementation
+pub mod pocket_architecture;          // Layer 1 (𝕃₁): Pocket Architecture
+pub mod ghost_intent_search;          // Layer 2 (𝕃₂): Ghost Intent Search  
+pub mod core_features;                // Missing core features F4,F6,F7,F14,F15,F16,F18
+pub mod compositional_proof_chain;    // Compositional proof chain connecting all layers
+pub mod performance_guarantees;       // Performance guarantee verifications
+
 // Hebbian learning constraint validation
 pub mod hebbian_learning;
 
