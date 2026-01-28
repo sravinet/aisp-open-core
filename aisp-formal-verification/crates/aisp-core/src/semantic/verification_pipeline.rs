@@ -945,16 +945,7 @@ mod tests {
     #[test]
     fn test_comprehensive_verification() {
         let mut pipeline = MultiLayerVerificationPipeline::new();
-        let document = AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: "test".to_string(),
-                date: "2026-01-27".to_string(),
-                metadata: None,
-            },
-            metadata: DocumentMetadata { domain: None, protocol: None },
-            blocks: vec![AispBlock::Meta(MetaBlock { entries: vec!["Vision≜\\\"Test\\\"".to_string()] })],
-        };
+        let document = crate::ast::canonical::create_document("test", "5.1", "2026-01-27");
 
         let result = pipeline.verify_document(&document);
         assert!(result.is_ok());
@@ -1009,11 +1000,11 @@ mod tests {
                     authenticity_score: 0.95,
                     execution_results: Vec::new(),
                     security_assessment: crate::semantic::behavioral_verifier::BehavioralSecurityAssessment {
-                        threat_level: crate::semantic::behavioral_verifier::ThreatLevel::None,
-                        risk_factors: Vec::new(),
+                        threat_level: crate::semantic::behavioral_verifier::ThreatLevel::Minimal,
+                        attack_surface_size: 0.05,
+                        vulnerability_count: 0,
                         security_score: 0.95,
-                        compliance_status: crate::semantic::behavioral_verifier::ComplianceStatus { compliant: true, violations: Vec::new() },
-                        mitigation_recommendations: Vec::new(),
+                        compliance_level: crate::semantic::behavioral_verifier::ComplianceLevel::FullyCompliant,
                     },
                     violations: Vec::new(),
                     recommendations: Vec::new(),
@@ -1047,6 +1038,12 @@ mod tests {
                 passed_tests: 45,
                 total_tests: 50,
                 attack_resistance: 0.95,
+                total_attacks: 50,
+                successful_attacks: 5,
+                success_rate: 0.90,
+                attack_resistance_score: 0.95,
+                vulnerabilities_found: Vec::new(),
+                recommendations: Vec::new(),
             }
         );
         

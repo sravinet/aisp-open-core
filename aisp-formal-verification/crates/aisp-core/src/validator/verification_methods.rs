@@ -198,36 +198,40 @@ mod tests {
     }
 
     fn create_test_analysis() -> DeepVerificationResult {
-        use crate::semantic::deep_verifier::{DeepVerificationResult, SecurityAssessment, ThreatLevel, VerificationDetails, CoverageMetrics, PerformanceMetrics};
-        
+        use crate::semantic::deep_verifier::types::*;
+
         DeepVerificationResult {
             overall_confidence: 0.9,
             semantic_score: 0.85,
             type_safety_score: 0.95,
             logic_consistency_score: 0.9,
             mathematical_correctness_score: 0.88,
-            deception_detection_score: 0.92,
+            deception_risk_score: 0.08, // Lower is better for deception risk
             security_assessment: SecurityAssessment {
                 threat_level: ThreatLevel::Low,
-                attack_surface_score: 0.1,
                 vulnerability_count: 0,
+                attack_surface_analysis: AttackSurfaceAnalysis {
+                    surface_area: 0.1,
+                    vulnerabilities: vec![],
+                },
                 security_recommendations: vec![],
+                compliance_status: ComplianceStatus {
+                    compliant: true,
+                    missing_requirements: vec![],
+                },
             },
             verification_details: VerificationDetails {
-                total_checks: 10,
-                passed_checks: 9,
+                verified_components: vec![],
                 failed_verifications: vec![],
-                verification_time: std::time::Duration::from_millis(100),
-            },
-            coverage_metrics: CoverageMetrics {
-                line_coverage: 0.9,
-                branch_coverage: 0.85,
-                condition_coverage: 0.8,
-            },
-            performance_metrics: PerformanceMetrics {
-                verification_time: std::time::Duration::from_millis(100),
-                memory_usage_mb: 10.0,
-                cpu_utilization: 0.5,
+                warnings: vec![],
+                coverage_metrics: CoverageMetrics {
+                    line_coverage: 0.9,
+                    branch_coverage: 0.85,
+                },
+                performance_metrics: PerformanceMetrics {
+                    verification_time_ms: 100,
+                    memory_usage_mb: 10,
+                },
             },
             recommendations: vec![],
         }

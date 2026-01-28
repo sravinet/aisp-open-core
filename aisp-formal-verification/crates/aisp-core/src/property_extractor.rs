@@ -282,10 +282,10 @@ impl Default for PropertyExtractor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::canonical::Span;
+    use crate::ast::canonical::{self, Span};
 
-    fn create_test_span() -> Span {
-        Span::new(1, 10, 1, 10)
+    fn create_test_span() -> Option<Span> {
+        Some(Span::new(1, 10, 1, 10))
     }
 
     #[test]
@@ -299,24 +299,11 @@ mod tests {
     #[test]
     fn test_empty_document_extraction() -> AispResult<()> {
         let mut extractor = PropertyExtractor::new();
-        let doc = AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: "test".to_string(),
-                date: "2026-01-25".to_string(),
-                metadata: None,
-            },
-            metadata: DocumentMetadata {
-                domain: None,
-                protocol: None,
-            },
-            blocks: vec![],
-            span: create_test_span(),
-        };
-        
+        let doc = canonical::create_document("test", "5.1", "2026-01-25");
+
         let properties = extractor.extract_properties(&doc)?;
         assert!(properties.is_empty());
-        
+
         Ok(())
     }
 
@@ -329,18 +316,19 @@ mod tests {
             type_expr: TypeExpression::Basic(BasicType::Integer),
             span: create_test_span(),
         });
-        
+
         let types_block = TypesBlock {
             definitions: type_definitions,
+            raw_definitions: vec!["Integer≜ℤ".to_string()],
             span: create_test_span(),
         };
-        
+
         extractor.extract_type_properties(&types_block)?;
         assert!(!extractor.properties.is_empty());
-        
+
         // Should have type safety property
         assert!(extractor.properties.iter().any(|p| p.name.contains("type_safety")));
-        
+
         Ok(())
     }
 
@@ -353,26 +341,26 @@ mod tests {
             type_expr: TypeExpression::Enumeration(vec!["Red".to_string(), "Green".to_string(), "Blue".to_string()]),
             span: create_test_span(),
         });
-        
+
         let types_block = TypesBlock {
             definitions: type_definitions,
+            raw_definitions: vec!["Color≜{Red,Green,Blue}".to_string()],
             span: create_test_span(),
         };
-        
+
         extractor.extract_type_properties(&types_block)?;
-        
+
         // Should have type safety and membership properties
         assert!(extractor.properties.iter().any(|p| p.name.contains("type_safety")));
         assert!(extractor.properties.iter().any(|p| p.name.contains("membership")));
-        
+
         Ok(())
     }
 
     #[test]
     fn test_function_extraction() -> AispResult<()> {
         let mut extractor = PropertyExtractor::new();
-        let mut functions = HashMap::new();
-        functions.insert("add".to_string(), FunctionDefinition {
+        let functions = vec![FunctionDefinition {
             name: "add".to_string(),
             lambda: LambdaExpression {
                 parameters: vec!["x".to_string(), "y".to_string()],
@@ -380,19 +368,20 @@ mod tests {
                 span: create_test_span(),
             },
             span: create_test_span(),
-        });
-        
+        }];
+
         let funcs_block = FunctionsBlock {
             functions,
+            raw_functions: vec!["add≜λx,y.result".to_string()],
             span: create_test_span(),
         };
-        
+
         extractor.extract_function_properties(&funcs_block)?;
-        
+
         // Should have well-defined and totality properties
         assert!(extractor.properties.iter().any(|p| p.name.contains("well_defined")));
         assert!(extractor.properties.iter().any(|p| p.name.contains("totality")));
-        
+
         Ok(())
     }
 

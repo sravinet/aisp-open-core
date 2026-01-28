@@ -164,6 +164,11 @@ impl DeepVerificationResult {
             category_counts: std::collections::HashMap::new(),
         }
     }
+
+    pub fn block_score(&self) -> f64 {
+        (self.semantic_score + self.type_safety_score +
+         self.logic_consistency_score + self.mathematical_correctness_score) / 4.0
+    }
 }
 
 // Mock types for compatibility

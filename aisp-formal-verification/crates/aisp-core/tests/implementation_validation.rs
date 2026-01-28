@@ -23,7 +23,7 @@ fn test_enumeration_parsing_fix() {
     
     let result1 = validator.validate(doc_spaces);
     // Should not fail with parsing error
-    assert!(!result1.error.as_ref().map_or(false, |e| e.contains("Expected ',' or '}' in enumeration")),
+    assert!(!result1.error.as_ref().map_or(false, |e| e.to_string().contains("Expected ',' or '}' in enumeration")),
            "Space-separated enumerations should parse without comma errors");
     
     // Test comma-separated enumeration (should still work)  
@@ -36,7 +36,7 @@ fn test_enumeration_parsing_fix() {
     
     let result2 = validator.validate(doc_commas);
     // Should not fail with parsing error
-    assert!(!result2.error.as_ref().map_or(false, |e| e.contains("Expected ',' or '}' in enumeration")),
+    assert!(!result2.error.as_ref().map_or(false, |e| e.to_string().contains("Expected ',' or '}' in enumeration")),
            "Comma-separated enumerations should still parse correctly");
 }
 
@@ -125,7 +125,7 @@ fn test_malformed_document_handling() {
     assert!(result.error.is_some(), "Malformed document should have error message");
     
     if let Some(error) = &result.error {
-        assert!(!error.is_empty(), "Error message should not be empty");
+        assert!(!error.to_string().is_empty(), "Error message should not be empty");
     }
 }
 

@@ -30,22 +30,22 @@ impl EnhancedZ3Verifier {
     }
 
     /// Create verifier with specific configuration
-    pub fn with_config(_config: AdvancedVerificationConfig) -> AispResult<Self> {
+    pub fn with_config(config: AdvancedVerificationConfig) -> AispResult<Self> {
         #[cfg(feature = "z3-verification")]
         {
             Ok(Self {
                 environment: AispZ3Environment::new(),
-                property_verifier: PropertyVerifier::new(),
-                config: _config,
+                property_verifier: PropertyVerifier::new(config.clone()),
+                config,
                 stats: EnhancedVerificationStats::default(),
             })
         }
-        
+
         #[cfg(not(feature = "z3-verification"))]
         {
-            Err(AispError::ValidationError {
-                message: "Z3 verification requires z3-verification feature".to_string(),
-            })
+            Err(AispError::validation_error(
+                "Z3 verification requires z3-verification feature".to_string(),
+            ))
         }
     }
 
@@ -56,7 +56,7 @@ impl EnhancedZ3Verifier {
         _tri_vector_result: Option<&TriVectorValidationResult>,
     ) -> AispResult<EnhancedVerificationResult> {
         let _start_time = Instant::now();
-        
+
         #[cfg(feature = "z3-verification")]
         {
             // Comprehensive verification would go here
@@ -71,7 +71,7 @@ impl EnhancedZ3Verifier {
                 tri_vector_result: None,
             })
         }
-        
+
         #[cfg(not(feature = "z3-verification"))]
         {
             Ok(EnhancedVerificationResult {
@@ -126,38 +126,13 @@ impl EnhancedZ3Verifier {
     }
 }
 
-impl Default for EnhancedZ3Verifier {
-    fn default() -> Self {
-        Self::new().unwrap_or_else(|_| {
-            // This should not be reachable in normal circumstances
-            panic!("Failed to create default EnhancedZ3Verifier");
-        })
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::{AispDocument, DocumentHeader, DocumentMetadata, Span, Position};
+    use crate::ast::canonical::{self, CanonicalAispDocument as AispDocument};
 
     fn create_test_document() -> AispDocument {
-        AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: "test".to_string(),
-                date: "2026-01-26".to_string(),
-                metadata: None,
-            },
-            metadata: DocumentMetadata {
-                domain: Some("test".to_string()),
-                protocol: None,
-            },
-            blocks: vec![],
-            span: Span {
-                start: Position { line: 1, column: 1, offset: 0 },
-                end: Position { line: 1, column: 1, offset: 0 },
-            },
-        }
+        canonical::create_document("test", "5.1", "2026-01-26")
     }
 
     #[test]
@@ -167,7 +142,7 @@ mod tests {
             let verifier = EnhancedZ3Verifier::new();
             assert!(verifier.is_ok());
         }
-        
+
         #[cfg(not(feature = "z3-verification"))]
         {
             let verifier = EnhancedZ3Verifier::new();
@@ -196,7 +171,7 @@ mod tests {
             assert_eq!(v.get_config().query_timeout_ms, 15000);
             assert!(v.get_config().generate_proofs);
         }
-        
+
         #[cfg(not(feature = "z3-verification"))]
         {
             let verifier = EnhancedZ3Verifier::with_config(config);
@@ -207,17 +182,17 @@ mod tests {
     #[test]
     fn test_document_verification() {
         let document = create_test_document();
-        
+
         #[cfg(feature = "z3-verification")]
         {
             let mut verifier = EnhancedZ3Verifier::new().unwrap();
             let result = verifier.verify_document(&document, None);
             assert!(result.is_ok());
-            
+
             let verification_result = result.unwrap();
             assert_eq!(verification_result.status, VerificationStatus::AllVerified);
         }
-        
+
         #[cfg(not(feature = "z3-verification"))]
         {
             // Cannot test without Z3 feature
@@ -229,36 +204,30 @@ mod tests {
         #[cfg(feature = "z3-verification")]
         {
             let verifier = EnhancedZ3Verifier::new().unwrap();
-            
+
             // Test empty properties
             let empty_props = vec![];
             assert_eq!(verifier.determine_status(&empty_props), VerificationStatus::Incomplete);
-            
+
             // Test all proven properties
             let proven_props = vec![
-                VerifiedProperty {
-                    id: "test1".to_string(),
-                    category: PropertyCategory::TypeSafety,
-                    description: "Test property".to_string(),
-                    result: PropertyResult::Proven,
-                    proof: None,
-                    counterexample: None,
-                    verification_time: std::time::Duration::from_millis(100),
-                },
+                VerifiedProperty::new(
+                    "test1".to_string(),
+                    PropertyCategory::TypeSafety,
+                    "Test property".to_string(),
+                    PropertyResult::Proven,
+                ),
             ];
             assert_eq!(verifier.determine_status(&proven_props), VerificationStatus::AllVerified);
-            
+
             // Test failed property
             let failed_props = vec![
-                VerifiedProperty {
-                    id: "test2".to_string(),
-                    category: PropertyCategory::TypeSafety,
-                    description: "Failed property".to_string(),
-                    result: PropertyResult::Disproven,
-                    proof: None,
-                    counterexample: None,
-                    verification_time: std::time::Duration::from_millis(100),
-                },
+                VerifiedProperty::new(
+                    "test2".to_string(),
+                    PropertyCategory::TypeSafety,
+                    "Failed property".to_string(),
+                    PropertyResult::Disproven,
+                ),
             ];
             match verifier.determine_status(&failed_props) {
                 VerificationStatus::Failed(_) => assert!(true),
@@ -272,15 +241,15 @@ mod tests {
         #[cfg(feature = "z3-verification")]
         {
             let verifier = EnhancedZ3Verifier::new().unwrap();
-            
+
             // Test config accessor
             let config = verifier.get_config();
             assert!(config.incremental); // Default should be true
-            
+
             // Test stats accessor
             let stats = verifier.get_stats();
             assert_eq!(stats.smt_queries, 0);
-            
+
             // Test environment accessor
             let env = verifier.get_environment();
             assert_eq!(env.sorts.len(), 0);
@@ -299,13 +268,13 @@ mod tests {
             max_memory_mb: 1024,
             random_seed: None,
         };
-        
+
         #[cfg(feature = "z3-verification")]
         {
             let verifier = EnhancedZ3Verifier::with_config(valid_config);
             assert!(verifier.is_ok());
         }
-        
+
         // Test edge cases
         let zero_timeout_config = AdvancedVerificationConfig {
             query_timeout_ms: 0,
@@ -317,7 +286,7 @@ mod tests {
             max_memory_mb: 0,
             random_seed: Some(0),
         };
-        
+
         #[cfg(feature = "z3-verification")]
         {
             // Should still work with edge case values

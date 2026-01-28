@@ -381,7 +381,7 @@ mod tests {
             level: DiagnosticLevel::Warning,
             message: "Test warning".to_string(),
             context: "Test context".to_string(),
-            timestamp: Instant::now(),
+            timestamp: SystemTime::now(),
         };
         assert_eq!(diag.level, DiagnosticLevel::Warning);
     }

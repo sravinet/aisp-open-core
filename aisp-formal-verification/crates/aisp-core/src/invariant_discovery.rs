@@ -44,76 +44,24 @@ mod tests {
     use std::collections::HashMap;
 
     /// Helper function to create a valid test AispDocument
-    fn create_test_aisp_document(name: &str, types: HashMap<String, TypeExpression>, has_types_block: bool) -> AispDocument {
-        let blocks = if has_types_block {
-            vec![
-                AispBlock::Types(TypesBlock {
-                    definitions: types,
-                    span: crate::ast::Span {
-                        start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                        end: crate::ast::Position { line: 1, column: 10, offset: 10 },
-                    },
-                }),
-            ]
-        } else {
-            vec![]
-        };
-
-        AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: name.to_string(),
-                date: "2026-01-26".to_string(),
-                metadata: None,
-            },
-            metadata: DocumentMetadata {
-                domain: None,
-                protocol: None,
-            },
-            blocks,
-            span: crate::ast::Span {
-                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                end: crate::ast::Position { line: 10, column: 1, offset: 100 },
-            },
+    fn create_test_aisp_document(name: &str, raw_types: Vec<String>, has_types_block: bool) -> AispDocument {
+        let mut doc = crate::ast::canonical::create_document(name, "5.1", "2026-01-26");
+        if has_types_block {
+            doc.add_block(crate::ast::canonical::create_types_block(raw_types));
+            doc.parse_structured_data();
         }
+        doc
     }
 
     #[test]
     fn test_full_invariant_discovery_workflow() {
         // Create a test document
-        let mut types = HashMap::new();
-        types.insert("Counter".to_string(), TypeExpression::Basic(BasicType::Natural));
-        types.insert("State".to_string(), TypeExpression::Enumeration(vec![
-            "Init".to_string(),
-            "Running".to_string(),
-            "Complete".to_string(),
+        let mut document = crate::ast::canonical::create_document("WorkflowTest", "5.1", "2026-01-26");
+        document.add_block(crate::ast::canonical::create_types_block(vec![
+            "Counter≜ℕ".to_string(),
+            "State≜{Init,Running,Complete}".to_string(),
         ]));
-
-        let document = AispDocument {
-            header: DocumentHeader {
-                version: "5.1".to_string(),
-                name: "WorkflowTest".to_string(),
-                date: "2026-01-26".to_string(),
-                metadata: None,
-            },
-            metadata: DocumentMetadata {
-                domain: None,
-                protocol: None,
-            },
-            blocks: vec![
-                AispBlock::Types(TypesBlock {
-                    definitions: types,
-                    span: crate::ast::Span {
-                        start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                        end: crate::ast::Position { line: 1, column: 10, offset: 10 },
-                    },
-                }),
-            ],
-            span: crate::ast::Span {
-                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                end: crate::ast::Position { line: 10, column: 1, offset: 100 },
-            },
-        };
+        document.parse_structured_data();
 
         // Test the full workflow
         let mut discovery = InvariantDiscovery::new();

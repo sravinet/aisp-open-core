@@ -434,15 +434,21 @@ mod tests {
 
     fn mock_behavioral_results() -> crate::semantic::behavioral_verifier::BehavioralVerificationResult {
         crate::semantic::behavioral_verifier::BehavioralVerificationResult {
-            overall_confidence: 0.82,
+            overall_score: 0.82,
+            execution_safety_score: 0.85,
+            behavioral_consistency_score: 0.80,
+            property_compliance_score: 0.82,
+            authenticity_score: 0.81,
             execution_results: vec![],
-            violations: vec![],
-            security_events: vec![],
-            security_assessment: crate::semantic::behavioral_verifier::SecurityAssessment {
+            security_assessment: crate::semantic::behavioral_verifier::BehavioralSecurityAssessment {
                 threat_level: crate::semantic::behavioral_verifier::ThreatLevel::Low,
-                vulnerabilities: vec![],
-                recommendations: vec![],
+                attack_surface_size: 0.1,
+                vulnerability_count: 0,
+                security_score: 0.85,
+                compliance_level: crate::semantic::behavioral_verifier::ComplianceLevel::FullyCompliant,
             },
+            violations: vec![],
+            recommendations: vec![],
         }
     }
 }
