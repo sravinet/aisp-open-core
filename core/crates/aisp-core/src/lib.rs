@@ -77,6 +77,9 @@ pub mod semantic_preservation;
 
 // Rigorous mathematical foundations
 pub mod mathematical_semantics;
+pub mod mathematical_evaluator;
+pub mod incompleteness_handler;
+pub mod vector_space_verifier;
 pub mod mechanized_proofs;
 
 // Tri-vector signal validation
@@ -84,6 +87,7 @@ pub mod tri_vector_validation;
 
 // Enhanced Z3 SMT solver integration (modular)
 pub mod z3_verification;
+pub mod semantic_z3_verifier;
 
 // Enhanced Z3 SMT solver integration (legacy re-exports)
 pub mod enhanced_z3_verification;

@@ -2,7 +2,8 @@
 // Security-hardened with error recovery and adversarial input resistance
 
 WHITESPACE = _{ " " | "\t" | "\n" | "\r" }
-COMMENT = _{ "//" ~ (!"\n" ~ ANY)* }
+COMMENT = _{ "//" ~ (!"\n" ~ ANY)* | ";;" ~ (!"\n" ~ ANY)* }
+MATH_COMMENT = { ";;" ~ (!"\n" ~ ANY)* }
 
 // Top-level document structure with error recovery
 aisp_document = { 
@@ -121,7 +122,7 @@ gamma_block = {
 }
 rule_definitions = { rule_definition* }
 rule_definition = { 
-    (logical_rule | constraint_rule) ~ ";"?
+    (MATH_COMMENT | logical_rule | constraint_rule) ~ ";"?
 }
 
 logical_rule = { 
@@ -142,7 +143,7 @@ lambda_block = {
 }
 function_definitions = { function_definition* }
 function_definition = { 
-    identifier ~ "≜" ~ lambda_expression ~ ";"?
+    (MATH_COMMENT | (identifier ~ "≜" ~ lambda_expression)) ~ ";"?
 }
 
 lambda_expression = { 
@@ -329,7 +330,6 @@ unicode_symbol = {
 // Primitives
 variable = { identifier }
 type_expr = { type_expression }
-logical_expr = { logical_expr }
 constraint_rule = { logical_expr }
 proof_claim = { identifier ~ (":" ~ identifier)* }
 proof_details = { identifier ~ ("-" ~ identifier)* }
@@ -339,7 +339,12 @@ identifier = {
 }
 
 number = { 
+    special_number |
     ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? ~ (("e" | "E") ~ ("+" | "-")? ~ ASCII_DIGIT+)?
+}
+
+special_number = {
+    "∞" | "NaN" | "⊥" | "undefined"
 }
 
 fraction = { 
