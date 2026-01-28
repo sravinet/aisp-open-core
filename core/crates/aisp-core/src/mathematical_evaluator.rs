@@ -8,7 +8,7 @@ use std::fmt;
 use thiserror::Error;
 
 /// Mathematical value with formal error handling
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum MathValue {
     /// Finite real number
     Real(f64),
@@ -197,11 +197,12 @@ impl MathEvaluator {
                 name: name.to_string() 
             })?.clone();
         
-        // Check if any dependencies would create cycles
+        // Add current variable to evaluation stack to track circular dependencies
         self.evaluation_stack.push(name.to_string());
         
+        // Recursively evaluate all dependencies to detect circular dependencies
         for dep in &dependencies {
-            if let Err(e) = self.check_circular_dependency(dep) {
+            if let Err(e) = self.evaluate_variable(dep) {
                 self.evaluation_stack.pop();
                 return Err(e);
             }
@@ -244,6 +245,29 @@ impl MathEvaluator {
             Ok(true)
         } else {
             Err(errors)
+        }
+    }
+}
+
+impl PartialEq for MathValue {
+    fn eq(&self, other: &Self) -> bool {
+        const EPSILON: f64 = 1e-10;
+        
+        match (self, other) {
+            (MathValue::Real(a), MathValue::Real(b)) => {
+                // Use relative epsilon comparison for floating-point values
+                if a.abs() < EPSILON && b.abs() < EPSILON {
+                    // Both are effectively zero
+                    true
+                } else {
+                    (a - b).abs() / a.abs().max(b.abs()) < EPSILON
+                }
+            },
+            (MathValue::Infinity(a), MathValue::Infinity(b)) => a == b,
+            (MathValue::NaN, MathValue::NaN) => true,
+            (MathValue::Bottom, MathValue::Bottom) => true,
+            (MathValue::Undefined(a), MathValue::Undefined(b)) => a == b,
+            _ => false,
         }
     }
 }
