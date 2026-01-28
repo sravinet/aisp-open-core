@@ -12,6 +12,9 @@ pub mod sla;
 pub mod degradation;
 pub mod verifier;
 
+#[cfg(test)]
+mod integration_test;
+
 // Re-export key types for convenience
 pub use types::*;
 pub use timing::TimingConstraintAnalysis;
