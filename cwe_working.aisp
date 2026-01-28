@@ -1,0 +1,19 @@
+𝔸5.1.CWEPatterns@2026-01-28
+
+⟦Ω:Meta⟧{
+  domain≜"security"
+}
+
+⟦Σ:Types⟧{
+  SafeInt≜ℤ       
+  Buffer≜ℕ        
+  SQLQuery≜Bool   
+}
+
+⟦Γ:Rules⟧{
+}
+
+⟦Λ:Funcs⟧{
+}
+
+⟦Ε⟧⟨δ≜0.75⟩
