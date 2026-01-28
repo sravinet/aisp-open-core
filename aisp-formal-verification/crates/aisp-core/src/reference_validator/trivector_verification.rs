@@ -265,7 +265,7 @@ pub mod utils {
 mod tests {
     use super::*;
     use super::utils::*;
-    use crate::ast::{AispDocument, DocumentHeader, DocumentMetadata, Span, Position};
+    use crate::ast::canonical::{CanonicalAispDocument as AispDocument, DocumentHeader, DocumentMetadata, Span};
     use crate::z3_verification::Z3VerificationFacade;
     use std::collections::HashMap;
     
@@ -282,10 +282,7 @@ mod tests {
                 protocol: None,
             },
             blocks: vec![],
-            span: Span {
-                start: Position { line: 1, column: 1, offset: 0 },
-                end: Position { line: 1, column: 1, offset: 0 },
-            },
+            span: Some(Span::new(0, 0, 1, 1)),
         }
     }
     
