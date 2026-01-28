@@ -237,7 +237,7 @@ fn test_ctl_temporal_operators() {
 ⟦Ε⟧⟨δ≜0.85;τ≜◊⁺⟩"#;
 
     TemporalTestBuilder::new(document)
-        .expecting_operators(8) # AG, AF, EF, EG, AX, EX count as separate operators
+        .expecting_operators(8) // AG, AF, EF, EG, AX, EX count as separate operators
         .expecting_ctl_formulas(4)
         .expecting_consistency(1.0)
         .test_temporal_analysis()
@@ -273,7 +273,7 @@ fn test_temporal_pattern_detection() {
 ⟦Ε⟧⟨δ≜0.88;τ≜◊⁺⟩"#;
 
     TemporalTestBuilder::new(document)
-        .expecting_operators(10) # Multiple nested operators
+        .expecting_operators(10) // Multiple nested operators
         .expecting_patterns(5)   # Safety, liveness, response, persistence, fairness
         .expecting_ltl_formulas(5)
         .test_temporal_analysis()
@@ -315,8 +315,8 @@ fn test_complex_temporal_formulas() {
 ⟦Ε⟧⟨δ≜0.9;φ≜100;τ≜◊⁺⟩"#;
 
     TemporalTestBuilder::new(document)
-        .expecting_operators(20) # Many nested operators
-        .expecting_patterns(6)   # Various complex patterns
+        .expecting_operators(20) // Many nested operators
+        .expecting_patterns(6)   // Various complex patterns
         .expecting_ltl_formulas(4)
         .expecting_ctl_formulas(1)
         .expecting_consistency(1.0)

@@ -927,7 +927,8 @@ impl fmt::Display for ComprehensiveVerificationResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::robust_parser::{DocumentHeader, DocumentMetadata, MetaBlock};
+    use crate::ast::canonical::{DocumentHeader, DocumentMetadata};
+    use crate::parser::robust_parser::MetaBlock;
 
     #[test]
     fn test_pipeline_creation() {

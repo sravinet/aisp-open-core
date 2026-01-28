@@ -137,7 +137,7 @@ pub enum BehaviorClassification {
     Unknown,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
 pub enum ThreatLevel {
     Minimal,
     Low,

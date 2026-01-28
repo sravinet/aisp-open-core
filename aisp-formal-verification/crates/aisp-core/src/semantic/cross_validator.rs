@@ -912,7 +912,8 @@ impl fmt::Display for CrossValidationResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::robust_parser::{DocumentHeader, DocumentMetadata, MetaBlock};
+    use crate::ast::canonical::{DocumentHeader, DocumentMetadata};
+    use crate::parser::robust_parser::MetaBlock;
 
     #[test]
     fn test_cross_validation_checker_creation() {

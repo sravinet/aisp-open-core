@@ -1217,7 +1217,7 @@ mod tests {
                 protocol: None,
             },
             blocks: vec![
-                AispBlock::Types(TypesBlock {
+                AispBlock::Types(crate::ast::canonical::TypesBlock {
                     definitions: types,
                     raw_definitions: vec!["Counter≜ℕ".to_string()],
                     span: Some(Span::new(0, 0, 1, 1)),

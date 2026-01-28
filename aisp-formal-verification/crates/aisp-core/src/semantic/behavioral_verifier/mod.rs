@@ -284,7 +284,7 @@ impl Default for BehavioralVerifier {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::robust_parser::{DocumentHeader, DocumentMetadata};
+    use crate::ast::canonical::{DocumentHeader, DocumentMetadata};
 
     #[test]
     fn test_behavioral_verifier_creation() {

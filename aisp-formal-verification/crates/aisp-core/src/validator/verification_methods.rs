@@ -176,9 +176,8 @@ impl VerificationMethods {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::robust_parser::{DocumentHeader, DocumentMetadata};
-    use crate::ast::canonical::{FunctionsBlock, Span};
-    use crate::ast::CanonicalAispBlock as AispBlock;
+    use crate::ast::canonical::{DocumentHeader, DocumentMetadata, FunctionsBlock, Span};
+    use crate::ast::canonical::CanonicalAispBlock as AispBlock;
 
     fn create_test_document() -> AispDocument {
         AispDocument {

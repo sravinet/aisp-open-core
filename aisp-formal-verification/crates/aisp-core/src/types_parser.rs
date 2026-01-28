@@ -261,7 +261,7 @@ mod tests {
         
         match type_expr {
             TypeExpression::Function { params, return_type } => {
-                match (&params[0], &**return_type) {
+                match (&params[0], return_type.as_ref()) {
                     (TypeExpression::Basic(BasicType::Natural), TypeExpression::Basic(BasicType::Boolean)) => {},
                     _ => panic!("Expected ℕ → 𝔹 function type"),
                 }

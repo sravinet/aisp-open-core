@@ -253,8 +253,9 @@ mod tests {
             orthogonality_results: HashMap::new(),
             safety_isolation: crate::tri_vector_validation::SafetyIsolationResult {
                 isolated: true,
-                isolation_score: 1.0,
-                boundary_violations: vec![],
+                isolation_proof: None,
+                preserved_properties: vec![],
+                violations: vec![],
             },
             proof_certificates: vec![],
             errors: vec![],
