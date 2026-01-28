@@ -105,6 +105,11 @@ pub mod core_features;                // Missing core features F4,F6,F7,F14,F15,
 pub mod compositional_proof_chain;    // Compositional proof chain connecting all layers
 pub mod performance_guarantees;       // Performance guarantee verifications
 
+// Phase 2: Enhanced Verification Capabilities
+pub mod advanced_theorem_prover;      // Advanced mathematical theorem proving
+pub mod category_theory_verifier;     // Category theory verification module
+pub mod mathematical_notation_parser; // Enhanced Unicode mathematical parsing
+
 // Hebbian learning constraint validation
 pub mod hebbian_learning;
 
