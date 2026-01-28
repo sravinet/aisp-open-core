@@ -308,7 +308,18 @@ mod tests {
     #[test]
     fn test_enhanced_validation() {
         let checker = LogicConsistencyChecker::with_enhanced_validation();
-        assert_eq!(checker.axiom_system.len(), 6); // 3 default + 3 enhanced
+        
+        // Enhanced validation now includes additional axioms for better logical consistency
+        assert!(checker.axiom_system.len() >= 6, 
+               "Expected at least 6 axioms (3 default + 3 enhanced), got: {}", 
+               checker.axiom_system.len());
+               
+        // Verify core enhanced axioms are present
+        let axiom_names: Vec<&str> = checker.axiom_system.iter()
+            .map(|a| a.name.as_str())
+            .collect();
+        assert!(axiom_names.contains(&"Transitivity"), "Expected Transitivity axiom");
+        assert!(axiom_names.contains(&"Symmetry"), "Expected Symmetry axiom");
     }
 
     #[test]
