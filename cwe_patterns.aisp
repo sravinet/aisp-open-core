@@ -1,0 +1,119 @@
+𝔸5.1.cwe-patterns@2026-01-28
+γ≔security-formal-verification
+
+⟦Ω:Meta⟧{
+  ∀D∈AISP:Ambig(D)<0.02
+  ∀P∈CWE-Patterns:Verifiable(P)
+  Description≜"Formal specifications for CWE pattern detection and prevention"
+}
+
+⟦Σ:Types⟧{
+  # Buffer Overflow Types (CWE-119)
+  Buffer≜{data:Array⟨Byte⟩,size:ℕ,capacity:ℕ}
+  MemoryAccess≜{target:Buffer,offset:ℕ,length:ℕ}
+  
+  # SQL Injection Types (CWE-89)
+  SQLQuery≜{query:String,params:Array⟨Parameter⟩,method:QueryMethod}
+  Parameter≜{name:String,value:String,type:SQLType,sanitized:Bool}
+  QueryMethod≜{Parameterized,Concatenation,StoredProcedure}
+  
+  # Race Condition Types (CWE-362)
+  Resource≜{id:String,state:ResourceState,checkTime:Time,useTime:Time}
+  ResourceState≜{Available,InUse,Locked,Invalid}
+  
+  # Integer Overflow Types (CWE-190)
+  SafeInt32≜{value:ℤ|value∈[-2³¹,2³¹-1]}
+  ArithOp≜{op:Operator,a:ℤ,b:ℤ,resultType:IntType}
+  
+  # Use After Free Types (CWE-416)
+  MemoryBlock≜{addr:Address,size:ℕ,allocated:Bool,deallocTime:Option⟨Time⟩}
+  Pointer≜{target:MemoryBlock,valid:Bool}
+}
+
+⟦Γ:Rules⟧{
+  # CWE-119: Buffer Overflow Prevention
+  ∀access∈MemoryAccess:
+    BoundsSafe(access) ⇔ 
+    access.offset≥0 ∧ 
+    access.offset+access.length≤access.target.capacity
+    
+  # CWE-89: SQL Injection Prevention  
+  ∀query∈SQLQuery:
+    SQLSafe(query) ⇔
+    query.method=Parameterized ∨ 
+    (∀p∈query.params:p.sanitized=True)
+    
+  # CWE-362: Race Condition Prevention
+  ∀r∈Resource:
+    TOCTOUSafe(r) ⇔ 
+    (CheckResource(r,t₁) ∧ UseResource(r,t₂)) →
+    (t₂-t₁≤δ_safe ∧ ¬Modified(r,t₁,t₂))
+    
+  # CWE-190: Integer Overflow Prevention
+  ∀op∈ArithOp:
+    OverflowSafe(op) ⇔
+    Result(op)∈TypeBounds(op.resultType)
+    
+  # CWE-416: Use After Free Prevention
+  ∀ptr∈Pointer,t∈Time:
+    UAFSafe(ptr,t) ⇔
+    Access(ptr,t) → 
+    (ptr.target.allocated=True ∧ 
+     ptr.target.deallocTime≻t)
+}
+
+⟦Λ:Funcs⟧{
+  # Safe Buffer Operations
+  SafeCopy≜λ(dest:Buffer,src:Buffer,count:ℕ).
+    count≤src.size ∧ count≤dest.capacity-dest.size →
+    {dest with size≔dest.size+count, data≔dest.data⊕src.data[0..count]}
+    
+  # Safe SQL Query Construction  
+  BuildQuery≜λ(template:String,params:Array⟨Parameter⟩).
+    ∀p∈params:p.sanitized=True →
+    SQLQuery{query≔template,params≔params,method≔Parameterized}
+    
+  # Atomic Resource Access
+  AtomicAccess≜λ(r:Resource).
+    Lock(r) ; CheckAndUse(r) ; Unlock(r)
+    
+  # Safe Arithmetic
+  SafeAdd≜λ(a:SafeInt32,b:SafeInt32).
+    a.value+b.value∈[-2³¹,2³¹-1] → 
+    SafeInt32{value≔a.value+b.value}
+    
+  # Safe Memory Management
+  SafeFree≜λ(ptr:Pointer).
+    ptr.valid=True → 
+    {ptr.target with allocated≔False, deallocTime≔Some(Now())} ;
+    {ptr with valid≔False}
+}
+
+⟦Π:Props⟧{
+  # Security Properties
+  MemorySafety≜∀access∈MemoryAccess:BoundsSafe(access)
+  SQLSafety≜∀query∈SQLQuery:SQLSafe(query)  
+  RaceSafety≜∀resource∈Resource:TOCTOUSafe(resource)
+  OverflowSafety≜∀op∈ArithOp:OverflowSafe(op)
+  UAFSafety≜∀ptr∈Pointer,t∈Time:UAFSafe(ptr,t)
+  
+  # Composite Security Property
+  SystemSecurity≜MemorySafety ∧ SQLSafety ∧ RaceSafety ∧ OverflowSafety ∧ UAFSafety
+}
+
+⟦Τ:Temporal⟧{
+  # Temporal Security Properties
+  □(AllocateMemory(ptr) → ◊FreeMemory(ptr))  # All allocated memory eventually freed
+  □(CheckResource(r) → ◊≤δ UseResource(r))   # Resource use follows check within time bound
+  □(InputReceived(data) → ○Validated(data))  # All input validated immediately
+  □(SecurityViolation(v) → ○Alert(v))        # All violations trigger immediate alerts
+}
+
+⟦Ι:Invariants⟧{
+  # Global Security Invariants
+  ∀t∈Time:ValidSystemState(t) → SecurityPropertiesHold(t)
+  ∀input∈UntrustedInput:ProcessedSecurely(input) → Validated(input) ∧ Sanitized(input)
+  ∀operation∈SecurityCritical:Executed(operation) → Authorized(operation) ∧ Logged(operation)
+}
+
+⟦Ε⟧⟨δ≜0.01;τ≜◊⟩

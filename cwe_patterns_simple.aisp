@@ -1,0 +1,32 @@
+𝔸5.1.cwe-security-patterns@2026-01-28
+γ≔security-verification
+
+⟦Ω:Meta⟧{
+  domain≜"security"
+}
+
+⟦Σ:Types⟧{
+  Buffer≜ℕ
+  SQLQuery≜Bool  
+  Resource≜ℕ
+  SafeInt≜ℤ
+  MemoryPtr≜Bool
+}
+
+⟦Γ:Rules⟧{
+  BufferSafe≜∀b:Buffer.b≥0
+  SQLSafe≜∀q:SQLQuery.q=True  
+  TOCTOUSafe≜∀r:Resource.r≤100
+  OverflowSafe≜∀i:SafeInt.i∈[-2³¹,2³¹-1]
+  UAFSafe≜∀p:MemoryPtr.p=False
+}
+
+⟦Λ:Funcs⟧{
+  validateBuffer≜λb:Buffer.b≥0
+  sanitizeSQL≜λq:SQLQuery.True
+  atomicAccess≜λr:Resource.r≤100
+  safeAdd≜λa,b:SafeInt.a+b  
+  safeFree≜λp:MemoryPtr.False
+}
+
+⟦Ε⟧⟨δ≜0.01;τ≜◊⟩

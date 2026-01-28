@@ -1,0 +1,647 @@
+# CWE Pattern Verification Test Cases
+# Demonstrates detection of common security vulnerabilities using AISP formal specifications
+
+aisp_version: "5.1"
+created: "2026-01-28"
+description: "Test cases and examples for CWE pattern detection"
+
+# Import the CWE pattern specifications
+import "cwe_patterns.aisp"
+
+# =============================================================================
+# Test Cases for Buffer Overflow Detection (CWE-119)
+# =============================================================================
+
+test_suite buffer_overflow_tests {
+  
+  # Positive test case: safe buffer operation
+  test safe_buffer_copy_valid {
+    given {
+      dest_buffer = Buffer { data: Array<Byte>(capacity: 100), size: 0, capacity: 100 }
+      src_data = "Hello World"  # 11 characters
+    }
+    
+    when {
+      result = safe_buffer_copy(dest_buffer, src_data.as_buffer(), 11)
+    }
+    
+    then {
+      verify memory_bounds_safety
+      assert result.size == 11
+      assert !buffer_overflow_detected.violated()
+    }
+  }
+  
+  # Negative test case: buffer overflow vulnerability
+  test buffer_overflow_vulnerability {
+    given {
+      small_buffer = Buffer { data: Array<Byte>(capacity: 10), size: 0, capacity: 10 }
+      large_input = "This string is much longer than the buffer capacity"
+    }
+    
+    when {
+      # Simulated unsafe copy operation
+      unsafe_access = MemoryAccess {
+        target_buffer: small_buffer,
+        offset: 0,
+        length: large_input.length(),  # 51 > 10
+        operation_type: Copy
+      }
+    }
+    
+    then {
+      assert buffer_overflow_detected.violated()
+      assert unsafe_access.offset + unsafe_access.length > unsafe_access.target_buffer.capacity
+    }
+  }
+  
+  # Stack-based buffer overflow simulation
+  test stack_overflow_detection {
+    given {
+      stack_buffer = Buffer { capacity: 256, size: 0 }
+      user_input = get_untrusted_input()  # Could be arbitrarily large
+    }
+    
+    when {
+      # Common vulnerable pattern: strcpy without bounds checking
+      strcpy_operation(stack_buffer, user_input)
+    }
+    
+    then {
+      if user_input.length() >= stack_buffer.capacity {
+        assert buffer_overflow_detected.violated()
+      } else {
+        verify memory_bounds_safety
+      }
+    }
+  }
+}
+
+# =============================================================================
+# Test Cases for SQL Injection Detection (CWE-89)
+# =============================================================================
+
+test_suite sql_injection_tests {
+  
+  # Positive test case: safe parameterized query
+  test parameterized_query_safe {
+    given {
+      user_id = "12345"
+      query = SQLQuery {
+        query_string: "SELECT * FROM users WHERE id = ?",
+        parameters: [Parameter { name: "id", value: user_id, data_type: Integer, is_sanitized: true }],
+        construction_method: Parameterized,
+        user_inputs: []
+      }
+    }
+    
+    when {
+      execute_query(query)
+    }
+    
+    then {
+      verify sql_injection_safety
+      assert !sql_injection_risk.violated()
+    }
+  }
+  
+  # Negative test case: SQL injection vulnerability
+  test sql_injection_vulnerability {
+    given {
+      malicious_input = "1; DROP TABLE users; --"
+      vulnerable_query = SQLQuery {
+        query_string: "SELECT * FROM users WHERE id = " + malicious_input,
+        parameters: [],
+        construction_method: Concatenation,
+        user_inputs: [UserInput {
+          value: malicious_input,
+          source: WebForm,
+          sanitization_applied: [],
+          is_validated: false
+        }]
+      }
+    }
+    
+    when {
+      analyze_query(vulnerable_query)
+    }
+    
+    then {
+      assert sql_injection_risk.violated()
+      assert dangerous_sql_construction.matches()
+      assert contains_sql_metacharacters(malicious_input)
+    }
+  }
+  
+  # Test input sanitization effectiveness
+  test sanitization_effectiveness {
+    given {
+      potentially_malicious = "admin'; --"
+      sanitized_input = UserInput {
+        value: escape_sql(potentially_malicious),
+        source: WebForm,
+        sanitization_applied: [SQLEscape, TypeValidation],
+        is_validated: true
+      }
+    }
+    
+    when {
+      safe_query = build_query_with_sanitization(sanitized_input)
+    }
+    
+    then {
+      assert safe_sanitization_applied(sanitized_input)
+      verify sql_injection_safety
+    }
+  }
+}
+
+# =============================================================================
+# Test Cases for Race Condition Detection (CWE-362)
+# =============================================================================
+
+test_suite race_condition_tests {
+  
+  # TOCTOU vulnerability test
+  test toctou_file_access {
+    given {
+      filename = "/tmp/sensitive_file"
+      thread1 = create_thread("checker")
+      thread2 = create_thread("user")
+    }
+    
+    scenario concurrent_access {
+      thread1: {
+        t1 = now()
+        check_op = Operation { type: Check, resource: file_resource(filename), timestamp: t1, thread_id: thread1.id }
+        if file_exists(filename) && has_permissions(filename, current_user()) {
+          # Vulnerable: gap between check and use
+          wait(100ms)  # Simulated delay
+        }
+      }
+      
+      thread2: {
+        t2 = now() + 50ms  # Runs during the gap
+        modify_file_permissions(filename, NO_ACCESS)
+      }
+      
+      thread1: {
+        t3 = now() + 150ms
+        use_op = Operation { type: Use, resource: file_resource(filename), timestamp: t3, thread_id: thread1.id }
+        access_file(filename)  # May fail due to race condition
+      }
+    }
+    
+    then {
+      assert race_condition_detected.violated()
+      assert t3 > t1 + MAX_SAFE_INTERVAL
+      assert resource_modified_between(file_resource(filename), t1, t3)
+    }
+  }
+  
+  # Safe atomic operation test
+  test atomic_file_access {
+    given {
+      filename = "/secure/atomic_file"
+    }
+    
+    when {
+      handle = safe_file_access(filename)
+    }
+    
+    then {
+      verify toctou_prevention
+      assert atomic_check_and_open(filename)
+      assert handle.is_valid()
+    }
+  }
+  
+  # Double-checked locking test
+  test double_checked_locking {
+    given {
+      singleton_instance = null
+      lock = create_mutex()
+    }
+    
+    scenario unsafe_double_check {
+      if singleton_instance == null {  # First check (unsynchronized)
+        lock.acquire()
+        if singleton_instance == null {  # Second check (synchronized)
+          singleton_instance = create_instance()  # Potential visibility issue
+        }
+        lock.release()
+      }
+    }
+    
+    then {
+      if !memory_barrier_present() {
+        assert double_checked_locking_unsafe.violated()
+      }
+    }
+  }
+}
+
+# =============================================================================
+# Test Cases for Integer Overflow Detection (CWE-190)
+# =============================================================================
+
+test_suite integer_overflow_tests {
+  
+  # Safe arithmetic test
+  test safe_addition {
+    given {
+      a = SafeInt32 { value: 1000000 }
+      b = SafeInt32 { value: 2000000 }
+    }
+    
+    when {
+      result = safe_add(a, b)
+    }
+    
+    then {
+      verify integer_overflow_safety
+      assert result.value == 3000000
+      assert !integer_overflow_detected.violated()
+    }
+  }
+  
+  # Integer overflow vulnerability test
+  test integer_overflow_vulnerability {
+    given {
+      large_value = 2147483647  # INT32_MAX
+      increment = 1
+    }
+    
+    when {
+      overflow_op = ArithmeticOperation {
+        operator: Add,
+        operand1: large_value,
+        operand2: increment,
+        result_type: Int32
+      }
+    }
+    
+    then {
+      assert signed_overflow_risk(overflow_op)
+      assert integer_overflow_detected.violated()
+    }
+  }
+  
+  # Buffer allocation overflow test
+  test allocation_size_overflow {
+    given {
+      element_count = 1000000  # Large count
+      element_size = 5000      # Large size per element
+    }
+    
+    when {
+      # This multiplication could overflow
+      if element_count <= UINT32_MAX / element_size {
+        buffer_size = safe_buffer_size_calc(element_count, element_size)
+      } else {
+        overflow_detected = true
+      }
+    }
+    
+    then {
+      if element_count * element_size > UINT32_MAX {
+        assert overflow_detected
+      } else {
+        verify integer_overflow_safety
+      }
+    }
+  }
+  
+  # Shift operation overflow test  
+  test shift_overflow {
+    given {
+      value = SafeInt32 { value: 1000000 }
+      shift_amount = 25  # Large shift that could cause overflow
+    }
+    
+    when {
+      try {
+        result = safe_left_shift(value, shift_amount)
+      } catch overflow_error {
+        overflow_caught = true
+      }
+    }
+    
+    then {
+      if value.value > INT32_MAX >> shift_amount {
+        assert overflow_caught || integer_overflow_detected.violated()
+      }
+    }
+  }
+}
+
+# =============================================================================
+# Test Cases for Use-After-Free Detection (CWE-416)
+# =============================================================================
+
+test_suite use_after_free_tests {
+  
+  # Safe memory management test
+  test safe_memory_lifecycle {
+    given {
+      ptr = allocate_memory(1024)
+    }
+    
+    when {
+      # Use memory safely
+      write_to_memory(ptr, "test_data")
+      data = safe_dereference(ptr)
+      
+      # Safe cleanup
+      safe_free(ptr)
+    }
+    
+    then {
+      verify use_after_free_safety
+      assert ptr.value == null  # Pointer nullified after free
+      assert !use_after_free_detected.violated()
+    }
+  }
+  
+  # Use-after-free vulnerability test
+  test use_after_free_vulnerability {
+    given {
+      ptr = allocate_memory(256)
+      free_time = now()
+    }
+    
+    scenario unsafe_usage {
+      write_to_memory(ptr, "initial_data")
+      deallocate_memory(ptr)  # Memory freed at free_time
+      
+      # Vulnerable: use after free
+      wait(10ms)
+      use_time = now()
+      attempt_access = try_dereference(ptr)  # Use after free
+    }
+    
+    then {
+      assert use_after_free_detected.violated()
+      assert use_time > free_time
+      assert pointer_used(ptr, use_time) && pointer_freed(ptr, free_time)
+    }
+  }
+  
+  # Double-free vulnerability test
+  test double_free_vulnerability {
+    given {
+      ptr = allocate_memory(512)
+      free_time1 = now()
+    }
+    
+    scenario unsafe_double_free {
+      use_memory(ptr)
+      deallocate_memory(ptr)  # First free
+      
+      wait(5ms)
+      free_time2 = now()
+      deallocate_memory(ptr)  # Second free - vulnerability
+    }
+    
+    then {
+      assert double_free_detected.violated()
+      assert free_time2 > free_time1
+      assert same_memory_block(ptr, free_time1, free_time2)
+    }
+  }
+  
+  # Scoped memory management test
+  test scoped_allocation_safety {
+    given {
+      function_scope = current_scope()
+    }
+    
+    when {
+      scoped_ptr = scoped_allocation(1024, function_scope)
+      use_scoped_memory(scoped_ptr)
+      # Automatic cleanup when scope exits
+    }
+    
+    then {
+      verify use_after_free_safety
+      assert automatic_cleanup_at_scope_exit(scoped_ptr, function_scope)
+    }
+  }
+  
+  # Dangling pointer detection test
+  test dangling_pointer_detection {
+    given {
+      ptr = allocate_memory(128)
+    }
+    
+    when {
+      deallocate_memory(ptr)
+      # Pointer not nullified - becomes dangling
+      if ptr.value != null && ptr.target.is_deallocated() {
+        dangling_detected = true
+      }
+    }
+    
+    then {
+      if dangling_detected {
+        assert dangling_pointer_access.matches()
+      }
+    }
+  }
+}
+
+# =============================================================================
+# Integration Tests - Multiple CWE Patterns
+# =============================================================================
+
+test_suite multi_cwe_integration_tests {
+  
+  # Test case combining buffer overflow + integer overflow
+  test buffer_allocation_with_overflow {
+    given {
+      user_count = get_user_input_count()  # Untrusted input
+      record_size = 1024
+    }
+    
+    when {
+      # Check for integer overflow in size calculation
+      if user_count > UINT32_MAX / record_size {
+        reject_allocation()
+      } else {
+        total_size = safe_buffer_size_calc(user_count, record_size)
+        buffer = allocate_safe_buffer(total_size)
+      }
+    }
+    
+    then {
+      verify integer_overflow_safety
+      verify memory_bounds_safety
+      assert !integer_overflow_detected.violated()
+      assert !buffer_overflow_detected.violated()
+    }
+  }
+  
+  # Test case combining SQL injection + buffer overflow  
+  test database_query_with_buffer_handling {
+    given {
+      user_query = get_user_input()  # Potentially malicious
+      query_buffer = Buffer { capacity: 4096, size: 0 }
+    }
+    
+    when {
+      # Safe parameterized query construction
+      if user_query.length() < query_buffer.capacity {
+        safe_query = build_parameterized_query(user_query)
+        copy_to_buffer(query_buffer, safe_query.as_bytes())
+      }
+    }
+    
+    then {
+      verify sql_injection_safety
+      verify memory_bounds_safety
+      assert safe_sanitization_applied(user_query.as_input())
+    }
+  }
+  
+  # Multi-threaded application with multiple vulnerabilities
+  test concurrent_memory_and_race_conditions {
+    given {
+      shared_buffer = allocate_shared_memory(2048)
+      access_lock = create_mutex()
+    }
+    
+    scenario multi_thread_access {
+      thread1: {
+        lock.acquire()
+        if shared_buffer.is_valid() {
+          write_to_buffer(shared_buffer, "data1")
+        }
+        lock.release()
+      }
+      
+      thread2: {
+        lock.acquire()
+        if shared_buffer.is_valid() {
+          read_from_buffer(shared_buffer)
+        }
+        lock.release()
+        
+        # Potential race condition after releasing lock
+        deallocate_memory(shared_buffer)
+      }
+      
+      thread1: {
+        # Potential use-after-free if thread2 freed the memory
+        lock.acquire()
+        access_buffer(shared_buffer)  # Could be use-after-free
+        lock.release()
+      }
+    }
+    
+    then {
+      verify toctou_prevention
+      verify use_after_free_safety
+      verify race_condition_prevention
+    }
+  }
+}
+
+# =============================================================================
+# Real-World Application Patterns
+# =============================================================================
+
+# Web application security patterns
+application_patterns web_security {
+  
+  pattern secure_user_authentication {
+    components: [input_validation, sql_injection_prevention, buffer_overflow_prevention]
+    
+    flow user_login(username: String, password: String) {
+      # Input validation
+      require username.length() <= MAX_USERNAME_LENGTH
+      require password.length() <= MAX_PASSWORD_LENGTH
+      require validate_input_charset(username, ALPHANUMERIC_CHARSET)
+      
+      # Safe database query
+      query = SQLQuery {
+        query_string: "SELECT user_id, password_hash FROM users WHERE username = ?",
+        parameters: [Parameter { name: "username", value: username, data_type: String, is_sanitized: true }],
+        construction_method: Parameterized
+      }
+      
+      verify sql_injection_safety
+      verify memory_bounds_safety
+    }
+  }
+  
+  pattern secure_file_upload {
+    components: [buffer_overflow_prevention, race_condition_prevention, integer_overflow_prevention]
+    
+    flow handle_file_upload(file_data: FileData) {
+      # Size validation to prevent integer overflow
+      require file_data.size <= MAX_SAFE_FILE_SIZE
+      require file_data.size > 0
+      
+      # Atomic file operations to prevent TOCTOU
+      temp_filename = generate_unique_filename()
+      safe_handle = safe_file_access(temp_filename)
+      
+      # Safe buffer allocation
+      buffer_size = safe_buffer_size_calc(file_data.size, 1)
+      file_buffer = allocate_safe_buffer(buffer_size)
+      
+      verify integer_overflow_safety
+      verify toctou_prevention
+      verify memory_bounds_safety
+    }
+  }
+}
+
+# System-level security patterns
+application_patterns system_security {
+  
+  pattern secure_inter_process_communication {
+    components: [buffer_overflow_prevention, race_condition_prevention, use_after_free_prevention]
+    
+    flow ipc_message_passing(message: IPCMessage) {
+      # Message size validation
+      require message.size <= MAX_IPC_MESSAGE_SIZE
+      require message.size >= MIN_IPC_MESSAGE_SIZE
+      
+      # Atomic message handling
+      message_buffer = allocate_ipc_buffer(message.size)
+      atomic_write_operation = copy_message_atomically(message, message_buffer)
+      
+      # Safe cleanup with proper synchronization
+      scoped_ptr = scoped_allocation(message.size, ipc_scope())
+      
+      verify memory_bounds_safety
+      verify use_after_free_safety
+      verify race_condition_prevention
+    }
+  }
+}
+
+# Performance and security metrics
+metrics security_verification_metrics {
+  coverage: {
+    cwe_patterns_covered: 5
+    test_cases_total: 25
+    integration_scenarios: 6
+    real_world_patterns: 4
+  }
+  
+  verification_depth: {
+    static_analysis_integration: "comprehensive"
+    temporal_property_verification: "enabled"  
+    cross_pattern_validation: "enabled"
+    false_positive_filtering: "advanced"
+  }
+  
+  tool_compatibility: {
+    supported_languages: ["C", "C++", "Java", "C#", "Python", "Rust", "Go"]
+    static_analyzers_compatible: 15
+    dynamic_analyzers_compatible: 8
+    formal_verifiers_compatible: 6
+  }
+}

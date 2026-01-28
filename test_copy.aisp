@@ -1,0 +1,19 @@
+𝔸5.1.ValidMinimal@2026-01-28
+
+⟦Ω:Meta⟧{
+  domain≜"test"
+}
+
+⟦Σ:Types⟧{
+  Natural≜ℕ
+  Buffer≜ℕ
+  Resource≜ℕ
+}
+
+⟦Γ:Rules⟧{
+}
+
+⟦Λ:Funcs⟧{
+}
+
+⟦Ε⟧⟨δ≜0.75⟩

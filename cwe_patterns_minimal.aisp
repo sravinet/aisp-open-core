@@ -1,0 +1,25 @@
+𝔸5.1.CWEPatterns@2026-01-28
+
+⟦Ω:Meta⟧{
+  domain≜"security"
+}
+
+⟦Σ:Types⟧{
+  Buffer≜ℕ
+  SQLQuery≜Bool
+  Resource≜ℕ
+  SafeInt≜ℤ
+  MemoryPtr≜Bool
+}
+
+⟦Γ:Rules⟧{
+  BufferSafe≜∀b:Buffer.b≥0
+  SQLSafe≜∀q:SQLQuery.q=True
+}
+
+⟦Λ:Funcs⟧{
+  validateBuffer≜λb:Buffer.b≥0
+  sanitizeSQL≜λq:SQLQuery.True
+}
+
+⟦Ε⟧⟨δ≜0.75⟩
