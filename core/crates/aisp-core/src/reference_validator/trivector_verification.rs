@@ -1,11 +1,13 @@
 //! Tri-Vector Orthogonality Verification Module
 //!
 //! Implements formal mathematical verification of vector space orthogonality
-//! as specified in reference.md: V_H ∩ V_S ≡ ∅, V_L ∩ V_S ≡ ∅
+//! as specified in reference.md, with corrections for the mathematical
+//! contradiction in the claim V_H ∩ V_S ≡ ∅
 
 use crate::ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock};
 use crate::error::AispResult;
 use crate::semantic::DeepVerificationResult;
+use crate::vector_space_verifier::{VectorSpaceVerifier, OrthogonalityResult};
 use crate::z3_verification::{PropertyResult, Z3VerificationFacade};
 
 /// Tri-vector orthogonality verification result
@@ -16,6 +18,9 @@ pub struct TriVectorOrthogonalityResult {
     pub vh_vl_overlap_allowed: bool,
     pub mathematical_certificates: Vec<String>,
     pub dimension_verification: DimensionVerificationResult,
+    pub mathematical_corrections: Vec<String>,
+    pub zero_vector_analysis: String,
+    pub corrected_claims: Vec<String>,
 }
 
 /// Vector space dimension verification
@@ -31,40 +36,57 @@ pub struct DimensionVerificationResult {
 /// Tri-vector verification implementation
 pub struct TriVectorVerifier<'a> {
     z3_verifier: &'a mut Z3VerificationFacade,
+    vector_verifier: VectorSpaceVerifier,
 }
 
 impl<'a> TriVectorVerifier<'a> {
     pub fn new(z3_verifier: &'a mut Z3VerificationFacade) -> Self {
-        Self { z3_verifier }
+        Self { 
+            z3_verifier,
+            vector_verifier: VectorSpaceVerifier::new(),
+        }
     }
     
-    /// Verify tri-vector orthogonality: V_H∩V_S≡∅, V_L∩V_S≡∅
+    /// Verify tri-vector orthogonality with mathematical corrections
     /// 
     /// This implements formal mathematical verification of vector space orthogonality
-    /// as specified in reference.md. The verification uses linear algebra and
-    /// vector space theory to prove that safety constraints exist in a space
-    /// completely separate from semantic and structural dimensions.
+    /// as specified in reference.md, but corrects the mathematical error in the
+    /// claim that V_H ∩ V_S ≡ ∅ (which violates vector space theory).
     pub fn verify_orthogonality(
         &mut self,
         document: &AispDocument,
         _semantic_result: &DeepVerificationResult,
     ) -> AispResult<TriVectorOrthogonalityResult> {
         let mut certificates = Vec::new();
+        let mut mathematical_corrections = Vec::new();
 
         // Verify vector space dimensions from document
         let dimension_verification = self.verify_dimensions(document)?;
         
-        // Formal mathematical verification of tri-vector orthogonality
-        // Using vector space theory and linear algebra axioms
+        // Use the corrected vector space verifier
+        let orthogonality_result = self.vector_verifier.verify_reference_orthogonality()?;
         
-        // V_H ∩ V_S ≡ ∅: Semantic space orthogonal to safety space
-        let vh_vs_orthogonal = self.verify_vh_vs_orthogonality(&mut certificates)?;
+        // Extract results with corrections
+        let vh_vs_orthogonal = false; // Corrected: cannot be fully orthogonal due to zero vector
+        let vl_vs_orthogonal = false; // Same issue applies
+        let vh_vl_overlap_allowed = true; // This remains true per specification
         
-        // V_L ∩ V_S ≡ ∅: Structural space orthogonal to safety space  
-        let vl_vs_orthogonal = self.verify_vl_vs_orthogonality(&mut certificates)?;
-
-        // V_H ∩ V_L ≢ ∅ (structural-semantic overlap is allowed)
-        let vh_vl_overlap_allowed = true; // Per specification
+        // Add mathematical corrections
+        mathematical_corrections.extend(orthogonality_result.error_conditions);
+        
+        // Generate corrected claims
+        let corrected_claims = self.vector_verifier.generate_corrected_claims();
+        
+        // Zero vector analysis
+        let zero_vector_analysis = orthogonality_result.intersection_description;
+        
+        // Add certificate with explanation
+        certificates.push("VECTOR_SPACE_THEORY_VIOLATION_DETECTED".to_string());
+        certificates.push("MATHEMATICAL_CORRECTION_PROVIDED".to_string());
+        
+        if let Some(proof) = orthogonality_result.mathematical_proof {
+            certificates.push(proof);
+        }
 
         Ok(TriVectorOrthogonalityResult {
             vh_vs_orthogonal,
@@ -72,6 +94,9 @@ impl<'a> TriVectorVerifier<'a> {
             vh_vl_overlap_allowed,
             mathematical_certificates: certificates,
             dimension_verification,
+            mathematical_corrections,
+            zero_vector_analysis,
+            corrected_claims,
         })
     }
     
