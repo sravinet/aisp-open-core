@@ -783,7 +783,7 @@ impl AntiDriftValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::{DocumentHeader, DocumentMetadata, Span, Position};
+    use crate::ast::canonical::{DocumentHeader, DocumentMetadata, Span};
     use crate::semantic::QualityTier;
 
     fn create_test_document() -> AispDocument {
@@ -799,10 +799,7 @@ mod tests {
                 protocol: Some("aisp".to_string()),
             },
             blocks: vec![],
-            span: Span {
-                start: Position { line: 1, column: 1, offset: 0 },
-                end: Position { line: 1, column: 1, offset: 0 },
-            },
+            span: Some(Span::new(0, 0, 1, 1)),
         }
     }
 

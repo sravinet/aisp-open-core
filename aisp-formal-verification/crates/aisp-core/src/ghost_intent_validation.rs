@@ -451,7 +451,7 @@ impl GhostIntentValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::{DocumentHeader, DocumentMetadata, Span, Position};
+    use crate::ast::canonical::{DocumentHeader, DocumentMetadata, Span};
 
     fn create_test_document() -> AispDocument {
         AispDocument {
@@ -466,10 +466,7 @@ mod tests {
                 protocol: None,
             },
             blocks: vec![],
-            span: Span {
-                start: Position { line: 1, column: 1, offset: 0 },
-                end: Position { line: 1, column: 1, offset: 0 },
-            },
+            span: Some(Span::new(0, 0, 1, 1)),
         }
     }
 
