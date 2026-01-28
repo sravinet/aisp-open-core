@@ -86,13 +86,41 @@ dev: fmt check test-unit
 ci: check test build
     @echo "🚀 CI pipeline complete"
 
-# Install development tools
+# Install development tools and setup environment
 install-tools:
     @echo "🔧 Installing development tools..."
     cargo install just
     cargo install cargo-watch
     cargo install cargo-audit
     cargo install cargo-outdated
+
+# Setup development environment (replaces Makefile functionality)
+setup:
+    @echo "🔧 Setting up AISP development environment..."
+    @echo "🔍 Checking Z3 installation..."
+    @if ! command -v z3 >/dev/null 2>&1; then \
+        echo "❌ Z3 not found. Installing via Homebrew..."; \
+        brew install z3; \
+    else \
+        echo "✅ Z3 found: $(z3 --version)"; \
+    fi
+    @echo "🔍 Checking LLVM/Clang installation..."
+    @if ! brew list llvm >/dev/null 2>&1; then \
+        echo "❌ LLVM not found. Installing via Homebrew..."; \
+        brew install llvm; \
+    else \
+        echo "✅ LLVM found"; \
+    fi
+    @echo "✅ Environment setup complete!"
+
+# Debug Z3 configuration
+debug-z3:
+    @echo "🐛 Z3 Configuration Debug"
+    @echo "Environment Variables:"
+    @echo "  Z3 Binary: $(which z3 || echo 'Not found')"
+    @echo "  Z3 Version: $(z3 --version || echo 'N/A')"
+    @echo "  Z3 Headers: $(if [ -f /opt/homebrew/include/z3.h ]; then echo '✅ Found'; else echo '❌ Missing'; fi)"
+    @echo "  libclang: $(if [ -f /opt/homebrew/opt/llvm/lib/libclang.dylib ]; then echo '✅ Found'; else echo '❌ Missing'; fi)"
 
 # Watch for changes and run tests
 watch:
