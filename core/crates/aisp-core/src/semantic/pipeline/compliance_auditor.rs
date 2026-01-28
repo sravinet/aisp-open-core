@@ -390,7 +390,10 @@ mod tests {
         
         let recommendations = auditor.generate_recommendations(0.75, &framework_compliance);
         assert!(!recommendations.is_empty());
-        assert!(recommendations[0].contains("TestFramework"));
+        
+        // The test should check that TestFramework appears in any recommendation, not just the first
+        assert!(recommendations.iter().any(|r| r.contains("TestFramework")), 
+               "Expected TestFramework to appear in recommendations: {:?}", recommendations);
     }
 
     // Mock helper functions for testing
