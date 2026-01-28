@@ -524,7 +524,12 @@ impl AispSemantics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::canonical::*;
+    use crate::ast::canonical::{
+        CanonicalAispDocument as AispDocument, 
+        DocumentHeader, 
+        DocumentMetadata, 
+        Span
+    };
     use std::collections::HashMap;
 
     // Inline test utility - replaced test_fixtures
@@ -541,7 +546,7 @@ mod tests {
                 protocol: None,
             },
             blocks: vec![],
-            span: Span::new(1, 1, 1, 10),
+            span: Some(Span::new(0, 10, 1, 1)),
         }
     }
 

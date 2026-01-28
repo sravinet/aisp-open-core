@@ -177,7 +177,7 @@ impl VerificationMethods {
 mod tests {
     use super::*;
     use crate::parser::robust_parser::{DocumentHeader, DocumentMetadata};
-    use crate::ast::canonical::FunctionsBlock;
+    use crate::ast::canonical::{FunctionsBlock, Span};
     use crate::ast::CanonicalAispBlock as AispBlock;
 
     fn create_test_document() -> AispDocument {
@@ -191,9 +191,12 @@ mod tests {
             metadata: DocumentMetadata { domain: None, protocol: None },
             blocks: vec![
                 AispBlock::Functions(FunctionsBlock {
-                    functions: vec!["test_func≜λx.x*2".to_string()],
+                    functions: vec![],
+                    raw_functions: vec!["test_func≜λx.x*2".to_string()],
+                    span: Some(Span { start: 0, end: 0, line: 1, column: 1 }),
                 })
             ],
+            span: Some(Span { start: 0, end: 0, line: 1, column: 1 }),
         }
     }
 
