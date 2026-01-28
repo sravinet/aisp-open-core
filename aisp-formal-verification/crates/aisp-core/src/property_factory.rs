@@ -290,7 +290,7 @@ impl Default for PropertyFactory {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::Span;
+    use crate::ast::canonical::Span;
 
     fn create_test_span() -> Span {
         Span::new(1, 1, 1, 10)
@@ -385,7 +385,7 @@ mod tests {
         let lambda = LambdaExpression {
             parameters: vec!["x".to_string()],
             body: LogicalExpression::Variable("x".to_string()),
-            span: create_test_span(),
+            span: Some(create_test_span()),
         };
         
         let formula = factory.create_function_well_defined_formula("f", &lambda)?;
@@ -408,7 +408,7 @@ mod tests {
         let lambda = LambdaExpression {
             parameters: vec!["x".to_string(), "y".to_string()],
             body: LogicalExpression::Variable("result".to_string()),
-            span: create_test_span(),
+            span: Some(create_test_span()),
         };
         
         let property = factory.create_totality_property("add", &lambda)?;
@@ -426,7 +426,7 @@ mod tests {
         let lambda = LambdaExpression {
             parameters: vec!["x".to_string()],
             body: LogicalExpression::Variable("x".to_string()),
-            span: create_test_span(),
+            span: Some(create_test_span()),
         };
         
         assert!(factory.should_generate_totality_property(&lambda));

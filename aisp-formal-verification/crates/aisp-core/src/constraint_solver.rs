@@ -380,7 +380,7 @@ mod tests {
                 set: "State".to_string(),
             },
             priority: ConstraintPriority::High,
-            span: Some(Span::new(1, 1, 1, 10)),
+            span: Span::new(1, 1, 1, 10),
         };
 
         // Without domain setup, should be unsatisfied
@@ -398,7 +398,7 @@ mod tests {
                 right: "y".to_string(),
             },
             priority: ConstraintPriority::High,
-            span: Some(Span::new(1, 1, 1, 10)),
+            span: Span::new(1, 1, 1, 10),
         };
         let c2 = Constraint {
             id: "neq".to_string(),

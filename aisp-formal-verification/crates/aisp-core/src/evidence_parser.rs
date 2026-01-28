@@ -88,7 +88,7 @@ mod tests {
         let evidence = EvidenceParser::parse_evidence_block(&mut lexer).unwrap();
         
         assert_eq!(evidence.delta, Some(0.85));
-        assert_eq!(evidence.phi, Some(100.0));
+        assert_eq!(evidence.phi, Some(100u64));
         assert_eq!(evidence.tau, Some("◊⁺".to_string()));
         assert!(evidence.metrics.is_empty());
     }

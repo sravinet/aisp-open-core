@@ -368,13 +368,13 @@ mod tests {
                 span: create_test_span(),
             },
             raw_text: "add≜λx,y.result".to_string(),
-            span: Some(create_test_span()),
+            span: create_test_span(),
         }];
 
         let funcs_block = FunctionsBlock {
             functions,
             raw_functions: vec!["add≜λx,y.result".to_string()],
-            span: Some(create_test_span()),
+            span: create_test_span(),
         };
 
         extractor.extract_function_properties(&funcs_block)?;
