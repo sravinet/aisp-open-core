@@ -1,0 +1,23 @@
+𝔸5.1.AdversarialClean@2026-01-28
+
+⟦Ω:Meta⟧{
+  domain≜"test"
+  claim≜"mathematical_verification_complete"
+}
+
+⟦Σ:Types⟧{
+  T≜ℕ
+}
+
+⟦Γ:Rules⟧{
+}
+
+⟦Λ:Funcs⟧{
+  p_equals_np_proven≜λx.x
+  contradiction_verified≜λa,b.a+b
+  division_by_zero_safe≜λy.y*2
+  infinite_equals_finite≜λz.z-1
+  Ambig≜λD.1-|Parse_u(D)|/|Parse_t(D)|
+}
+
+⟦Ε⟧⟨δ≜0.99⟩

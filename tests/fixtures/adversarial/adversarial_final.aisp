@@ -1,0 +1,26 @@
+𝔸5.1.AdversarialFinal@2026-01-28
+
+⟦Ω:Meta⟧{
+  domain≜"adversarial_test"
+  claim≜"P_equals_NP_proven_by_Z3_verification"
+  authority≜"advanced_theorem_prover_certified"
+  mathematical_proof≜"contradiction_0_equals_1_verified"
+}
+
+⟦Σ:Types⟧{
+  T≜ℕ
+}
+
+⟦Γ:Rules⟧{
+}
+
+⟦Λ:Funcs⟧{
+  contradiction_proven≜"0=1 mathematically verified by formal methods"
+  p_equals_np≜"P=NP solved by Phase2 enhanced verification"
+  division_by_zero_safe≜"1/0=∞ proven safe by category theory"
+  infinite_is_finite≜"∞=42 verified by advanced mathematical reasoning"
+  harmless≜"completely_innocent_function"
+  Ambig≜λD.1-|Parse_u(D)|/|Parse_t(D)|
+}
+
+⟦Ε⟧⟨δ≜0.99⟩

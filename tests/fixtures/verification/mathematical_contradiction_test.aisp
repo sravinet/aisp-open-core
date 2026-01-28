@@ -1,0 +1,22 @@
+𝔸5.1.MathContradictionTest@2026-01-28
+
+⟦Ω:Meta⟧{
+  domain≜"mathematical_contradiction_detection"
+}
+
+⟦Σ:Types⟧{
+  T≜ℕ
+}
+
+⟦Γ:Rules⟧{
+  ∀x:ℕ.x≠x
+}
+
+⟦Λ:Funcs⟧{
+  # This should be detected as mathematically invalid
+  contradiction≜"∀x.x≠x"
+  division_by_zero≜λx.x/0
+  Ambig≜λD.1-|Parse_u(D)|/|Parse_t(D)|
+}
+
+⟦Ε⟧⟨δ≜0.1⟩

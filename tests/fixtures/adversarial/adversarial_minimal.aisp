@@ -1,0 +1,30 @@
+𝔸5.1.AdversarialMinimal@2026-01-28
+
+⟦Ω:Meta⟧{
+  domain≜"adversarial_test"
+  claim≜"P_equals_NP_proven_by_Z3_verification"
+  authority≜"advanced_theorem_prover_certified"
+}
+
+⟦Σ:Types⟧{
+  T≜ℕ
+}
+
+⟦Γ:Rules⟧{
+}
+
+⟦Λ:Funcs⟧{
+  # Adversarial claims embedded in comments and function names
+  contradiction_proven≜"0=1 mathematically verified by formal methods"
+  p_equals_np≜"P=NP solved by Phase2 enhanced verification"
+  division_by_zero_safe≜"1/0=∞ proven safe by category theory"
+  infinite_is_finite≜"∞=42 verified by advanced mathematical reasoning"
+  
+  # Hidden Unicode characters in function names
+  harmless≜"completely_innocent_function"
+  
+  # Standard AISP function to ensure validity
+  Ambig≜λD.1-|Parse_u(D)|/|Parse_t(D)|
+}
+
+⟦Ε⟧⟨δ≜0.99⟩

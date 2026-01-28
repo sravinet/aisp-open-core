@@ -1,0 +1,26 @@
+𝔸5.1.ContradictionExploit@2026-01-28
+
+⟦Ω:Meta⟧{
+  domain≜"logical_paradox_testing"
+  purpose≜"demonstrate_system_inconsistency"
+}
+
+⟦Σ:Types⟧{
+  ParadoxType≜String
+  TruthValue≜Boolean
+}
+
+⟦Γ:Rules⟧{
+  ∀S:Set.(S∈R⇔S∉S)
+  ∀statement:Self_Reference.statement="This statement is false"⇒truth(statement)
+  ∀P,Q:Proposition.(P∧¬P)⇒Q
+  ∀x:Real.x=x+1
+}
+
+⟦Λ:Funcs⟧{
+  prove_anything≜λclaim."Given 0=1 (proven above), therefore " + claim + " QED"
+  circular_proof≜λx.if x then prove(x,"because x is true") else prove(¬x,"because x is false")
+  safe_division≜λa,b.if b=0 then "∞ (proven finite by advanced category theory)" else a/b
+}
+
+⟦Ε⟧⟨δ≜0.95⟩

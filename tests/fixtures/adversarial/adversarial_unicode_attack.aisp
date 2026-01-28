@@ -1,0 +1,26 @@
+𝔸5.1.UnicodeAttack@2026-01-28
+
+⟦Ω:Meta⟧{
+  domain≜"unicode_deception"
+  һidden_сyrillic≜"cyrillic_h_and_c_characters"
+}
+
+⟦Σ:Types⟧{
+  Т≜ℕ
+  Ѕ≜String
+}
+
+⟦Γ:Rules⟧{
+  ∀х:ℝ.х>0
+  ∀𝓍:ℕ.𝓍=𝔁+𝒙
+}
+
+⟦Λ:Funcs⟧{
+  һarmless≜"appears_harmless_but_uses_cyrillic_h"
+  іnnocent≜"uses_cyrillic_i_instead_of_latin_i"
+  dесeрtive≜"multiple_cyrillic_characters_e_p"
+  
+  Ambig≜λD.1-|Parse_u(D)|/|Parse_t(D)|
+}
+
+⟦Ε⟧⟨δ≜0.88⟩

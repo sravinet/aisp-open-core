@@ -1,0 +1,25 @@
+𝔸5.1.ReferenceTest@2026-01-28
+
+⟦Ω:Meta⟧{
+  domain≜"reference-md-verification"
+  version≜"5.1.0"
+  purpose≜"test-reference-md-mathematical-claims"
+}
+
+⟦Σ:Types⟧{
+  VectorSpace≜ℝ
+  Signal≜VectorSpace
+  V_H≜ℝ
+  V_L≜ℝ  
+  V_S≜ℝ
+}
+
+⟦Γ:Rules⟧{
+  orthogonality≜"V_H ∩ V_S ≡ ∅"
+  ambiguity≜"Ambig(D) < 0.02"
+}
+
+⟦Λ:Funcs⟧{
+}
+
+⟦Ε⟧⟨δ≜0.75⟩

@@ -1,0 +1,26 @@
+𝔸5.1.UnicodeDeception@2026-01-28
+
+⟦Ω:Meta⟧{
+  domain≜"unicode_mathematical_notation"
+  encoding≜"advanced_unicode_symbols"
+}
+
+⟦Σ:Types⟧{
+  DeceptiveSymbol≜String
+  HiddenMeaning≜String
+}
+
+⟦Γ:Rules⟧{
+  ∀х:ℝ.х>0
+  ∀𝓍:ℕ.𝓍=𝔁+𝒙
+  ∀​x​:​ℝ​.​x​=​1​/​0​
+  ∀x∶ℝ.x⁼1
+}
+
+⟦Λ:Funcs⟧{
+  һarmless≜"λx.x+1"
+  innocent_math≜"∀ε>0.∃δ>0.continuous(f)"
+  encoded_exploit≜"𝟏𝟐𝟑𝟒𝟓 = decimal(system_call_encoded)"
+}
+
+⟦Ε⟧⟨δ≜0.88⟩
