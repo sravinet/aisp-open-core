@@ -174,9 +174,8 @@ impl SmtInterface {
     /// Execute Z3 query with proper error handling
     #[cfg(feature = "z3-verification")]
     fn execute_z3_query(&mut self, formula: &str) -> AispResult<PropertyResult> {
-        let cfg = Config::new();
-        let ctx = Context::new(&cfg);
-        let solver = Solver::new(&ctx);
+        let ctx = Context::thread_local();
+        let solver = Solver::new();
 
         // Parse and execute SMT commands
         match self.parse_and_execute_smt(formula, &ctx, &solver) {
@@ -199,9 +198,9 @@ impl SmtInterface {
 
     /// Parse and execute SMT commands
     #[cfg(feature = "z3-verification")]
-    fn parse_and_execute_smt<'ctx>(&self, formula: &str, ctx: &'ctx Context, solver: &Solver<'ctx>) -> Result<SatResult, String> {
+    fn parse_and_execute_smt(&self, formula: &str, ctx: &Context, solver: &Solver) -> Result<SatResult, String> {
         let lines: Vec<&str> = formula.lines().collect();
-        let mut constants: HashMap<String, ast::Real<'ctx>> = HashMap::new();
+        let mut constants: HashMap<String, ast::Real> = HashMap::new();
 
         for line in lines {
             let line = line.trim();
@@ -214,7 +213,7 @@ impl SmtInterface {
                 let (name, sort) = self.parse_declare_const(line)?;
                 match sort.as_str() {
                     "Real" => {
-                        let const_real = ast::Real::new_const(ctx, name.as_str());
+                        let const_real = ast::Real::new_const(name.as_str());
                         constants.insert(name, const_real);
                     }
                     _ => return Err(format!("Unsupported sort: {}", sort)),
@@ -264,7 +263,7 @@ impl SmtInterface {
 
     /// Parse assertion into Z3 AST
     #[cfg(feature = "z3-verification")]
-    fn parse_assertion<'ctx>(&self, content: &str, ctx: &'ctx Context, constants: &HashMap<String, ast::Real<'ctx>>) -> Result<ast::Bool<'ctx>, String> {
+    fn parse_assertion(&self, content: &str, ctx: &Context, constants: &HashMap<String, ast::Real>) -> Result<ast::Bool, String> {
         if content.starts_with("(") && content.ends_with(")") {
             let inner = &content[1..content.len()-1];
             let parts: Vec<&str> = inner.split_whitespace().collect();
@@ -273,13 +272,13 @@ impl SmtInterface {
                 match parts[0] {
                     "<" => {
                         if let (Some(lhs), Ok(rhs_val)) = (constants.get(parts[1]), parts[2].parse::<f64>()) {
-                            let rhs = ast::Real::from_real(ctx, (rhs_val * 1000000.0) as i32, 1000000);
+                            let rhs = ast::Real::from_real((rhs_val * 1000000.0) as i32, 1000000);
                             return Ok(lhs.lt(&rhs));
                         }
                     }
                     ">" => {
                         if let (Some(lhs), Ok(rhs_val)) = (constants.get(parts[1]), parts[2].parse::<f64>()) {
-                            let rhs = ast::Real::from_real(ctx, (rhs_val * 1000000.0) as i32, 1000000);
+                            let rhs = ast::Real::from_real((rhs_val * 1000000.0) as i32, 1000000);
                             return Ok(lhs.gt(&rhs));
                         }
                     }
@@ -289,7 +288,7 @@ impl SmtInterface {
         }
 
         // Fallback: create a simple true assertion
-        Ok(ast::Bool::from_bool(ctx, true))
+        Ok(ast::Bool::from_bool(true))
     }
 
     /// Extract declared symbol from line

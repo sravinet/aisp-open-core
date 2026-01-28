@@ -179,8 +179,8 @@ impl EnhancedZ3Verifier {
 
             // Create Z3 context and solver
             let cfg = Config::new();
-            let ctx = Context::new(&cfg);
-            let solver = Solver::new(&ctx);
+            let ctx = Context::thread_local();
+            let solver = Solver::new();
 
             // Parse and execute SMT commands
             let result = match self.parse_and_execute_smt(formula, &ctx, &solver) {
@@ -278,9 +278,9 @@ impl EnhancedZ3Verifier {
 
     /// Parse a simple assertion
     #[cfg(feature = "z3-verification")]
-    fn parse_simple_assertion<'ctx>(&self, _line: &str, ctx: &'ctx Context) -> Result<ast::Bool<'ctx>, String> {
+    fn parse_simple_assertion(&self, _line: &str, ctx: &Context) -> Result<ast::Bool, String> {
         // Return true for now - real implementation would parse the assertion
-        Ok(ast::Bool::from_bool(ctx, true))
+        Ok(ast::Bool::from_bool(true))
     }
 }
 

@@ -29,9 +29,9 @@ impl Z3VerificationFacade {
         // STRICT REQUIREMENT: Z3 must be available
         #[cfg(not(feature = "z3-verification"))]
         {
-            return Err(AispError::new(
-                "Z3 verification is MANDATORY - compile with --features z3-verification"
-            ));
+            return Err(AispError::Z3Error {
+                message: "Z3 verification is MANDATORY - compile with --features z3-verification".to_string()
+            });
         }
         
         #[cfg(feature = "z3-verification")]

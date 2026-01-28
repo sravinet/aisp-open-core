@@ -339,10 +339,9 @@ impl PropertyVerifier {
     fn verify_smt_formula(&mut self, formula: &str, property_id: &str) -> AispResult<PropertyResult> {
         use z3::*;
         
-        // Create Z3 context with appropriate configuration
-        let cfg = Config::new();
-        let ctx = Context::new(&cfg);
-        let solver = Solver::new(&ctx);
+        // Create Z3 context with appropriate configuration (Z3 0.19.7 API)
+        let ctx = Context::thread_local();
+        let solver = Solver::new();
         
         // Configure solver for AISP verification
         // Note: Z3 crate 0.11 doesn't expose set() method directly
@@ -350,14 +349,14 @@ impl PropertyVerifier {
         // For now, we'll use default configuration
 
         // Declare AISP-specific sorts
-        let vector_sort = Sort::uninterpreted(&ctx, Symbol::String("Vector".to_string()));
-        let real_sort = Sort::real(&ctx);
+        let vector_sort = Sort::uninterpreted(Symbol::String("Vector".to_string()));
+        let real_sort = Sort::real();
         
         // Declare functions referenced in formula
-        let dot_product = FuncDecl::new(&ctx, Symbol::String("dot_product".to_string()), 
+        let dot_product = FuncDecl::new("dot_product", 
                                       &[&vector_sort, &vector_sort], &real_sort);
-        let in_space = FuncDecl::new(&ctx, Symbol::String("in_space".to_string()), 
-                                   &[&vector_sort, &Sort::string(&ctx)], &Sort::bool(&ctx));
+        let in_space = FuncDecl::new("in_space", 
+                                   &[&vector_sort, &Sort::string()], &Sort::bool());
 
         // Parse and assert the SMT formula
         match self.parse_and_assert_formula(&ctx, &solver, formula) {
@@ -396,13 +395,13 @@ impl PropertyVerifier {
         // In a complete implementation, this would parse the full SMT-LIB formula
         
         // Create variables for the orthogonality check
-        let v1 = ast::Real::new_const(&ctx, "v1_x"); // Simplified: just use real components
-        let v2 = ast::Real::new_const(&ctx, "v2_x");
+        let v1 = ast::Real::new_const("v1_x"); // Simplified: just use real components
+        let v2 = ast::Real::new_const("v2_x");
         
         // Assert dot product constraint: v1 * v2 = 0 for orthogonal vectors  
         let dot_product = &v1 * &v2;  // Use standard multiplication operator
-        let zero = ast::Real::from_real(&ctx, 0, 1);
-        let orthogonality_constraint = ast::Bool::from_bool(&ctx, true); // Simplified for now
+        let zero = ast::Real::from_real(0, 1);
+        let orthogonality_constraint = ast::Bool::from_bool(true); // Simplified for now
         
         // For verification, we check the negation - if unsat, then property holds
         let negated_constraint = orthogonality_constraint.not();
