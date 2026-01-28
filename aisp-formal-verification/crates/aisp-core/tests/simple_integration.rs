@@ -6,7 +6,7 @@
 use aisp_core::{AispValidator, ValidationConfig, ValidationResult, QualityTier};
 
 /// Helper to assert validation results
-fn assert_valid_document(result: ValidationResult, expected_tier: QualityTier) {
+fn assert_valid_document(result: &ValidationResult, expected_tier: QualityTier) {
     assert!(result.valid, "Document should be valid but got error: {:?}", result.error);
     assert_eq!(result.tier, expected_tier,
         "Expected quality tier {:?} but got {:?}", expected_tier, result.tier);
@@ -32,7 +32,7 @@ fn test_minimal_valid_document() {
     let validator = AispValidator::new();
     let result = validator.validate(document);
 
-    assert_valid_document(result, QualityTier::Silver);
+    assert_valid_document(&result, QualityTier::Silver);
 }
 
 #[test]
@@ -74,7 +74,7 @@ fn test_complete_document() {
     let validator = AispValidator::new();
     let result = validator.validate(document);
 
-    assert_valid_document(result, QualityTier::Platinum);
+    assert_valid_document(&result, QualityTier::Platinum);
 }
 
 #[test]
@@ -113,7 +113,7 @@ fn test_document_with_types() {
     let validator = AispValidator::new();
     let result = validator.validate(document);
 
-    assert_valid_document(result, QualityTier::Gold);
+    assert_valid_document(&result, QualityTier::Gold);
 }
 
 #[test]
@@ -139,7 +139,7 @@ fn test_document_with_temporal_logic() {
     let validator = AispValidator::new();
     let result = validator.validate(document);
 
-    assert_valid_document(result, QualityTier::Platinum);
+    assert_valid_document(&result, QualityTier::Platinum);
 }
 
 #[test]
@@ -167,7 +167,7 @@ fn test_formal_verification_enabled() {
     let validator = AispValidator::with_config(config);
     let result = validator.validate(document);
 
-    assert_valid_document(result, QualityTier::Platinum);
+    assert_valid_document(&result, QualityTier::Platinum);
     // Note: formal verification results would be in result.formal_verification_result
 }
 
@@ -191,7 +191,7 @@ fn test_validation_config_options() {
     let validator = AispValidator::with_config(config);
     let result = validator.validate(document);
 
-    assert_valid_document(result, QualityTier::Silver);
+    assert_valid_document(&result, QualityTier::Silver);
     
     // Verify timing information is included when requested
     assert!(result.total_time.is_some(), "Timing information should be present");
@@ -263,7 +263,7 @@ fn test_validation_performance() {
     let result = validator.validate(document);
     let duration = start.elapsed();
 
-    assert_valid_document(result, QualityTier::Platinum);
+    assert_valid_document(&result, QualityTier::Platinum);
     
     // Validation should complete reasonably quickly
     assert!(duration.as_millis() < 5000, 
@@ -305,5 +305,5 @@ fn test_unicode_symbols_handling() {
     let validator = AispValidator::new();
     let result = validator.validate(document);
 
-    assert_valid_document(result, QualityTier::Platinum);
+    assert_valid_document(&result, QualityTier::Platinum);
 }

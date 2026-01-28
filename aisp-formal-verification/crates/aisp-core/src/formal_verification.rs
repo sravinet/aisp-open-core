@@ -1192,7 +1192,6 @@ impl Default for PropertyFormula {
 mod tests {
     use super::*;
     use crate::{
-        ast::{AispDocument, DocumentHeader, AispBlock, TypesBlock, TypeDefinition, TypeExpression, BasicType, Span},
         invariant_types::InvariantType,
     };
     use std::collections::{HashMap, HashSet};
