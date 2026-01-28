@@ -251,8 +251,13 @@ impl SmtInterface {
         if let Some(start) = line.find("(assert ") {
             let content_start = start + 8;
             if let Some(content) = line.get(content_start..) {
-                let content = content.trim_end_matches(')');
-                Ok(content.trim().to_string())
+                let content = content.trim();
+                // Only remove the outermost closing parenthesis
+                if content.ends_with(')') {
+                    Ok(content[..content.len()-1].to_string())
+                } else {
+                    Ok(content.to_string())
+                }
             } else {
                 Err("Empty assertion".to_string())
             }

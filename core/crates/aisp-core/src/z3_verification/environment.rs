@@ -3,7 +3,11 @@
 //! This module handles the setup of Z3 contexts, sorts, and functions
 //! specifically tailored for AISP document verification.
 
-use crate::{ast::*, error::*};
+use crate::{
+    ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock, 
+                     TypeExpression, BasicType, FunctionDefinition, TypeDefinition},
+    error::*
+};
 use std::collections::HashMap;
 
 #[cfg(feature = "z3-verification")]
@@ -87,8 +91,8 @@ impl AispZ3Environment {
         // Process function definitions
         for block in &document.blocks {
             if let AispBlock::Functions(funcs_block) = block {
-                for (name, func_def) in &funcs_block.functions {
-                    self.declare_function(name, func_def)?;
+                for func_def in &funcs_block.functions {
+                    self.declare_function(&func_def.name, func_def)?;
                 }
             }
         }
@@ -443,21 +447,23 @@ mod tests {
 
         // Create a minimal test document
         let test_doc = AispDocument {
-            header: crate::ast::DocumentHeader {
+            header: crate::ast::canonical::DocumentHeader {
                 version: "5.1".to_string(),
                 name: "test".to_string(),
                 date: "2026".to_string(),
                 metadata: None,
             },
-            metadata: crate::ast::DocumentMetadata {
+            metadata: crate::ast::canonical::DocumentMetadata {
                 domain: Some("test".to_string()),
                 protocol: None,
             },
             blocks: vec![],
-            span: crate::ast::Span {
-                start: crate::ast::Position { line: 1, column: 1, offset: 0 },
-                end: crate::ast::Position { line: 1, column: 1, offset: 0 },
-            },
+            span: Some(crate::ast::canonical::Span {
+                start: 0,
+                end: 0,
+                line: 1,
+                column: 1,
+            }),
         };
 
         let result = env.setup_from_document(&test_doc);

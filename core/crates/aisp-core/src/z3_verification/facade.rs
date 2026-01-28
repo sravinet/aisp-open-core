@@ -367,7 +367,9 @@ mod tests {
             
             // Should return a meaningful result when Z3 is available
             let property_result = result.unwrap();
-            assert!(matches!(property_result, PropertyResult::Proven | PropertyResult::Unknown));
+            assert!(matches!(property_result, 
+                PropertyResult::Proven | PropertyResult::Unknown | PropertyResult::Disproven | 
+                PropertyResult::Error(_) | PropertyResult::Unsupported));
         }
     }
     

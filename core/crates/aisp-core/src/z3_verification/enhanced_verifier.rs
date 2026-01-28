@@ -4,7 +4,7 @@
 //! AISP document verification with comprehensive SMT solving.
 
 use super::{environment::AispZ3Environment, properties::PropertyVerifier, types::*};
-use crate::{ast::*, error::*, tri_vector_validation::*};
+use crate::{ast::canonical::CanonicalAispDocument as AispDocument, error::*, tri_vector_validation::*};
 use std::collections::HashMap;
 use std::time::Instant;
 
