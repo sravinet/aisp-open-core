@@ -1,8 +1,8 @@
 [workspace]
 members = [
-    "aisp-rust",
-    "aisp-formal-verification/crates/aisp-core", 
-    "aisp-formal-verification/crates/aisp-cli",
+    "core/crates/aisp-core", 
+    "core/crates/aisp-cli",
+    "archive/aisp-rust",
 ]
 resolver = "2"
 

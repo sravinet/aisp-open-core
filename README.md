@@ -2,7 +2,7 @@
 
 **The specification language designed for AI agents, not humans.** AISP is a proof-carrying protocol that LLMs understand natively—no training, no fine-tuning, no special interpreters required. Reduces ambiguity from 40-65% (natural language) to under 2%.
 
-> 📋 **See [WORKSPACE.md](WORKSPACE.md)** for complete project organization and development guide.
+> 📋 **See [docs/architecture/WORKSPACE.md](docs/architecture/WORKSPACE.md)** for complete project organization and development guide.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/Version-5.1%20Platinum-blue.svg)]()
@@ -26,7 +26,7 @@
 ## **Quick Start — Try it NOW**
 
 ### Step 1: Copy the Spec
-**[Download aisp-spec.md](./AI_GUIDE.md)** — the complete AISP 5.1 Platinum specification
+**[Download aisp-spec.md](./docs/user-guides/AI_GUIDE.md)** — the complete AISP 5.1 Platinum specification
 
 ### Step 2: Paste into Any AI
 Works with Claude, ChatGPT, Gemini, Claude Code, Cursor — no setup required
@@ -576,8 +576,8 @@ println!("Valid: {}, Tier: {}", result.valid, result.tier.symbol());
 
 ## 🔗 Related Resources
 
-- [AISP 5.1 Platinum Specification](./AI_GUIDE.md) — The complete spec (copy this into your AI)
-- [Human Guide & Tutorials](./HUMAN_GUIDE.md)
+- [AISP 5.1 Platinum Specification](./docs/user-guides/AI_GUIDE.md) — The complete spec (copy this into your AI)
+- [Human Guide & Tutorials](./docs/user-guides/HUMAN_GUIDE.md)
 - [Tic-Tac-Toe Comparative Analysis](./evidence/tic-tac-toe/)
 
 ---
