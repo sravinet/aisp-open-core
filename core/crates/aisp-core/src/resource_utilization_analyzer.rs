@@ -4,7 +4,7 @@
 //! including memory usage, CPU utilization, network bandwidth, and other system resources.
 
 use crate::{
-    ast::AispDocument,
+    ast::canonical::CanonicalAispDocument as AispDocument,
     error::{AispError, AispResult},
     concurrent_behavior_verifier::ConcurrentProcess,
     protocol_state_machine::ProtocolStateMachine,

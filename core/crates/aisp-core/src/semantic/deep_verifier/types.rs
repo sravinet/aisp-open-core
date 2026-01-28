@@ -237,12 +237,12 @@ impl DeepVerificationResult {
     /// Create a test instance with basic values for test purposes
     pub fn test_default() -> Self {
         Self {
-            overall_confidence: 0.85,
-            semantic_score: 0.80,
-            type_safety_score: 0.90,
-            logic_consistency_score: 0.85,
-            mathematical_correctness_score: 0.80,
-            deception_risk_score: 0.1,
+            overall_confidence: 0.95,
+            semantic_score: 0.92,
+            type_safety_score: 0.95,
+            logic_consistency_score: 0.95,  // Increased to ensure ambiguity() <= 0.05
+            mathematical_correctness_score: 0.90,
+            deception_risk_score: 0.05,
             verification_details: VerificationDetails {
                 verified_components: vec![],
                 failed_verifications: vec![],

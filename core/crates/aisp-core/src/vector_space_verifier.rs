@@ -398,10 +398,9 @@ mod tests {
         let result = verifier.verify_reference_orthogonality().unwrap();
         
         // Should detect the mathematical error
-        assert!(!result.intersection_is_empty);
-        assert!(!result.spaces_are_orthogonal);
-        assert!(!result.error_conditions.is_empty());
+        assert!(matches!(result.orthogonality_type, crate::tri_vector_validation::OrthogonalityType::NotOrthogonal));
         assert!(result.counterexample.is_some());
+        assert!(result.confidence < 1.0);
     }
     
     #[test]

@@ -4,7 +4,9 @@
 //! including state transition validation, reachability analysis, and behavioral property verification.
 
 use crate::{
-    ast::AispDocument,
+    ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock, 
+                     TypesBlock, Span, DocumentHeader, DocumentMetadata, 
+                     TypeDefinition, TypeExpression, BasicType},
     error::{AispError, AispResult},
     property_types::{PropertyFormula, FormulaStructure, AtomicFormula, Term},
     formal_verification::FormalVerifier,
@@ -428,7 +430,7 @@ impl ProtocolStateMachineAnalyzer {
     }
 
     /// Extract state machine from a specific block
-    fn extract_state_machine_from_block(&self, _block: &crate::ast::AispBlock) -> AispResult<Option<ProtocolStateMachine>> {
+    fn extract_state_machine_from_block(&self, _block: &AispBlock) -> AispResult<Option<ProtocolStateMachine>> {
         // Simplified extraction - in practice would analyze block structure
         Ok(Some(ProtocolStateMachine {
             id: "extracted_machine".to_string(),
@@ -851,7 +853,6 @@ impl Default for ProtocolStateMachineAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::canonical::{AispDocument, DocumentHeader, DocumentMetadata, TypeDefinition, TypeExpression, BasicType, Span, CanonicalAispBlock as AispBlock, TypesBlock};
     use std::collections::HashMap;
 
     fn create_test_document() -> AispDocument {
@@ -876,6 +877,7 @@ mod tests {
             blocks: vec![
                 AispBlock::Types(TypesBlock {
                     definitions: types,
+                    raw_definitions: Vec::new(),
                     span: Some(Span::new(0, 0, 1, 1)),
                 }),
             ],

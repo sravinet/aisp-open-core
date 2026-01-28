@@ -31,7 +31,8 @@ pub use crate::z3_verification::{
 #[cfg(test)]
 mod integration_tests {
     use super::*;
-    use crate::ast::{AispDocument, DocumentHeader, DocumentMetadata, Span, Position};
+    use crate::ast::canonical::{CanonicalAispDocument as AispDocument, DocumentHeader, DocumentMetadata, Span};
+    use crate::ast::Position;
 
     fn create_test_document() -> AispDocument {
         AispDocument {
@@ -46,10 +47,12 @@ mod integration_tests {
                 protocol: None,
             },
             blocks: vec![],
-            span: Span {
-                start: Position { line: 1, column: 1, offset: 0 },
-                end: Position { line: 1, column: 1, offset: 0 },
-            },
+            span: Some(Span {
+                start: 0,
+                end: 0,
+                line: 1,
+                column: 1,
+            }),
         }
     }
 
