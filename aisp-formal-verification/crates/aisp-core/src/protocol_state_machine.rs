@@ -851,7 +851,7 @@ impl Default for ProtocolStateMachineAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::*;
+    use crate::ast::canonical::{AispDocument, DocumentHeader, DocumentMetadata, TypeDefinition, TypeExpression, BasicType, Span, CanonicalAispBlock as AispBlock, TypesBlock};
     use std::collections::HashMap;
 
     fn create_test_document() -> AispDocument {

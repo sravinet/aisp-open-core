@@ -1781,7 +1781,7 @@ impl Default for ResourceUtilizationAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::*;
+    use crate::ast::canonical::{AispDocument, DocumentHeader, DocumentMetadata, Span};
 
     fn create_test_document() -> AispDocument {
         AispDocument {
@@ -1796,7 +1796,7 @@ mod tests {
                 protocol: Some("utilization".to_string()),
             },
             blocks: vec![],
-            span: Span { start: 0, end: 0 },
+            span: Some(Span::new(0, 0, 1, 1)),
         }
     }
 

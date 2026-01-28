@@ -817,7 +817,7 @@ impl std::fmt::Display for TriVectorError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::{DocumentHeader, DocumentMetadata};
+    use crate::ast::canonical::{AispDocument, DocumentHeader, DocumentMetadata};
 
     fn create_test_document_with_trivector() -> AispDocument {
         // Create a test document with proper tri-vector definitions
