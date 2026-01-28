@@ -192,7 +192,7 @@ impl SemanticZ3Verifier {
         
         // Verify vector space claims
         let vector_result = self.vector_verifier.verify_reference_orthogonality()?;
-        if !vector_result.intersection_is_empty {
+        if vector_result.orthogonality_type == crate::tri_vector_validation::OrthogonalityType::NotOrthogonal {
             completeness_violations.push("Vector space orthogonality claims are mathematically false".to_string());
         }
         
@@ -215,7 +215,7 @@ impl SemanticZ3Verifier {
         Ok(MathematicalConsistencyResult {
             axiom_consistency: system_consistent,
             logical_coherence: matches!(z3_result, PropertyResult::Proven),
-            mathematical_soundness: handles_div_zero && vector_result.spaces_are_orthogonal,
+            mathematical_soundness: handles_div_zero && (vector_result.orthogonality_type == crate::tri_vector_validation::OrthogonalityType::CompletelyOrthogonal),
             completeness_violations,
             consistency_proof,
         })
