@@ -7,7 +7,14 @@ use crate::{ast::*, error::*, tri_vector_validation::*};
 use std::collections::HashMap;
 use std::time::{Duration, Instant, SystemTime};
 
-/// Enhanced verification configuration
+/// Enhanced verification configuration for production Z3 integration
+/// 
+/// **Contract Invariants:**
+/// - `query_timeout_ms` ∈ [1000, 600_000] (1 second to 10 minutes)
+/// - `max_memory_mb` ∈ [256, 32_768] (256MB to 32GB reasonable bounds)
+/// - `solver_tactics` contains valid Z3 tactic names only
+/// - When `incremental == true`, supports push/pop operations
+/// - `random_seed.is_some()` ensures reproducible verification results
 #[derive(Debug, Clone)]
 pub struct AdvancedVerificationConfig {
     /// Timeout for individual queries
@@ -83,7 +90,14 @@ impl Default for EnhancedVerificationStats {
     }
 }
 
-/// Result of enhanced Z3 verification
+/// Result of enhanced Z3 verification with formal guarantees
+/// 
+/// **Contract Invariants:**
+/// - `status == AllVerified` ⟺ `∀p ∈ verified_properties: p.result == PropertyResult::Proven`
+/// - `proofs.len() == verified_properties.count(|p| p.result == Proven)`
+/// - `counterexamples.len() == verified_properties.count(|p| p.result == Disproven)`
+/// - `stats.successful_proofs <= stats.smt_queries` (successful proofs subset of queries)
+/// - `tri_vector_result.is_some()` when tri-vector validation requested
 #[derive(Debug, Clone)]
 pub struct EnhancedVerificationResult {
     /// Overall verification status
@@ -269,6 +283,12 @@ pub enum DiagnosticLevel {
 
 impl EnhancedVerificationResult {
     /// Create a disabled result when Z3 is not available
+    /// 
+    /// **Contract:**
+    /// - **Precondition:** Z3 verification capabilities unavailable
+    /// - **Postcondition:** Returns result with `status == VerificationStatus::Disabled`
+    /// - **Invariant:** All collections empty, all counters zero
+    /// - **Side effects:** None
     pub fn disabled() -> Self {
         Self {
             status: VerificationStatus::Disabled,
@@ -283,6 +303,12 @@ impl EnhancedVerificationResult {
     }
 
     /// Create a failed result with error message
+    /// 
+    /// **Contract:**
+    /// - **Precondition:** `error` is non-empty descriptive message
+    /// - **Postcondition:** Returns result with `status == VerificationStatus::Failed(error)`
+    /// - **Invariant:** Error message preserved exactly in status
+    /// - **Side effects:** None
     pub fn failed(error: String) -> Self {
         Self {
             status: VerificationStatus::Failed(error),
@@ -299,6 +325,12 @@ impl EnhancedVerificationResult {
 
 impl VerifiedProperty {
     /// Create a new verified property
+    /// 
+    /// **Contract:**
+    /// - **Precondition:** `id` unique within verification context, `description` non-empty
+    /// - **Postcondition:** Returns property with specified fields and defaults for optional fields
+    /// - **Invariant:** `verification_time == Duration::ZERO` initially
+    /// - **Side effects:** None
     pub fn new(
         id: String,
         category: PropertyCategory,

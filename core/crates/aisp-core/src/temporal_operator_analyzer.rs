@@ -118,6 +118,12 @@ pub struct OperatorValidationResult {
 
 impl TemporalOperatorAnalyzer {
     /// Create a new temporal operator analyzer
+    /// 
+    /// **Contract:**
+    /// - **Precondition:** None
+    /// - **Postcondition:** Returns an analyzer with 7 predefined temporal operators (□, ◊, X, U, R, W, M)
+    /// - **Invariant:** `operator_symbols.len() == 7` and contains all standard LTL/CTL operators
+    /// - **Side effects:** None
     pub fn new() -> Self {
         let mut operator_symbols = HashMap::new();
         operator_symbols.insert('□', TemporalOperator::Always);
@@ -135,6 +141,13 @@ impl TemporalOperatorAnalyzer {
     }
 
     /// Analyze temporal operators in the document
+    /// 
+    /// **Contract:**
+    /// - **Precondition:** `document` is a valid AISP document reference
+    /// - **Postcondition:** Returns complete validation result with operators, path quantifiers, and complexity metrics
+    /// - **Invariant:** `complexity_score` ∈ [0.0, 1.0], `valid == errors.is_empty() && complexity_score <= 0.8`
+    /// - **Side effects:** Clears and repopulates `detected_operators`
+    /// - **Performance:** O(n) where n = total characters in all blocks
     pub fn analyze_operators(&mut self, document: &AispDocument) -> OperatorValidationResult {
         self.detected_operators.clear();
 
@@ -393,6 +406,13 @@ impl TemporalOperatorAnalyzer {
     }
 
     /// Calculate operator complexity metrics
+    /// 
+    /// **Contract:**
+    /// - **Precondition:** `detected_operators` contains all analyzed operators
+    /// - **Postcondition:** Returns metrics with `complexity_score` ∈ [0.0, 1.0] and consistent statistics
+    /// - **Invariant:** `operator_count == detected_operators.len()`, `max_nesting >= avg_nesting`
+    /// - **Side effects:** None (read-only operation)
+    /// - **Performance:** O(n) where n = number of detected operators
     fn calculate_complexity(&self) -> OperatorComplexity {
         if self.detected_operators.is_empty() {
             return OperatorComplexity {

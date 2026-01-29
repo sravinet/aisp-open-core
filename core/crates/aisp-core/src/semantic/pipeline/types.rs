@@ -7,7 +7,12 @@ use crate::error::AispResult;
 use std::collections::HashMap;
 use std::time::Duration;
 
-/// Verification execution strategies
+/// Verification execution strategies for pipeline orchestration
+/// 
+/// **Contract Invariants:**
+/// - Each strategy defines deterministic execution ordering
+/// - Adaptive strategies maintain performance > Sequential baseline
+/// - Priority-based ensures critical verifications execute first
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExecutionStrategy {
     Sequential,
@@ -60,7 +65,13 @@ pub struct AdversarialTestResults {
     pub recommendations: Vec<String>,
 }
 
-/// Comprehensive verification result
+/// Comprehensive verification result with enterprise-grade metrics
+/// 
+/// **Contract Invariants:**
+/// - All scores ∈ [0.0, 1.0] representing percentage compliance
+/// - `overall_success == true` ⟺ all critical stages passed
+/// - `execution_time` accurately reflects wall-clock verification duration
+/// - `stage_results.len() >= 1` (at least one verification stage executed)
 #[derive(Debug, Clone)]
 pub struct VerificationResult {
     pub overall_success: bool,
