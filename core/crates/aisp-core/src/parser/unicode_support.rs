@@ -353,23 +353,28 @@ impl UnicodeSymbolRegistry {
                 result.suggestions.push(format!("ASCII alternative: {}", ascii));
             }
         } else {
-            // Unknown character - check against dangerous patterns
-            let ch_str = ch.to_string();
-            for pattern in &self.dangerous_patterns {
-                if regex::Regex::new(pattern.detection_regex)
-                    .map(|re| re.is_match(&ch_str))
-                    .unwrap_or(false)
-                {
-                    result.security_warnings.push(SecurityWarning {
-                        warning_type: SecurityWarningType::EncodingConfusion,
-                        severity: pattern.threat_level.clone(),
-                        message: format!("Character '{}' matches dangerous pattern: {}", ch, pattern.description),
-                        mitigation: "Remove or replace with safe equivalent".to_string(),
-                    });
+            // Check if it's a safe ASCII character (letters, digits, basic punctuation)
+            if ch.is_ascii() && (ch.is_alphanumeric() || ".:>=<()[]{}+-*/=!?".contains(ch)) {
+                result.is_valid = true;
+            } else {
+                // Unknown character - check against dangerous patterns
+                let ch_str = ch.to_string();
+                for pattern in &self.dangerous_patterns {
+                    if regex::Regex::new(pattern.detection_regex)
+                        .map(|re| re.is_match(&ch_str))
+                        .unwrap_or(false)
+                    {
+                        result.security_warnings.push(SecurityWarning {
+                            warning_type: SecurityWarningType::EncodingConfusion,
+                            severity: pattern.threat_level.clone(),
+                            message: format!("Character '{}' matches dangerous pattern: {}", ch, pattern.description),
+                            mitigation: "Remove or replace with safe equivalent".to_string(),
+                        });
+                    }
                 }
-            }
 
-            result.suggestions.push("Use only registered AISP mathematical symbols".to_string());
+                result.suggestions.push("Use only registered AISP mathematical symbols".to_string());
+            }
         }
 
         // Check for normalization issues
@@ -460,6 +465,9 @@ impl UnicodeSymbolRegistry {
                     if symbol.security_level == SecurityLevel::Safe {
                         safe_chars += 1;
                     }
+                } else {
+                    // ASCII characters that are valid but not registered as mathematical symbols
+                    safe_chars += 1;
                 }
             } else {
                 if validation.symbol_info.is_some() {
@@ -617,8 +625,9 @@ mod tests {
         let safe_text = "∀x∈ℕ";
         let report = registry.generate_security_report(safe_text);
         
-        assert_eq!(report.total_characters, 4);
-        assert_eq!(report.safe_characters, 4);
+        let expected_chars = safe_text.chars().count();
+        assert_eq!(report.total_characters, expected_chars);
+        assert_eq!(report.safe_characters, expected_chars);
         assert_eq!(report.dangerous_characters, 0);
         assert!(matches!(report.overall_safety, SecuritySeverity::Info));
     }
