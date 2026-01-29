@@ -3,7 +3,10 @@
 //! This module provides working integration tests that match the actual
 //! validator API and demonstrate end-to-end functionality.
 
-use aisp_core::{AispValidator, ValidationConfig, ValidationResult, QualityTier};
+use aisp_core::{
+    validator::{AispValidator, types::{ValidationConfig, ValidationResult}},
+    semantic::QualityTier
+};
 
 /// Helper for asserting validation results with correct API
 struct ValidationAssertion {
