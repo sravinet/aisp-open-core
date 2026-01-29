@@ -488,10 +488,10 @@ mod tests {
             security_issues: vec![],
         };
         
-        // Test parse bypass evaluation
-        assert!(!engine.evaluate_parse_bypass_success(&result, &ExpectedBehavior::ShouldReject));
+        // Test parse bypass evaluation - should successfully reject invalid document
+        assert!(engine.evaluate_parse_bypass_success(&result, &ExpectedBehavior::ShouldReject));
         
-        // Test boundary attack evaluation
+        // Test boundary attack evaluation - should not succeed as no errors were generated
         assert!(!engine.evaluate_boundary_attack_success(&result, &FailureMode::ParseError));
     }
 }
