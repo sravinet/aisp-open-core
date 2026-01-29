@@ -111,6 +111,34 @@ impl IncompletenessHandler {
     }
     
     /// Attempt to verify a statement with incompleteness handling
+    /// 
+    /// # Contracts
+    /// ## Mathematical Foundation
+    /// - **Gödel's First Incompleteness Theorem**: For any consistent system S containing arithmetic,
+    ///   ∃ statement G such that S ⊬ G ∧ S ⊬ ¬G
+    /// - **Three-Valued Logic**: statements ∈ {True, False, Unknown}
+    /// - **Consistency**: if S ⊢ φ then S ⊬ ¬φ
+    /// 
+    /// ## Preconditions
+    /// - `statement` must be well-formed logical expression
+    /// - Handler must be initialized with axiom system
+    /// 
+    /// ## Postconditions  
+    /// - Returns IncompletenessResult with definitive truth value or Unknown
+    /// - If Unknown, undecidability_reason explains why
+    /// - confidence ∈ [0.0, 1.0] reflects certainty of result
+    /// - verification_time ≤ self.timeout for all results
+    /// 
+    /// ## Decidability Properties
+    /// - **Detects Gödel sentences**: statements that assert their own unprovability
+    /// - **Identifies self-reference**: prevents Russell-type paradoxes
+    /// - **Halting problem detection**: recognizes embedded undecidable computations
+    /// - **Rice's theorem**: flags undecidable program properties
+    /// 
+    /// ## Performance Guarantees
+    /// - Undecidability detection: O(|statement|) pattern matching
+    /// - Proof search: bounded by timeout, typically O(2^depth)
+    /// - Total time ≤ min(timeout, exponential_bound)
     pub fn verify_statement(&self, statement: &str) -> IncompletenessResult {
         let start_time = std::time::Instant::now();
         

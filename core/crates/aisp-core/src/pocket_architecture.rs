@@ -210,6 +210,37 @@ impl PocketArchitectureVerifier {
 
     /// Verify complete pocket architecture with formal proofs
     /// Implements: ∀p:ℋ.id(p)≡SHA256(𝒩(p))
+    /// 
+    /// # Contracts
+    /// ## Mathematical Specification
+    /// - **CAS Integrity**: ∀p:Pocket. ℋ.id(p) ≡ SHA256(𝒩(p))
+    /// - **Tamper Detection**: ∀p:Pocket. ∂𝒩(p) ⇒ ∂ℋ.id(p)  
+    /// - **Learning Isolation**: ∀p:Pocket. ∂ℳ(p) ⇏ ∂ℋ.id(p)
+    /// 
+    /// ## Preconditions
+    /// - `pocket` must have valid header, membrane, and nucleus
+    /// - `pocket.header.id` must be 32-byte SHA256 hash
+    /// - `pocket.nucleus` must be serializable
+    /// 
+    /// ## Postconditions
+    /// - Returns complete verification result with confidence score
+    /// - `result.cas_integrity_verified` reflects hash consistency
+    /// - `result.tamper_detection_status` indicates any tampering
+    /// - `result.learning_isolation_verified` confirms membrane isolation
+    /// - `result.verification_confidence` ∈ [0.0, 1.0]
+    /// - Result cached for performance if verification succeeds
+    /// 
+    /// ## Performance Guarantees
+    /// - Cache lookup: O(1) for previously verified pockets
+    /// - Hash computation: O(n) where n = nucleus size
+    /// - Formal verification: O(log m) where m = property count
+    /// - Total: O(n + log m) for cache miss, O(1) for cache hit
+    /// 
+    /// ## Security Properties
+    /// - Cryptographic hash integrity via SHA256
+    /// - Temporal consistency validation prevents replay attacks
+    /// - Signal vector orthogonality ensures safety isolation
+    /// - Immutability guarantees prevent post-creation modification
     pub fn verify_pocket(&mut self, pocket: &Pocket) -> AispResult<PocketVerificationResult> {
         let start_time = Instant::now();
         let pocket_id = pocket.header.id;
@@ -445,6 +476,31 @@ impl PocketArchitectureVerifier {
     }
 
     /// Update membrane learning with Hebbian rule: ⊕→+1;⊖→-10
+    /// 
+    /// # Contracts
+    /// ## Mathematical Specification  
+    /// - **Hebbian Learning**: affinity'(p₂) = affinity(p₂) + η × Δ
+    /// - **Success Reward**: Δ = +1.0 for InteractionResult::Success
+    /// - **Failure Penalty**: Δ = -10.0 for InteractionResult::Failure  
+    /// - **Learning Rate**: η = membrane.learning_rate ∈ [0.0, 1.0]
+    /// - **Bounded Affinity**: affinity ∈ [-100.0, 100.0]
+    /// 
+    /// ## Preconditions
+    /// - `pocket` must have valid membrane with initialized learning parameters
+    /// - `other_pocket_id` must be valid 32-byte hash
+    /// - `interaction_result` must be Success or Failure
+    /// 
+    /// ## Postconditions  
+    /// - `pocket.membrane.affinity_scores[other_pocket_id]` updated
+    /// - `pocket.membrane.usage_count` incremented
+    /// - `pocket.membrane.last_accessed` updated to current timestamp
+    /// - Affinity score clamped to [-100.0, 100.0] range
+    /// 
+    /// ## Learning Properties
+    /// - Convergence: repeated interactions drive affinity toward stable values
+    /// - Plasticity: learning rate controls adaptation speed
+    /// - Stability: bounded range prevents unbounded growth
+    /// - Asymmetric: failures penalized 10× more than successes rewarded
     pub fn update_affinity_hebbian(
         &mut self,
         pocket: &mut Pocket,

@@ -14,6 +14,19 @@ use super::verification_methods::VerificationMethods;
 use std::time::Instant;
 
 /// Main AISP validator engine
+/// 
+/// # Contracts
+/// 
+/// ## Invariants
+/// - `config` and `verification_methods.config` must always be synchronized
+/// - Validator maintains immutable configuration during validation operations
+/// - Thread-safe for concurrent read operations (validation)
+/// 
+/// ## Performance Guarantees  
+/// - Document size validation: O(1)
+/// - Parse phase: O(n) where n = document size
+/// - Semantic analysis: O(m*log(m)) where m = number of semantic elements
+/// - Total validation: O(n + m*log(m)) typical case
 pub struct AispValidator {
     config: ValidationConfig,
     verification_methods: VerificationMethods,
@@ -21,6 +34,16 @@ pub struct AispValidator {
 
 impl AispValidator {
     /// Create a new validator with default configuration
+    /// 
+    /// # Contracts
+    /// ## Postconditions
+    /// - Returns validator with `ValidationConfig::default()` settings
+    /// - `config` and `verification_methods.config` are synchronized
+    /// - Validator ready for immediate use without configuration
+    /// 
+    /// # Performance
+    /// - Time complexity: O(1)
+    /// - Space complexity: O(1) 
     pub fn new() -> Self {
         let config = ValidationConfig::default();
         let verification_methods = VerificationMethods::new(config.clone());
@@ -32,6 +55,15 @@ impl AispValidator {
     }
 
     /// Create a new validator with custom configuration
+    /// 
+    /// # Contracts
+    /// ## Preconditions
+    /// - `config` must be a valid ValidationConfig
+    /// 
+    /// ## Postconditions
+    /// - Returns validator using the provided configuration
+    /// - `config` and `verification_methods.config` are synchronized
+    /// - All verification methods configured according to provided settings
     pub fn with_config(config: ValidationConfig) -> Self {
         let verification_methods = VerificationMethods::new(config.clone());
         
@@ -53,6 +85,30 @@ impl AispValidator {
     }
 
     /// Validate AISP document from source text
+    /// 
+    /// # Contracts
+    /// ## Preconditions
+    /// - `source` must be valid UTF-8 string
+    /// - `self.config` must be properly initialized
+    /// 
+    /// ## Postconditions
+    /// - Returns complete ValidationResult with all configured checks
+    /// - `result.valid` reflects overall document validity
+    /// - `result.warnings` contains all non-fatal issues found
+    /// - `result.error` is Some(_) if validation failed critically
+    /// - Performance timing included if `config.include_timing` is true
+    /// 
+    /// ## Performance Guarantees
+    /// - Fails fast on oversized documents (> config.max_document_size)
+    /// - Parsing limited to O(n) where n = source.len()  
+    /// - Semantic analysis bounded by configured timeouts
+    /// - Total time ≤ max(parse_time, semantic_time, verification_time)
+    /// 
+    /// ## Security Properties
+    /// - Document size limits prevent resource exhaustion
+    /// - Parser handles malformed input safely
+    /// - Unicode normalization prevents injection attacks
+    /// - Formal verification catches logical inconsistencies
     pub fn validate(&self, source: &str) -> ValidationResult {
         let start_time = Instant::now();
         let document_size = source.len();
