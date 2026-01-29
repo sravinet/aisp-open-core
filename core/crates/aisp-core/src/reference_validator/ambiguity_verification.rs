@@ -222,6 +222,7 @@ mod tests {
         let mut result = DeepVerificationResult::test_default();
         result.overall_confidence = 1.0 - ambiguity; // Convert ambiguity to confidence
         result.semantic_score = coherence;
+        result.logic_consistency_score = 1.0 - ambiguity; // Set logic consistency to match expected ambiguity
         result
     }
     

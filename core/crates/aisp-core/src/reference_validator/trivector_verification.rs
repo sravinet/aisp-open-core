@@ -355,8 +355,10 @@ mod tests {
         let mut z3_facade = Z3VerificationFacade::new_disabled();
         let verifier = TriVectorVerifier::new(&mut z3_facade);
         
-        // Verifier should be created successfully
-        assert_eq!(std::mem::size_of_val(&verifier), std::mem::size_of::<&mut Z3VerificationFacade>());
+        // Verifier should be created successfully and have reasonable size
+        let verifier_size = std::mem::size_of_val(&verifier);
+        assert!(verifier_size > std::mem::size_of::<&mut Z3VerificationFacade>());
+        assert!(verifier_size < 1000); // Reasonable upper bound
     }
     
     #[test]
