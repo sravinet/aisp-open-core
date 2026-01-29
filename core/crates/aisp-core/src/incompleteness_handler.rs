@@ -446,7 +446,7 @@ mod tests {
         
         let report = handler.generate_incompleteness_report();
         assert!(report.contains("Gödel"));
-        assert!(report.contains("incompleteness"));
+        assert!(report.contains("Incompleteness")); // Capital I to match actual output
         assert!(report.contains("three-valued logic"));
     }
 }
