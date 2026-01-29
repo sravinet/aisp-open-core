@@ -3,7 +3,10 @@
 //! These tests verify the complete validation pipeline works end-to-end
 //! with real AISP documents and produces expected results.
 
-use aisp_core::{AispValidator, ValidationConfig, ValidationResult, QualityTier};
+use aisp_core::{
+    validator::{AispValidator, types::{ValidationConfig, ValidationResult}},
+    semantic::QualityTier
+};
 
 /// Helper to assert validation results
 fn assert_valid_document(result: &ValidationResult, expected_tier: QualityTier) {
