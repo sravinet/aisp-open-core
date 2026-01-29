@@ -334,8 +334,20 @@ impl BehaviorAnalyzer {
     fn contains_malicious_patterns(&self, function_code: &str) -> bool {
         self.threat_patterns.iter().any(|pattern| {
             pattern.severity == ViolationSeverity::Critical && 
-            function_code.contains(&pattern.pattern_regex.replace(".*", ""))
+            self.matches_pattern(function_code, &pattern.pattern_regex)
         })
+    }
+
+    fn matches_pattern(&self, text: &str, pattern: &str) -> bool {
+        // Simple pattern matching for common threat patterns
+        let keywords = pattern
+            .replace("(", "")
+            .replace(")", "")
+            .replace("|", " ")
+            .replace(".*", " ");
+        
+        keywords.split_whitespace()
+            .any(|keyword| text.contains(keyword))
     }
 
     fn contains_suspicious_patterns(&self, function_code: &str) -> bool {
