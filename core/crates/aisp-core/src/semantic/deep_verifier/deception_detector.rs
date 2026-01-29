@@ -137,8 +137,6 @@ impl DeceptionDetector {
 
     /// Setup enhanced placeholder patterns for comprehensive detection
     fn setup_enhanced_patterns(&mut self) {
-        self.setup_placeholder_patterns();
-        
         self.placeholder_patterns.extend(vec![
             PlaceholderPattern {
                 pattern_name: "HardcodedPattern".to_string(),
@@ -178,8 +176,6 @@ impl DeceptionDetector {
 
     /// Setup advanced behavioral analyzers
     fn setup_advanced_analyzers(&mut self) {
-        self.setup_behavioral_analyzers();
-        
         self.behavioral_analyzers.extend(vec![
             BehavioralAnalyzer {
                 analysis_type: "SemanticConsistency".to_string(),
@@ -302,8 +298,12 @@ impl DeceptionDetector {
     /// Helper analysis methods
 
     fn matches_pattern(&self, text: &str, pattern: &str) -> bool {
-        // Simplified pattern matching
-        text.to_lowercase().contains(&pattern.to_lowercase().replace(r"(?i)", ""))
+        // Simplified pattern matching - extract content from regex groups
+        let cleaned_pattern = pattern.to_lowercase()
+            .replace(r"(?i)", "")
+            .replace("(", "")
+            .replace(")", "");
+        text.to_lowercase().contains(&cleaned_pattern)
     }
 
     fn analyze_implementation_depth(&self, _document: &AispDocument) -> AispResult<Vec<String>> {
