@@ -25,9 +25,23 @@ test:
     just test-security
     @echo "✅ All test suites completed successfully!"
 
+# Run all tests without warnings (quiet mode for unused variables)
+test-quiet:
+    @echo "🔇 Running comprehensive test suite (quiet mode)..."
+    RUSTFLAGS="-A unused-variables -A unused-imports -A dead-code" just test-unit-quiet
+    RUSTFLAGS="-A unused-variables -A unused-imports -A dead-code" just test-integration-quiet  
+    RUSTFLAGS="-A unused-variables -A unused-imports -A dead-code" just test-performance-quiet
+    RUSTFLAGS="-A unused-variables -A unused-imports -A dead-code" just test-security-quiet
+    @echo "✅ All test suites completed successfully (quiet mode)!"
+
 # Run unit tests only
 test-unit:
     @echo "📦 Running unit tests..."
+    cargo test-fast
+
+# Run unit tests (quiet - no unused variable warnings)
+test-unit-quiet:
+    @echo "📦 Running unit tests (quiet)..."
     cargo test-fast
 
 # Run integration tests
@@ -35,14 +49,29 @@ test-integration:
     @echo "🔗 Running integration tests..."
     cargo test integration_comprehensive --all-features
 
+# Run integration tests (quiet - no unused variable warnings)
+test-integration-quiet:
+    @echo "🔗 Running integration tests (quiet)..."
+    cargo test integration_comprehensive --all-features
+
 # Run performance benchmarks
 test-performance:
     @echo "🏃 Running performance benchmarks..."
     cargo test performance_benchmarks --all-features --release
 
+# Run performance benchmarks (quiet - no unused variable warnings)
+test-performance-quiet:
+    @echo "🏃 Running performance benchmarks (quiet)..."
+    cargo test performance_benchmarks --all-features --release
+
 # Run security tests
 test-security:
     @echo "🔒 Running security tests..."
+    cargo test security_regression --features security
+
+# Run security tests (quiet - no unused variable warnings)
+test-security-quiet:
+    @echo "🔒 Running security tests (quiet)..."
     cargo test security_regression --features security
 
 # Build release version

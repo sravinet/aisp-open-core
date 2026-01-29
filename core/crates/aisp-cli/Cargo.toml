@@ -33,6 +33,4 @@ tempfile = "3.0"
 assert_cmd.workspace = true
 predicates = "3.0"
 
-# Inherit workspace-wide lint configuration
-[lints]
-workspace = true
+# Lint configuration handled in .cargo/config.toml

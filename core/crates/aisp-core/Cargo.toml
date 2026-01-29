@@ -49,9 +49,7 @@ test-threads = 1  # For Z3 tests that might conflict
 timeout = 120     # 2 minute timeout
 nocapture = false # Capture output by default
 
-# Inherit workspace-wide lint configuration
-[lints]
-workspace = true
+# Lint configuration handled in .cargo/config.toml
 
 # Test targets
 [[test]]

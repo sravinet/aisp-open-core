@@ -67,6 +67,4 @@ strip = true
 panic = "abort"
 lto = true
 
-# Workspace-wide lint configuration
-[workspace.lints.rust]
-unused_variables = "allow"  # Allow unused variables in tests across all crates
+# Lint configuration now handled in .cargo/config.toml
