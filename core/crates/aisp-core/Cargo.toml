@@ -9,22 +9,31 @@ homepage.workspace = true
 description = "Core AISP parsing and validation engine"
 
 [features]
-# Default build with MANDATORY Z3 verification (production-ready)
-default = ["verification"]
-# Minimal build with essential features only (DEPRECATED)
-minimal = ["std"] 
-# Full verification with Z3 (now the default)
-verification = ["std", "serde", "z3-verification", "regex", "unicode-normalization"]
-# Full verification alias for backward compatibility
-full = ["verification"]
-# Security hardening features
-security = ["regex", "unicode-normalization"]
+# Default build - core AISP parsing and validation (Z3-free)
+default = ["std", "serde", "regex", "unicode-normalization"]
+
+# Core functionality
 std = []
-serde = ["dep:serde"] 
-z3-verification = ["dep:z3"]
-z3-static = ["z3-verification"]
+serde = ["dep:serde"]
+
+# Text processing capabilities  
 regex = ["dep:regex"]
 unicode-normalization = ["dep:unicode-normalization"]
+
+# Formal verification capabilities
+z3-verification = ["dep:z3"]
+z3-static = ["z3-verification"]
+
+# Advanced property testing (requires Z3)
+property-testing = ["z3-verification"]
+
+# Security hardening features
+security = ["regex", "unicode-normalization"]
+
+# Convenience meta-features
+verification = ["z3-verification"]  # Alias for backward compatibility
+full = ["z3-verification", "property-testing", "security"]
+minimal = ["std"]  # DEPRECATED - use default instead
 
 [dependencies]
 serde = { workspace = true, optional = true }

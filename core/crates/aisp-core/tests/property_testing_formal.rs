@@ -9,7 +9,7 @@
 //! - Ensures property extraction and Z3 verification consistency
 //! - Maintains performance bounds for verification operations
 
-#![cfg(feature = "verification")]
+#![cfg(feature = "property-testing")]
 
 use proptest::prelude::*;
 use aisp_core::{
