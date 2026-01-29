@@ -18,11 +18,12 @@ check:
 
 # Run all tests
 test:
-    @echo "🧪 Running test suites..."
+    @echo "🧪 Running comprehensive test suite..."
     just test-unit
     just test-integration  
     just test-performance
     just test-security
+    @echo "✅ All test suites completed successfully!"
 
 # Run unit tests only
 test-unit:

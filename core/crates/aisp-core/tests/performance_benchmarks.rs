@@ -64,13 +64,7 @@ fn benchmark_simple_validation() {
     use aisp_core::validator::{AispValidator, types::ValidationConfig};
     use std::fs;
     
-    let validator = match AispValidator::new() {
-        Ok(v) => v,
-        Err(_) => {
-            println!("⚠ Validator creation failed - skipping simple validation benchmark");
-            return;
-        }
-    };
+    let validator = AispValidator::new();
     
     let config = ValidationConfig::default();
     
@@ -89,14 +83,15 @@ fn benchmark_simple_validation() {
     }
     
     // Warm up
-    let _warmup = validator.validate_file(test_path, &config);
+    let file_content = fs::read_to_string(test_path).unwrap_or_default();
+    let _warmup = validator.validate(&file_content);
     
     // Benchmark
     let iterations = 10;
     let start = Instant::now();
     
     for _i in 0..iterations {
-        let _result = validator.validate_file(test_path, &config);
+        let _result = validator.validate(&file_content);
     }
     
     let total_time = start.elapsed();
@@ -120,13 +115,7 @@ fn benchmark_throughput() {
     use std::sync::Arc;
     use std::thread;
     
-    let validator = match AispValidator::new() {
-        Ok(v) => Arc::new(v),
-        Err(_) => {
-            println!("⚠ Validator creation failed - skipping throughput benchmark");
-            return;
-        }
-    };
+    let validator = Arc::new(AispValidator::new());
     
     let config = Arc::new(ValidationConfig::default());
     
@@ -149,6 +138,8 @@ fn benchmark_throughput() {
         return;
     }
     
+    let file_content = fs::read_to_string(test_path).unwrap_or_default();
+    
     let concurrent_threads = 4;
     let validations_per_thread = 10;
     
@@ -157,14 +148,15 @@ fn benchmark_throughput() {
     let handles: Vec<_> = (0..concurrent_threads).map(|_| {
         let validator_clone = Arc::clone(&validator);
         let config_clone = Arc::clone(&config);
+        let content_clone = file_content.clone();
         
         thread::spawn(move || {
             let mut successful = 0;
             
             for _i in 0..validations_per_thread {
-                match validator_clone.validate_file(test_path, &config_clone) {
-                    Ok(_) => successful += 1,
-                    Err(_) => {}
+                let result = validator_clone.validate(&content_clone);
+                if result.valid {
+                    successful += 1;
                 }
             }
             
@@ -200,13 +192,7 @@ fn benchmark_memory_usage() {
     // Note: This is a simplified memory test
     // In production, use proper memory profiling tools
     
-    let validator = match AispValidator::new() {
-        Ok(v) => v,
-        Err(_) => {
-            println!("⚠ Validator creation failed - skipping memory benchmark");
-            return;
-        }
-    };
+    let validator = AispValidator::new();
     
     let config = ValidationConfig::default();
     
@@ -230,13 +216,7 @@ fn benchmark_validation_levels() {
     use aisp_core::validator::{AispValidator, types::ValidationConfig};
     use std::fs;
     
-    let validator = match AispValidator::new() {
-        Ok(v) => v,
-        Err(_) => {
-            println!("⚠ Validator creation failed - skipping validation levels benchmark");
-            return;
-        }
-    };
+    let validator = AispValidator::new();
     
     let test_content = r#"𝔸5.1.LevelsTest@2026-01-28
 
@@ -263,6 +243,8 @@ fn benchmark_validation_levels() {
         return;
     }
     
+    let file_content = fs::read_to_string(test_path).unwrap_or_default();
+    
     // Test different configurations
     let test_configs = vec![
         ("minimal", ValidationConfig { 
@@ -283,27 +265,25 @@ fn benchmark_validation_levels() {
     for (level, config) in test_configs {
         let start = Instant::now();
         
-        match validator.validate_file(test_path, &config) {
-            Ok(_validation) => {
-                let duration = start.elapsed();
-                println!("{} validation: {}ms", level, duration.as_millis());
-                
-                // Different levels have different SLAs
-                let max_time = match level {
-                    "minimal" => Duration::from_millis(100),
-                    "standard" => Duration::from_secs(1),
-                    "comprehensive" => Duration::from_secs(10),
-                    _ => Duration::from_secs(10),
-                };
-                
-                assert!(duration < max_time,
-                    "{} validation too slow: {}ms > {}ms", 
-                    level, duration.as_millis(), max_time.as_millis());
-            },
-            Err(e) => {
-                println!("{} validation error: {:?}", level, e);
-                // Errors are acceptable for this performance test
-            }
+        let validation = validator.validate(&file_content);
+        if validation.valid {
+            let duration = start.elapsed();
+            println!("{} validation: {}ms", level, duration.as_millis());
+            
+            // Different levels have different SLAs
+            let max_time = match level {
+                "minimal" => Duration::from_millis(100),
+                "standard" => Duration::from_secs(1),
+                "comprehensive" => Duration::from_secs(10),
+                _ => Duration::from_secs(10),
+            };
+            
+            assert!(duration < max_time,
+                "{} validation too slow: {}ms > {}ms", 
+                level, duration.as_millis(), max_time.as_millis());
+        } else {
+            println!("{} validation failed: not valid", level);
+            // Non-valid results are acceptable for this performance test
         }
     }
     
@@ -317,13 +297,7 @@ fn benchmark_regression_detection() {
     
     // This test establishes performance baselines to detect regressions
     
-    let validator = match AispValidator::new() {
-        Ok(v) => v,
-        Err(_) => {
-            println!("⚠ Validator creation failed - skipping regression detection");
-            return;
-        }
-    };
+    let validator = AispValidator::new();
     
     let config = ValidationConfig::default();
     
