@@ -49,6 +49,10 @@ test-threads = 1  # For Z3 tests that might conflict
 timeout = 120     # 2 minute timeout
 nocapture = false # Capture output by default
 
+# Inherit workspace-wide lint configuration
+[lints]
+workspace = true
+
 # Test targets
 [[test]]
 name = "integration_comprehensive"
