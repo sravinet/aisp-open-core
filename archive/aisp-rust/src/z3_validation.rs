@@ -14,65 +14,85 @@ use std::collections::HashMap;
 pub enum AispConstruct {
     /// Universal quantifier: ∀x∈S:P(x)
     ForAll {
+        /// Variable name being quantified over (Contract: non-empty identifier)
         var: String,
+        /// Domain set for quantification (Contract: valid type or set expression)
         domain: String,
+        /// Predicate formula over the variable (Contract: well-formed logical expression)
         predicate: Box<AispConstruct>,
     },
     /// Existential quantifier: ∃x∈S:P(x)  
     Exists {
+        /// Variable name being quantified over (Contract: non-empty identifier)
         var: String,
+        /// Domain set for quantification (Contract: valid type or set expression)
         domain: String,
+        /// Predicate formula over the variable (Contract: well-formed logical expression)
         predicate: Box<AispConstruct>,
     },
     /// Logical implication: A⇒B
     Implies {
+        /// Antecedent formula (Contract: evaluable boolean expression)
         antecedent: Box<AispConstruct>,
+        /// Consequent formula (Contract: evaluable boolean expression)
         consequent: Box<AispConstruct>,
     },
     /// Logical equivalence: A⇔B
     Iff {
+        /// Left side of equivalence (Contract: evaluable boolean expression)
         left: Box<AispConstruct>,
+        /// Right side of equivalence (Contract: evaluable boolean expression)
         right: Box<AispConstruct>,
     },
     /// Set membership: x∈S
     SetMembership {
+        /// Element to test membership of (Contract: valid identifier or expression)
         element: String,
+        /// Set or domain name (Contract: defined set identifier)
         set: String,
     },
     /// Set inclusion: A⊆B
     SetSubset {
+        /// Subset name (Contract: defined set identifier)
         subset: String,
+        /// Superset name (Contract: defined set identifier)
         superset: String,
     },
     /// Function application: f(x)
     FunctionApp {
+        /// Function name (Contract: defined function identifier)
         function: String,
+        /// Function arguments (Contract: valid expressions matching function arity)
         args: Vec<String>,
     },
     /// Type constraint: x:ℕ
     TypeConstraint {
+        /// Variable to constrain (Contract: valid identifier)
         var: String,
+        /// Type name (Contract: valid AISP type identifier)
         type_name: String,
     },
     /// Equality: a≜b or a≡b
     Equality {
+        /// Left side expression (Contract: evaluable expression)
         left: String,
+        /// Right side expression (Contract: evaluable expression)
         right: String,
     },
     /// Atomic predicate
     Predicate(String),
 }
 
-/// Z3 SMT-LIB translation context
+/// Z3 SMT-LIB translation context with formal contract guarantees
 #[derive(Debug, Default)]
 pub struct Z3Context {
-    /// Declared sorts (types)
+    /// Declared sorts (types) (Contract: maps AISP type names to valid SMT-LIB sort declarations)
     sorts: HashMap<String, String>,
-    /// Declared functions
+    /// Declared functions (Contract: maps AISP function names to valid SMT-LIB function declarations)
     functions: HashMap<String, String>,
-    /// Declared constants
+    /// Declared constants (Contract: maps AISP constant names to valid SMT-LIB constant declarations)
     constants: HashMap<String, String>,
-    /// Generated assertions
+    /// Generated assertions (Contract: each element is well-formed SMT-LIB assertion)
     assertions: Vec<String>,
 }
 
