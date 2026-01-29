@@ -1,20 +1,23 @@
-//! Property-based tests for formal verification modules
+//! Property-based tests for modern formal verification system
 //!
-//! This module tests formal verification properties including property extraction,
-//! theorem proving, and Z3 integration using automated test case generation.
+//! This module provides comprehensive property-based testing for AISP formal verification
+//! including property extraction, theorem proving, and production Z3 integration.
 //!
-//! Note: These tests require the z3-verification feature and deprecated APIs.
+//! **Architectural Contract:**
+//! - Tests modern `z3_verification` APIs (production-ready)
+//! - Validates formal verification invariants across randomized inputs
+//! - Ensures property extraction and Z3 verification consistency
+//! - Maintains performance bounds for verification operations
 
-// Skip this entire test file - it uses deprecated z3_integration module
-#![cfg(feature = "z3-integration-deprecated")]
+#![cfg(feature = "verification")]
 
 use proptest::prelude::*;
 use aisp_core::{
-    ast::*,
+    ast::canonical::*,
     property_extractor::PropertyExtractor,
     theorem_prover::TheoremProver,
     proof_search::ProofSearchStrategy,
-    z3_integration::{Z3Verifier, PropertyStatus, GlobalVerificationStatus, DiagnosticLevel},
+    z3_verification::{Z3VerificationFacade, PropertyResult, VerificationStatus, DiagnosticLevel},
     property_types::*,
     parser_new::AispParser,
 };
@@ -353,7 +356,7 @@ proptest! {
     /// Property: Z3 verifier should handle documents gracefully
     #[test]
     fn prop_z3_verifier_graceful_handling(doc in formal_document()) {
-        let verifier = Z3Verifier::new();
+        let verifier = Z3VerificationFacade::new();
         if verifier.is_err() {
             // Z3 not available, skip test
             return Ok(());
@@ -364,7 +367,7 @@ proptest! {
         
         if let Ok(parsed_doc) = parser.parse() {
             // Attempt verification (should not panic)
-            let result = verifier.verify_document(&parsed_doc, None, None);
+            let result = verifier.verify_document(&parsed_doc, None);
             
             prop_assert!(result.is_ok(), "Z3 verification should not fail unexpectedly");
             
@@ -372,21 +375,23 @@ proptest! {
                 // Verification status should be valid
                 prop_assert!(matches!(
                     verification_result.status,
-                    GlobalVerificationStatus::AllVerified |
-                    GlobalVerificationStatus::PartiallyVerified |
-                    GlobalVerificationStatus::Incomplete |
-                    GlobalVerificationStatus::Failed
+                    VerificationStatus::AllVerified |
+                    VerificationStatus::PartiallyVerified |
+                    VerificationStatus::Incomplete |
+                    VerificationStatus::Failed(_) |
+                    VerificationStatus::Disabled
                 ), "Verification status should be valid");
                 
                 // Properties should have valid statuses
-                for property in &verification_result.properties {
+                for property in &verification_result.verified_properties {
                     prop_assert!(matches!(
-                        property.status,
-                        PropertyStatus::Proven |
-                        PropertyStatus::Disproven |
-                        PropertyStatus::Unknown |
-                        PropertyStatus::Error(_)
-                    ), "Property status should be valid");
+                        property.result,
+                        PropertyResult::Proven |
+                        PropertyResult::Disproven |
+                        PropertyResult::Unknown |
+                        PropertyResult::Error(_) |
+                        PropertyResult::Unsupported
+                    ), "Property result should be valid");
                     
                     // Verification time should be reasonable
                     prop_assert!(property.verification_time <= Duration::from_secs(30),
@@ -394,9 +399,8 @@ proptest! {
                 }
                 
                 // Statistics should be reasonable
-                prop_assert_eq!(verification_result.stats.properties_checked,
-                              verification_result.properties.len(),
-                              "Properties checked count should match");
+                prop_assert!(verification_result.stats.smt_queries >= verification_result.verified_properties.len(),
+                           "SMT queries should be at least as many as properties");
                 
                 prop_assert!(verification_result.stats.total_time >= Duration::ZERO,
                            "Total time should be non-negative");
@@ -511,7 +515,7 @@ proptest! {
                     // Type definitions in context should match document types
                     for block in &parsed_doc.blocks {
                         if let AispBlock::Types(types_block) = block {
-                            for (type_name, _) in &types_block.definitions {
+                            for (type_name, _type_def) in &types_block.definitions {
                                 if context.type_definitions.contains_key(type_name) {
                                     // Context should have this type
                                     prop_assert!(true, "Type context should include document types");
@@ -523,8 +527,8 @@ proptest! {
                     // Function definitions in context should match document functions
                     for block in &parsed_doc.blocks {
                         if let AispBlock::Functions(funcs_block) = block {
-                            for (func_name, _) in &funcs_block.functions {
-                                if context.function_definitions.contains_key(func_name) {
+                            for function in &funcs_block.functions {
+                                if context.function_definitions.contains_key(&function.name) {
                                     prop_assert!(true, "Function context should include document functions");
                                 }
                             }
@@ -647,14 +651,14 @@ mod formal_edge_cases {
                 
                 if extraction_result.is_ok() {
                     // Test Z3 integration
-                    let verifier_result = Z3Verifier::new();
+                    let verifier_result = Z3VerificationFacade::new();
                     if let Ok(mut verifier) = verifier_result {
-                        let verification_result = verifier.verify_document(&parsed_doc, None, None);
+                        let verification_result = verifier.verify_document(&parsed_doc, None);
                         
                         if let Ok(verification) = verification_result {
                             // Properties should exist if extraction found them
                             let extracted_props = extraction_result.unwrap();
-                            let verified_props = &verification.properties;
+                            let verified_props = &verification.verified_properties;
                             
                             // If we extracted properties, verification should handle them
                             if !extracted_props.is_empty() {
@@ -667,25 +671,25 @@ mod formal_edge_cases {
                             
                             // Verification status should be consistent
                             let proven_count = verified_props.iter()
-                                .filter(|p| p.status == PropertyStatus::Proven)
+                                .filter(|p| p.result == PropertyResult::Proven)
                                 .count();
                             
                             match verification.status {
-                                GlobalVerificationStatus::AllVerified => {
+                                VerificationStatus::AllVerified => {
                                     prop_assert_eq!(proven_count, verified_props.len(),
                                                   "All verified should mean all properties proven");
                                 }
-                                GlobalVerificationStatus::PartiallyVerified => {
+                                VerificationStatus::PartiallyVerified => {
                                     prop_assert!(proven_count > 0 && proven_count < verified_props.len(),
                                                "Partially verified should mean some but not all proven");
                                 }
-                                GlobalVerificationStatus::Failed => {
+                                VerificationStatus::Failed(_) => {
                                     prop_assert!(verification.diagnostics.iter().any(|d| 
                                                    d.level == DiagnosticLevel::Error),
                                                "Failed status should have error diagnostics");
                                 }
-                                GlobalVerificationStatus::Incomplete => {
-                                    // This is always acceptable
+                                VerificationStatus::Incomplete | VerificationStatus::Disabled => {
+                                    // These are always acceptable
                                     prop_assert!(true);
                                 }
                             }
