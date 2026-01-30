@@ -73,16 +73,11 @@ pub struct EvidenceBlock {
 /// Re-export pest types  
 pub use pest::iterators::{Pair, Pairs};
 
-// Create a module to properly export the generated Rule enum
-pub mod parser_impl {
-    use super::*;
-    use pest::Parser;
-    use pest_derive::Parser;
-    
-    #[derive(Parser)]
-    #[grammar_inline = r#"
+// Enhanced inline grammar with comprehensive Unicode support
+#[derive(pest_derive::Parser)]
+#[grammar_inline = r#"
 WHITESPACE = _{ " " | "\t" | "\n" | "\r" }
-COMMENT = _{ "//" ~ (!"\n" ~ ANY)* }
+COMMENT = _{ "//" ~ (!"\n" ~ ANY)* | ";;" ~ (!"\n" ~ ANY)* }
 
 // Top-level document structure
 aisp_document = { 
@@ -93,10 +88,10 @@ aisp_document = {
     EOI 
 }
 
-// Header with version, identifier, and date
-header = { "𝔸" ~ version ~ "." ~ doc_identifier ~ "@" ~ date }
+// Header with version, identifier, and date  
+header = { "𝔸" ~ version ~ "." ~ identifier ~ "@" ~ date }
 version = { ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
-doc_identifier = { (ASCII_ALPHANUMERIC | "-" | "_" | ".")+ }
+identifier = { (ASCII_ALPHANUMERIC | "-" | "_" | ".")+ }
 date = { ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
 
 // Domain and protocol declarations
@@ -110,7 +105,7 @@ domain_path = { (ASCII_ALPHANUMERIC | "." | "-" | "_")+ }
 tag_list = { tag ~ ("," ~ tag)* }
 tag = { (ASCII_ALPHANUMERIC | "-" | "_")+ }
 
-// AISP block structure
+// AISP block structure with comprehensive Unicode support
 aisp_blocks = { aisp_block* }
 aisp_block = { 
     omega_block | 
@@ -122,17 +117,17 @@ aisp_block = {
     malformed_block
 }
 
-// Block definitions
+// Enhanced block definitions with full Unicode support
 omega_block = { "⟦" ~ "Ω" ~ ":" ~ "Meta" ~ "⟧" ~ "{" ~ meta_entries ~ "}" }
 sigma_block = { "⟦" ~ "Σ" ~ ":" ~ "Types" ~ "⟧" ~ "{" ~ type_definitions ~ "}" }
 gamma_block = { "⟦" ~ "Γ" ~ ":" ~ "Rules" ~ "⟧" ~ "{" ~ rule_definitions ~ "}" }
 lambda_block = { "⟦" ~ "Λ" ~ ":" ~ ("Funcs" | "Functions") ~ "⟧" ~ "{" ~ function_definitions ~ "}" }
 chi_block = { "⟦" ~ "Χ" ~ ":" ~ "Errors" ~ "⟧" ~ "{" ~ error_definitions ~ "}" }
-epsilon_block = { "⟦" ~ "Ε" ~ (":" ~ "Evidence")? ~ "⟧" ~ "⟨" ~ evidence_entries ~ "⟩" }
+epsilon_block = { "⟦" ~ "Ε" ~ (":" ~ "Evidence")? ~ "⟧" ~ ("⟨" ~ evidence_entries ~ "⟩" | evidence_entries) }
 
-// Block content
+// Block content with enhanced expression support
 meta_entries = { meta_entry* }
-meta_entry = { identifier ~ "≜" ~ string_literal ~ ";"? }
+meta_entry = { identifier ~ "≜" ~ (string_literal | identifier) ~ ";"? }
 
 type_definitions = { type_definition* }
 type_definition = { identifier ~ "≜" ~ type_expression ~ ";"? }
@@ -149,32 +144,80 @@ error_definition = { identifier ~ "≜" ~ logical_expr ~ ";"? }
 evidence_entries = { evidence_entry* }
 evidence_entry = { evidence_symbol ~ "≜" ~ evidence_value ~ ";"? }
 
-// Expression types
-type_expression = { identifier | basic_type }
-basic_type = { "ℕ" | "ℝ" | "ℂ" | "ℚ" | "ℤ" | "𝕊" | "𝔹" }
+// Enhanced expression types with Unicode mathematical symbols
+type_expression = { 
+    set_type_expr |
+    basic_type | 
+    identifier 
+}
+set_type_expr = { "{" ~ identifier ~ ("," ~ identifier)* ~ "}" }
+basic_type = { "ℕ" | "ℝ" | "ℂ" | "ℚ" | "ℤ" | "𝕊" | "𝔹" | "Unit" | "Natural" | "Boolean" }
 
-lambda_expression = { "λ" ~ identifier ~ "." ~ identifier | identifier }
+lambda_expression = { 
+    "λ" ~ identifier ~ "." ~ (identifier | ASCII_ALPHANUMERIC+) |
+    identifier
+}
+function_body = {
+    identifier |
+    logical_expr
+}
 
-logical_expr = { identifier ~ ("∈" | "≡" | "⊆") ~ identifier | identifier }
+// Enhanced logical expressions with Unicode operators
+logical_expr = { 
+    quantified_expr |
+    implication_expr |
+    comparison_expr |
+    identifier
+}
 
-evidence_symbol = { "δ" | "φ" | "τ" | identifier }
-evidence_value = { number | string_literal }
+quantified_expr = { 
+    quantifier ~ identifier ~ ":" ~ type_expression ~ "→" ~ logical_expr
+}
+quantifier = { "∀" | "∃" }
 
-// Primitives
-identifier = { (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-")* }
+implication_expr = {
+    comparison_expr ~ ("→" ~ comparison_expr)*
+}
+
+comparison_expr = {
+    additive_expr ~ (comparison_op ~ additive_expr)*
+}
+comparison_op = { 
+    "∈" | "≡" | "⊆" | "⊇" | "=" | "≠" | "<" | ">" | "≤" | "≥"
+}
+
+additive_expr = {
+    multiplicative_expr ~ (("+" | "-") ~ multiplicative_expr)*
+}
+multiplicative_expr = {
+    primary_expr ~ (("*" | "/") ~ primary_expr)*
+}
+primary_expr = {
+    "(" ~ logical_expr ~ ")" |
+    function_call |
+    identifier |
+    number
+}
+
+function_call = {
+    identifier ~ "(" ~ argument_list? ~ ")"
+}
+argument_list = {
+    logical_expr ~ ("," ~ logical_expr)*
+}
+
+evidence_symbol = { "δ" | "φ" | "τ" | "|" ~ "𝔅" ~ "|" | identifier }
+evidence_value = { number | string_literal | quality_tier }
+quality_tier = { "◊" ~ ("⁺" | "⁻")* }
+
+// Primitives with Unicode support
 number = { ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
 string_literal = { "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
 
 // Error recovery
 malformed_block = { "⟦" ~ (!"⟧" ~ ANY)* ~ ("⟧" | &EOI) }
-    "#]
-    pub struct InternalParser;
-    
-    pub use InternalParser as AispParser;
-}
-
-// Re-export the parser and rule types
-pub use parser_impl::{AispParser, Rule};
+"#]
+pub struct AispParser;
 
 /// Security-hardened parser with error recovery capabilities
 pub struct RobustAispParser {
@@ -483,7 +526,7 @@ impl RobustAispParser {
         for inner in pair.into_inner() {
             match inner.as_rule() {
                 Rule::version => version = inner.as_str().to_string(),
-                Rule::doc_identifier => name = inner.as_str().to_string(),
+                Rule::identifier => name = inner.as_str().to_string(),
                 Rule::date => date = inner.as_str().to_string(),
                 _ => {}
             }
