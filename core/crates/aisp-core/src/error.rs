@@ -89,6 +89,7 @@ impl AispError {
             Self::AmbiguityError { .. } => true,
             Self::DocumentTooLarge { .. } => false,
             Self::UnsupportedVersion { .. } => false,
+            Self::UnsupportedFormat { .. } => false,
             Self::IoError { .. } => false,
             Self::Z3Error { .. } => true,
             Self::VerificationFailed(_) => true,

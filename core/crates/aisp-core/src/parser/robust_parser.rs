@@ -2,7 +2,6 @@
 // Implements ADR-022: Pest Parser Migration for Robustness
 
 use pest::Parser;
-use pest_derive::Parser;
 use std::collections::HashMap;
 use std::fmt;
 use crate::error::{AispError, AispResult};
@@ -20,11 +19,9 @@ use crate::ast::canonical::{
     MetaValue,
     TypeDefinition,
     TypeExpression,
-    LogicalRule,
     LogicalExpression,
     FunctionDefinition,
     LambdaExpression,
-    Span,
 };
 
 // Import SRP content parsers
@@ -187,6 +184,16 @@ string_literal = { "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
 malformed_block = { "⟦" ~ (!"⟧" ~ ANY)* ~ ("⟧" | &EOI) }
 "#]
 pub struct AispParser;
+
+impl AispParser {
+    pub fn new(input: String) -> RobustAispParser {
+        RobustAispParser::new()
+    }
+    
+    pub fn parse(&self) -> AispResult<crate::ast::canonical::CanonicalAispDocument> {
+        Err(AispError::ParseError("Use RobustAispParser instead".to_string()))
+    }
+}
 
 /// Security-hardened parser with error recovery capabilities
 pub struct RobustAispParser {

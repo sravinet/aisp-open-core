@@ -5,13 +5,19 @@
 //! directly, this module focuses on utility operations and type conversions.
 
 use super::types::*;
-use super::blocks::*;
 use super::document::*;
 use std::collections::HashMap;
 
 /// Conversion trait for future extensibility
 pub trait IntoCanonical<T> {
     fn into_canonical(self) -> T;
+}
+
+/// Implementation for CanonicalAispDocument (identity conversion)
+impl IntoCanonical<CanonicalAispDocument> for CanonicalAispDocument {
+    fn into_canonical(self) -> CanonicalAispDocument {
+        self
+    }
 }
 
 // Note: The robust parser now uses canonical AST types directly,
@@ -118,6 +124,7 @@ impl std::error::Error for ConversionError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ast::canonical::{CanonicalAispBlock, MetaBlock};
 
     #[test]
     fn test_meta_extraction_utilities() {

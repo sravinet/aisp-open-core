@@ -1,7 +1,5 @@
 // Build script for Pest grammar compilation
 
-use std::env;
-use std::path::Path;
 
 fn main() {
     // Tell cargo to rerun if the grammar file changes
