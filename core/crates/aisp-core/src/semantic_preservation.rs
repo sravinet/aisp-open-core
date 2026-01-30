@@ -506,11 +506,11 @@ through carefully verified transformation rules. □
         let target = transformation(source)?;
         
         // Get semantic interpretation of source  
-        let source_doc = crate::parser_new::parse(source)?;
+        let source_doc = crate::parser::parse(source)?;
         let source_semantics = self.semantics.interpret(&source_doc)?;
         
         // Get semantic interpretation of target
-        let target_doc = crate::parser_new::parse(&target)?;
+        let target_doc = crate::parser::parse(&target)?;
         let target_semantics = self.semantics.interpret(&target_doc)?;
         
         // Check semantic equivalence

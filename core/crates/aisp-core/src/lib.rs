@@ -4,7 +4,7 @@
 //! AISP 5.1 documents with zero-copy parsing and strong type safety guarantees.
 
 pub mod ast;
-pub mod parser_new;
+pub mod parser; // Consolidated SRP-compliant parser
 pub mod relational_new;
 pub mod temporal_new;
 pub mod validator;
@@ -12,15 +12,6 @@ pub mod validator;
 pub mod error;
 pub mod symbols;
 pub mod conflict_types;
-
-// New modular parser components
-pub mod lexer;
-pub mod token_parser;
-pub mod header_parser;
-pub mod meta_parser;
-pub mod types_parser;
-pub mod evidence_parser;
-pub mod logic_parser;
 
 // New modular semantic analysis components
 pub mod type_checker;
@@ -124,7 +115,6 @@ pub mod reference_integration_test;
 
 // Security hardening components (Pest parser migration)
 pub mod grammar;
-pub mod parser;
 pub mod testing;
 
 // Deep verification architecture (Phase 2)
@@ -133,7 +123,7 @@ pub mod semantic;
 // Test fixtures and utilities are now handled inline in each module
 
 pub use ast::*;
-pub use parser_new::*;
+pub use parser::*;
 pub use relational_new::*;
 pub use semantic::*;
 pub use temporal_new::*;
