@@ -1,0 +1,29 @@
+𝔸5.1.reference-ascii@2026-01-30
+
+⟦Ω:Meta⟧{
+  domain≜"formal-verification"
+  vision≜"Assembly language for AI cognition"
+  author≜"Bradley Ross"
+  claim≜"Measurable ambiguity under 2 percent"
+}
+
+⟦Σ:Types⟧{
+  Natural≜N
+  Real≜R
+  Signal≜Vector
+  Quality≜Real
+}
+
+⟦Γ:Rules⟧{
+  ambiguity_bound≜"All documents have ambiguity less than 0.02"
+  orthogonality≜"Safety and semantic vectors are orthogonal"
+  convergence≜"Optimization sequences converge to fixed points"
+}
+
+⟦Λ:Funcs⟧{
+  validate≜"Document validation function"
+  optimize≜"Quality improvement function"  
+  measure≜"Ambiguity measurement function"
+}
+
+⟦Ε⟧⟨δ≜0.79⟩

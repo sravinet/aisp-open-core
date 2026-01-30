@@ -1,0 +1,30 @@
+𝔸5.1.reference-simple@2026-01-30
+
+⟦Ω:Meta⟧{
+  domain≜"formal-verification"
+  vision≜"Assembly language for AI cognition"
+  author≜"Bradley Ross"
+  ambiguity_claim≜"∀D∈AISP:Ambig(D)<0.02"
+}
+
+⟦Σ:Types⟧{
+  Signal≜V_H⊕V_L⊕V_S
+  V_H≜ℝ^768
+  V_L≜ℝ^512
+  V_S≜ℝ^256
+  Pipeline_Success≜ℝ[0,1]
+}
+
+⟦Γ:Rules⟧{
+  orthogonality_claim≜"V_H∩V_S≡∅"
+  improvement_claim≜"P_aisp(10)/P_prose(10)≡97×"
+  bounded_convergence≜"∀d.∃n:ℕ.opt_δ(d,n)=opt_δ(d,n+1)"
+}
+
+⟦Λ:Funcs⟧{
+  ambiguity_function≜"Ambig≜λD.1-|Parse_u(D)|/|Parse_t(D)|"
+  ghost_intent≜"ψ_g≜λb.ψ_*⊖ψ_have(b.G)"
+  validation≜"validate≜⌈⌉∘δ∘Γ?∘∂"
+}
+
+⟦Ε⟧⟨δ≜0.79;φ≜97;τ≜◊⁺⁺⟩

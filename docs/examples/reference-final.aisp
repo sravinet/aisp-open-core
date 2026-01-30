@@ -1,0 +1,21 @@
+𝔸5.1.reference-final@2026-01-30
+
+⟦Ω:Meta⟧{
+  domain≜"formal-verification"
+  vision≜"Assembly language for AI cognition"
+  author≜"Bradley Ross"
+}
+
+⟦Σ:Types⟧{
+  Natural≜ℕ
+  AmbiguityMeasure≜Real
+  PipelineSuccess≜Real
+}
+
+⟦Γ:Rules⟧{
+}
+
+⟦Λ:Funcs⟧{
+}
+
+⟦Ε⟧⟨δ≜0.79⟩
