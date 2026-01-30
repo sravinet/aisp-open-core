@@ -46,6 +46,7 @@ pest = "2.7"
 pest_derive = "2.7"
 regex = { version = "1.10", optional = true }
 unicode-normalization = { version = "0.1", optional = true }
+num_cpus = "1.16"
 
 [build-dependencies]
 pest_generator = "2.7"

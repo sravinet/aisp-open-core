@@ -5,6 +5,7 @@
 
 pub mod ast;
 pub mod parser; // Consolidated SRP-compliant parser
+pub mod batch_verification; // Batch verification optimization
 pub mod relational_new;
 pub mod temporal_new;
 pub mod validator;

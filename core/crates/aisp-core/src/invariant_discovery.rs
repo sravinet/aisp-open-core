@@ -13,7 +13,7 @@
 //! ## Quick Start
 //!
 //! ```rust,ignore
-//! use aisp_core::{invariant_discovery::InvariantDiscovery, parser_new::AispParser};
+//! use aisp_core::{invariant_discovery::InvariantDiscovery, parser::AispParser};
 //!
 //! // Parse an AISP document
 //! let mut parser = AispParser::new(document_text);
@@ -39,7 +39,7 @@ mod tests {
     use super::*;
     use crate::{
         ast::canonical::{CanonicalAispDocument as AispDocument, DocumentHeader, DocumentMetadata, CanonicalAispBlock as AispBlock, TypesBlock, TypeExpression, BasicType, TypeDefinition, Span},
-        parser_new::AispParser,
+        parser::AispParser,
     };
     use std::collections::HashMap;
 
