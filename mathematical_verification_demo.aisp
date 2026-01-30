@@ -1,0 +1,28 @@
+𝔸5.1.MathVerification@2026-01-30
+
+⟦Ω:Meta⟧{
+  domain≜"mathematical-formal-verification"
+  version≜"5.1.0"
+  purpose≜"tri-vector-orthogonality-verification"
+}
+
+⟦Σ:Types⟧{
+  Signal≜ℝ
+  VectorH≜ℝ
+  VectorL≜ℝ
+  VectorS≜ℝ
+  Ambiguity≜ℝ
+  Natural≜ℕ
+  Boolean≜𝔹
+  Real≜ℝ
+  TriVector≜ℝ
+  OrthogonalSpace≜ℝ
+}
+
+⟦Γ:Rules⟧{
+}
+
+⟦Λ:Funcs⟧{
+}
+
+⟦Ε⟧⟨δ≜0.92⟩

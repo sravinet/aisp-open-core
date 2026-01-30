@@ -1,0 +1,19 @@
+𝔸5.1.SimpleMath@2026-01-30
+
+⟦Ω:Meta⟧{
+  domain≜"simple-mathematical-verification"
+}
+
+⟦Σ:Types⟧{
+  Real≜ℝ
+  Natural≜ℕ
+  Boolean≜𝔹
+}
+
+⟦Γ:Rules⟧{
+}
+
+⟦Λ:Funcs⟧{
+}
+
+⟦Ε⟧⟨δ≜0.80⟩
