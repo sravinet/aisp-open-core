@@ -565,22 +565,17 @@ impl BatchVerificationEngine {
                 audit_findings: Vec::new(),
             },
             performance_analysis: crate::semantic::verification_pipeline::PerformanceAnalysis {
-                verification_time: Duration::from_millis(100),
-                memory_usage: 1024,
-                cpu_usage: 0.1,
-                optimization_suggestions: Vec::new(),
+                bottlenecks: Vec::new(),
+                optimization_opportunities: Vec::new(),
             },
             audit_summary: crate::semantic::verification_pipeline::AuditSummary {
-                audit_score: 0.95,
+                audit_passed: true,
                 findings: Vec::new(),
-                recommendations: Vec::new(),
-                compliance_gaps: Vec::new(),
             },
             recommendations: Vec::new(),
             certification_eligibility: crate::semantic::verification_pipeline::CertificationEligibility {
-                eligible_certifications: Vec::new(),
-                requirements_met: HashMap::new(),
-                gaps_to_address: Vec::new(),
+                eligible_standards: Vec::new(),
+                requirements_met: 0.95,
             },
         })
     }

@@ -233,7 +233,7 @@ impl MultiFormatParser {
         };
         
         let metadata = MixedFormatMetadata {
-            source_format: analysis.format,
+            source_format: analysis.format.clone(),
             analysis,
             extraction_context,
             warnings: parsing_warnings,
