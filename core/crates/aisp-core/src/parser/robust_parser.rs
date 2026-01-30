@@ -27,6 +27,15 @@ use crate::ast::canonical::{
     Span,
 };
 
+// Import SRP content parsers
+use super::content::{
+    MetaContentParser,
+    TypeContentParser,
+    LogicContentParser,
+    LambdaContentParser,
+    EvidenceContentParser,
+};
+
 
 /// Re-export pest types  
 pub use pest::iterators::{Pair, Pairs};
@@ -590,11 +599,11 @@ impl RobustAispParser {
                         let entry_text = entry.as_str().to_string();
                         raw_entries.push(entry_text.clone());
                         
-                        // Parse entry format: "key≜value"
+                        // Parse entry format: "key≜value" 
                         if let Some((key, value)) = self.parse_meta_entry(&entry_text) {
                             entries.insert(key.clone(), MetaEntry {
                                 key: key.clone(),
-                                value: self.parse_meta_value(&value),
+                                value,
                                 span: None,
                             });
                         }
@@ -613,26 +622,8 @@ impl RobustAispParser {
         Ok(AispBlock::Meta(meta_block))
     }
     
-    fn parse_meta_entry(&self, entry_text: &str) -> Option<(String, String)> {
-        if let Some(pos) = entry_text.find('≜') {
-            let key = entry_text[..pos].trim().to_string();
-            let value = entry_text[pos + '≜'.len_utf8()..].trim().to_string();
-            Some((key, value))
-        } else {
-            None
-        }
-    }
-    
-    fn parse_meta_value(&self, value_text: &str) -> MetaValue {
-        // Try parsing as number first
-        if let Ok(num) = value_text.parse::<f64>() {
-            MetaValue::Number(num)
-        } else if value_text == "true" || value_text == "false" {
-            MetaValue::Boolean(value_text == "true")
-        } else {
-            // Default to string
-            MetaValue::String(value_text.to_string())
-        }
+    fn parse_meta_entry(&self, entry_text: &str) -> Option<(String, MetaValue)> {
+        MetaContentParser::parse_entry(entry_text)
     }
 
     fn parse_sigma_block(&self, pair: Pair<Rule>) -> AispResult<AispBlock> {
@@ -647,10 +638,10 @@ impl RobustAispParser {
                         raw_definitions.push(def_text.clone());
                         
                         // Parse type definition format: "TypeName≜TypeExpression"
-                        if let Some((name, type_expr_text)) = self.parse_type_definition(&def_text) {
+                        if let Some((name, type_expr)) = self.parse_type_definition(&def_text) {
                             definitions.insert(name.clone(), TypeDefinition {
                                 name: name.clone(),
-                                type_expr: self.parse_type_expression(&type_expr_text),
+                                type_expr,
                                 span: None,
                             });
                         }
@@ -669,26 +660,12 @@ impl RobustAispParser {
         Ok(AispBlock::Types(types_block))
     }
     
-    fn parse_type_definition(&self, def_text: &str) -> Option<(String, String)> {
-        if let Some(pos) = def_text.find('≜') {
-            let name = def_text[..pos].trim().to_string();
-            let type_expr = def_text[pos + '≜'.len_utf8()..].trim().to_string();
-            Some((name, type_expr))
-        } else {
-            None
-        }
-    }
-    
-    fn parse_type_expression(&self, type_text: &str) -> TypeExpression {
-        // Simplified type expression parsing
-        // For now, treat everything as a custom type
-        TypeExpression::Basic(crate::ast::canonical::BasicType::Custom(type_text.to_string()))
+    fn parse_type_definition(&self, def_text: &str) -> Option<(String, TypeExpression)> {
+        TypeContentParser::parse_type_definition(def_text)
     }
     
     fn parse_logical_expression(&self, expr_text: &str) -> LogicalExpression {
-        // Simplified logical expression parsing
-        // For now, treat everything as a variable
-        LogicalExpression::Variable(expr_text.to_string())
+        LogicContentParser::parse_logical_expression(expr_text)
     }
 
     fn parse_gamma_block(&self, pair: Pair<Rule>) -> AispResult<AispBlock> {
@@ -702,12 +679,7 @@ impl RobustAispParser {
                         let rule_text = rule.as_str().to_string();
                         raw_rules.push(rule_text.clone());
                         
-                        rules.push(LogicalRule {
-                            quantifier: None,
-                            expression: self.parse_logical_expression(&rule_text),
-                            raw_text: rule_text,
-                            span: None,
-                        });
+                        rules.push(LogicContentParser::parse_logical_rule(&rule_text));
                     }
                 }
                 _ => {}
@@ -735,10 +707,10 @@ impl RobustAispParser {
                         raw_functions.push(func_text.clone());
                         
                         // Parse function definition format: "name≜λparams.body"
-                        if let Some((name, lambda_text)) = self.parse_function_definition(&func_text) {
+                        if let Some((name, lambda)) = self.parse_function_definition(&func_text) {
                             functions.push(FunctionDefinition {
                                 name: name.clone(),
-                                lambda: self.parse_lambda_expression(&lambda_text),
+                                lambda,
                                 raw_text: func_text,
                                 span: None,
                             });
@@ -758,44 +730,8 @@ impl RobustAispParser {
         Ok(AispBlock::Functions(functions_block))
     }
     
-    fn parse_function_definition(&self, func_text: &str) -> Option<(String, String)> {
-        if let Some(pos) = func_text.find('≜') {
-            let name = func_text[..pos].trim().to_string();
-            let body = func_text[pos + '≜'.len_utf8()..].trim().to_string();
-            Some((name, body))
-        } else {
-            None
-        }
-    }
-    
-    fn parse_lambda_expression(&self, lambda_text: &str) -> LambdaExpression {
-        // Simplified lambda parsing for "λx.x" format
-        if lambda_text.starts_with('λ') {
-            if let Some(dot_pos) = lambda_text.find('.') {
-                let param_text = &lambda_text[1..dot_pos].trim();
-                let body_text = &lambda_text[dot_pos + 1..].trim();
-                
-                LambdaExpression {
-                    parameters: vec![param_text.to_string()],
-                    body: self.parse_logical_expression(body_text),
-                    span: None,
-                }
-            } else {
-                // Fallback for malformed lambda
-                LambdaExpression {
-                    parameters: vec!["x".to_string()],
-                    body: LogicalExpression::Variable(lambda_text.to_string()),
-                    span: None,
-                }
-            }
-        } else {
-            // Not a lambda expression, treat as simple function
-            LambdaExpression {
-                parameters: vec!["x".to_string()],
-                body: LogicalExpression::Variable(lambda_text.to_string()),
-                span: None,
-            }
-        }
+    fn parse_function_definition(&self, func_text: &str) -> Option<(String, LambdaExpression)> {
+        LambdaContentParser::parse_function_definition(func_text)
     }
 
     fn parse_epsilon_block(&self, pair: Pair<Rule>) -> AispResult<AispBlock> {
@@ -812,8 +748,17 @@ impl RobustAispParser {
                         let evidence_text = evidence.as_str().to_string();
                         raw_evidence.push(evidence_text.clone());
                         
-                        // Parse evidence entry format: "δ≜0.5" or "φ≜98"
-                        self.parse_evidence_entry(&evidence_text, &mut delta, &mut phi, &mut tau, &mut metrics);
+                        // Parse evidence entry using content parser
+                        if let Some(entry) = EvidenceContentParser::parse_evidence_entry(&evidence_text) {
+                            match entry {
+                                super::content::evidence_content::EvidenceEntry::Delta(d) => delta = Some(d),
+                                super::content::evidence_content::EvidenceEntry::Phi(p) => phi = Some(p),
+                                super::content::evidence_content::EvidenceEntry::Tau(t) => tau = Some(t),
+                                super::content::evidence_content::EvidenceEntry::Metric(name, value) => {
+                                    metrics.insert(name, value);
+                                }
+                            }
+                        }
                     }
                 }
                 _ => {}
@@ -830,35 +775,6 @@ impl RobustAispParser {
         };
         
         Ok(AispBlock::Evidence(evidence_block))
-    }
-    
-    fn parse_evidence_entry(&self, entry_text: &str, delta: &mut Option<f64>, phi: &mut Option<u64>, tau: &mut Option<String>, metrics: &mut HashMap<String, f64>) {
-        if let Some(pos) = entry_text.find('≜') {
-            let key = entry_text[..pos].trim();
-            let value = entry_text[pos + '≜'.len_utf8()..].trim();
-            
-            match key {
-                "δ" => {
-                    if let Ok(val) = value.parse::<f64>() {
-                        *delta = Some(val);
-                    }
-                }
-                "φ" => {
-                    if let Ok(val) = value.parse::<u64>() {
-                        *phi = Some(val);
-                    }
-                }
-                "τ" => {
-                    *tau = Some(value.to_string());
-                }
-                _ => {
-                    // Custom metric
-                    if let Ok(val) = value.parse::<f64>() {
-                        metrics.insert(key.to_string(), val);
-                    }
-                }
-            }
-        }
     }
 
     /// Extract block boundaries for error recovery

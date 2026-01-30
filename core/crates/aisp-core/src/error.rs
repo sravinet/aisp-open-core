@@ -39,6 +39,9 @@ pub enum AispError {
     #[error("Unsupported AISP version: {version}")]
     UnsupportedVersion { version: String },
 
+    #[error("Unsupported document format: {format}")]
+    UnsupportedFormat { format: String },
+
     #[error("IO error: {message}")]
     IoError { message: String },
 
