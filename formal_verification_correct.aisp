@@ -1,0 +1,35 @@
+𝔸5.1.FormalCorrect@2026-01-30
+γ≔formal.verification.test
+ρ≔⟨mathematical,orthogonality,verification⟩
+
+⟦Ω:Meta⟧{
+  ∀D∈AISP:Ambig(D)<0.02
+}
+
+⟦Σ:Types⟧{
+  Signal≜VH ⊕ VL ⊕ VS;
+  VH≜ℝ768;
+  VL≜ℝ512;
+  VS≜ℝ256;
+  Real≜ℝ;
+  Natural≜ℕ
+}
+
+⟦Γ:Rules⟧{
+  ∀D∈AISP:Ambig(D)<0.02;
+  VH ∩ VS ≡ ∅;
+  VL ∩ VS ≡ ∅;
+  ∀x∈Real:x × x ≥ 0;
+  ∀n∈Natural:n ≥ 0
+}
+
+⟦Λ:Funcs⟧{
+  Ambig≜λD.1-|Parse_u(D)|/|Parse_t(D)|;
+  square≜λx.x × x;
+  orthogonal≜λv1 v2.v1 ∩ v2 ≡ ∅
+}
+
+⟦Ε⟧⟨
+δ≜0.87;
+τ≜◊⁺⁺
+⟩

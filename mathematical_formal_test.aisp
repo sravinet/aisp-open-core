@@ -1,0 +1,24 @@
+𝔸5.1.MathematicalTest@2026-01-30
+
+⟦Ω:Meta⟧{
+  domain≜"formal-mathematical-verification"
+}
+
+⟦Σ:Types⟧{
+  Signal≜ℝ
+  VectorH≜ℝ
+  VectorL≜ℝ
+  VectorS≜ℝ
+  Real≜ℝ
+  Natural≜ℕ
+}
+
+⟦Γ:Rules⟧{
+}
+
+⟦Λ:Funcs⟧{
+  square≜λx.x
+  identity≜λx.x
+}
+
+⟦Ε⟧⟨δ≜0.85⟩

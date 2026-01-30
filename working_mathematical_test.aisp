@@ -1,0 +1,25 @@
+𝔸5.1.WorkingMath@2026-01-30
+
+⟦Ω:Meta⟧{
+  domain≜"working-mathematical-verification"
+}
+
+⟦Σ:Types⟧{
+  Signal≜ℝ
+  VectorH≜ℝ
+  VectorL≜ℝ  
+  VectorS≜ℝ
+  Ambiguity≜ℝ
+  Natural≜ℕ
+  Boolean≜𝔹
+}
+
+⟦Γ:Rules⟧{
+}
+
+⟦Λ:Funcs⟧{
+  identity≜x
+  square≜x
+}
+
+⟦Ε⟧⟨δ≜0.88⟩

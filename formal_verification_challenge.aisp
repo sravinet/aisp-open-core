@@ -1,0 +1,28 @@
+𝔸5.1.FormalChallenge@2026-01-30
+
+⟦Ω:Meta⟧{
+  domain≜"formal-verification-stress-test"
+  purpose≜"challenge-mathematical-reasoning"
+}
+
+⟦Σ:Types⟧{
+  Real≜ℝ
+  Natural≜ℕ
+  Boolean≜𝔹
+  Vector≜ℝⁿ
+}
+
+⟦Γ:Rules⟧{
+  consistency_rule≜"no_contradictions"
+  orthogonality_rule≜"vectors_must_be_orthogonal"
+}
+
+⟦Λ:Funcs⟧{
+  sqrt≜λx.x^(1/2)
+  square≜λx.x²
+  identity≜λx.x
+  zero≜λ.0
+  divide≜λx y.x/y
+}
+
+⟦Ε⟧⟨δ≜0.90⟩
