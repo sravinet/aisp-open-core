@@ -193,10 +193,17 @@ impl MathematicalNotationParser {
                 '∀' | '∃' | 'λ' => self.parse_quantified_expression(chars, depth),
                 // Category theory symbols
                 '𝔽' | '𝔾' | '⟨' | '⇒' | '⊣' | '∘' => self.parse_category_theory_construct(chars, depth),
-                // Greek letters and mathematical symbols
+                // Greek letters and mathematical symbols  
                 'α'..='ω' | 'Α'..='Ω' => self.parse_unicode_symbol(chars, depth),
-                // Mathematical operators
-                '≜' | '≔' | '≡' | '⇒' | '↔' | '⊢' | '⊨' | '⊕' | '⊖' | '⊗' => self.parse_mathematical_operator(chars, depth),
+                // Mathematical operators and logic symbols
+                '≜' | '≔' | '≡' | '⇒' | '↔' | '⊢' | '⊨' | '⊕' | '⊖' | '⊗' |
+                '∈' | '∉' | '⊆' | '⊊' | '∪' | '∩' | '∅' | '℘' | '∧' | '∨' | '¬' |
+                '→' | '↦' | '≤' | '≥' | '≠' | '◊' | '⊘' => self.parse_mathematical_operator(chars, depth),
+                // Number sets and mathematical constants
+                'ℕ' | 'ℤ' | 'ℚ' | 'ℝ' | 'ℂ' | '𝔸' | '𝔹' | '𝕊' | '𝕃' => self.parse_mathematical_constant(chars, depth),
+                // Subscripts and superscripts  
+                '₀' | '₁' | '₂' | '₃' | '₄' | '₅' | '₆' | '₇' | '₈' | '₉' |
+                '⁰' | '¹' | '²' | '³' | '⁴' | '⁵' | '⁶' | '⁷' | '⁸' | '⁹' | '⁺' | '⁻' => self.parse_script_symbol(chars, depth),
                 // Parentheses and brackets
                 '(' | '[' | '{' => self.parse_bracketed_expression(chars, depth),
                 // Regular identifiers and numbers
@@ -399,9 +406,9 @@ impl MathematicalNotationParser {
     fn parse_mathematical_operator(&self, chars: &mut Peekable<Chars>, _depth: usize) -> AispResult<EnhancedMathExpression> {
         let mut operator = String::new();
         
-        // Handle multi-character operators
+        // Handle multi-character operators - expanded to include all enhanced symbols
         while let Some(&ch) = chars.peek() {
-            if "≜≔≡⇒↔⊢⊨⊕⊖⊗".contains(ch) {
+            if "≜≔≡⇒↔⊢⊨⊕⊖⊗∈∉⊆⊊∪∩∅℘∧∨¬→↦≤≥≠◊⊘".contains(ch) {
                 operator.push(chars.next().unwrap());
             } else {
                 break;
@@ -416,6 +423,36 @@ impl MathematicalNotationParser {
             })
         } else {
             Ok(EnhancedMathExpression::BasicSymbol(operator))
+        }
+    }
+    
+    /// Parse mathematical constants (number sets, special symbols)
+    fn parse_mathematical_constant(&self, chars: &mut Peekable<Chars>, _depth: usize) -> AispResult<EnhancedMathExpression> {
+        let symbol = chars.next().unwrap().to_string();
+        
+        if let Some(symbol_info) = self.symbol_registry.get(&symbol) {
+            Ok(EnhancedMathExpression::UnicodeOperator {
+                symbol: symbol.clone(),
+                unicode_name: symbol_info.unicode_name.clone(),
+                category: symbol_info.category.clone(),
+            })
+        } else {
+            Ok(EnhancedMathExpression::BasicSymbol(symbol))
+        }
+    }
+    
+    /// Parse subscript and superscript symbols
+    fn parse_script_symbol(&self, chars: &mut Peekable<Chars>, _depth: usize) -> AispResult<EnhancedMathExpression> {
+        let symbol = chars.next().unwrap().to_string();
+        
+        if let Some(symbol_info) = self.symbol_registry.get(&symbol) {
+            Ok(EnhancedMathExpression::UnicodeOperator {
+                symbol: symbol.clone(),
+                unicode_name: symbol_info.unicode_name.clone(),
+                category: symbol_info.category.clone(),
+            })
+        } else {
+            Ok(EnhancedMathExpression::BasicSymbol(symbol))
         }
     }
     
@@ -580,6 +617,614 @@ impl MathematicalNotationParser {
             latex_equivalent: Some("\\otimes".to_string()),
             precedence: 5,
             associativity: Associativity::Left,
+        });
+        
+        // Enhanced Mathematical Symbols for AISP Reference Specification
+        
+        // Set theory and relations
+        registry.insert("∈".to_string(), UnicodeSymbolInfo {
+            symbol: "∈".to_string(),
+            unicode_name: "ELEMENT OF".to_string(),
+            category: "set_theory".to_string(),
+            latex_equivalent: Some("\\in".to_string()),
+            precedence: 3,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("∉".to_string(), UnicodeSymbolInfo {
+            symbol: "∉".to_string(),
+            unicode_name: "NOT AN ELEMENT OF".to_string(),
+            category: "set_theory".to_string(),
+            latex_equivalent: Some("\\notin".to_string()),
+            precedence: 3,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⊆".to_string(), UnicodeSymbolInfo {
+            symbol: "⊆".to_string(),
+            unicode_name: "SUBSET OF OR EQUAL TO".to_string(),
+            category: "set_theory".to_string(),
+            latex_equivalent: Some("\\subseteq".to_string()),
+            precedence: 3,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⊊".to_string(), UnicodeSymbolInfo {
+            symbol: "⊊".to_string(),
+            unicode_name: "SUBSET OF".to_string(),
+            category: "set_theory".to_string(),
+            latex_equivalent: Some("\\subset".to_string()),
+            precedence: 3,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("∪".to_string(), UnicodeSymbolInfo {
+            symbol: "∪".to_string(),
+            unicode_name: "UNION".to_string(),
+            category: "set_theory".to_string(),
+            latex_equivalent: Some("\\cup".to_string()),
+            precedence: 4,
+            associativity: Associativity::Left,
+        });
+        
+        registry.insert("∩".to_string(), UnicodeSymbolInfo {
+            symbol: "∩".to_string(),
+            unicode_name: "INTERSECTION".to_string(),
+            category: "set_theory".to_string(),
+            latex_equivalent: Some("\\cap".to_string()),
+            precedence: 5,
+            associativity: Associativity::Left,
+        });
+        
+        registry.insert("∅".to_string(), UnicodeSymbolInfo {
+            symbol: "∅".to_string(),
+            unicode_name: "EMPTY SET".to_string(),
+            category: "set_theory".to_string(),
+            latex_equivalent: Some("\\emptyset".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("℘".to_string(), UnicodeSymbolInfo {
+            symbol: "℘".to_string(),
+            unicode_name: "SCRIPT CAPITAL P".to_string(),
+            category: "set_theory".to_string(),
+            latex_equivalent: Some("\\wp".to_string()),
+            precedence: 6,
+            associativity: Associativity::Right,
+        });
+        
+        // Logic symbols
+        registry.insert("⊢".to_string(), UnicodeSymbolInfo {
+            symbol: "⊢".to_string(),
+            unicode_name: "RIGHT TACK".to_string(),
+            category: "logic".to_string(),
+            latex_equivalent: Some("\\vdash".to_string()),
+            precedence: 2,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⊨".to_string(), UnicodeSymbolInfo {
+            symbol: "⊨".to_string(),
+            unicode_name: "TRUE".to_string(),
+            category: "logic".to_string(),
+            latex_equivalent: Some("\\models".to_string()),
+            precedence: 2,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("∧".to_string(), UnicodeSymbolInfo {
+            symbol: "∧".to_string(),
+            unicode_name: "LOGICAL AND".to_string(),
+            category: "logic".to_string(),
+            latex_equivalent: Some("\\land".to_string()),
+            precedence: 3,
+            associativity: Associativity::Left,
+        });
+        
+        registry.insert("∨".to_string(), UnicodeSymbolInfo {
+            symbol: "∨".to_string(),
+            unicode_name: "LOGICAL OR".to_string(),
+            category: "logic".to_string(),
+            latex_equivalent: Some("\\lor".to_string()),
+            precedence: 2,
+            associativity: Associativity::Left,
+        });
+        
+        registry.insert("¬".to_string(), UnicodeSymbolInfo {
+            symbol: "¬".to_string(),
+            unicode_name: "NOT SIGN".to_string(),
+            category: "logic".to_string(),
+            latex_equivalent: Some("\\neg".to_string()),
+            precedence: 7,
+            associativity: Associativity::Right,
+        });
+        
+        registry.insert("↔".to_string(), UnicodeSymbolInfo {
+            symbol: "↔".to_string(),
+            unicode_name: "LEFT RIGHT ARROW".to_string(),
+            category: "logic".to_string(),
+            latex_equivalent: Some("\\leftrightarrow".to_string()),
+            precedence: 1,
+            associativity: Associativity::None,
+        });
+        
+        // Mathematical types and spaces
+        registry.insert("ℕ".to_string(), UnicodeSymbolInfo {
+            symbol: "ℕ".to_string(),
+            unicode_name: "DOUBLE-STRUCK CAPITAL N".to_string(),
+            category: "number_set".to_string(),
+            latex_equivalent: Some("\\mathbb{N}".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("ℤ".to_string(), UnicodeSymbolInfo {
+            symbol: "ℤ".to_string(),
+            unicode_name: "DOUBLE-STRUCK CAPITAL Z".to_string(),
+            category: "number_set".to_string(),
+            latex_equivalent: Some("\\mathbb{Z}".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("ℚ".to_string(), UnicodeSymbolInfo {
+            symbol: "ℚ".to_string(),
+            unicode_name: "DOUBLE-STRUCK CAPITAL Q".to_string(),
+            category: "number_set".to_string(),
+            latex_equivalent: Some("\\mathbb{Q}".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("ℝ".to_string(), UnicodeSymbolInfo {
+            symbol: "ℝ".to_string(),
+            unicode_name: "DOUBLE-STRUCK CAPITAL R".to_string(),
+            category: "number_set".to_string(),
+            latex_equivalent: Some("\\mathbb{R}".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("ℂ".to_string(), UnicodeSymbolInfo {
+            symbol: "ℂ".to_string(),
+            unicode_name: "DOUBLE-STRUCK CAPITAL C".to_string(),
+            category: "number_set".to_string(),
+            latex_equivalent: Some("\\mathbb{C}".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("𝔹".to_string(), UnicodeSymbolInfo {
+            symbol: "𝔹".to_string(),
+            unicode_name: "MATHEMATICAL DOUBLE-STRUCK CAPITAL B".to_string(),
+            category: "number_set".to_string(),
+            latex_equivalent: Some("\\mathbb{B}".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("𝕊".to_string(), UnicodeSymbolInfo {
+            symbol: "𝕊".to_string(),
+            unicode_name: "MATHEMATICAL DOUBLE-STRUCK CAPITAL S".to_string(),
+            category: "number_set".to_string(),
+            latex_equivalent: Some("\\mathbb{S}".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        // AISP specific symbols
+        registry.insert("𝔸".to_string(), UnicodeSymbolInfo {
+            symbol: "𝔸".to_string(),
+            unicode_name: "MATHEMATICAL DOUBLE-STRUCK CAPITAL A".to_string(),
+            category: "aisp".to_string(),
+            latex_equivalent: Some("\\mathbb{A}".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("γ".to_string(), UnicodeSymbolInfo {
+            symbol: "γ".to_string(),
+            unicode_name: "GREEK SMALL LETTER GAMMA".to_string(),
+            category: "aisp".to_string(),
+            latex_equivalent: Some("\\gamma".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("ρ".to_string(), UnicodeSymbolInfo {
+            symbol: "ρ".to_string(),
+            unicode_name: "GREEK SMALL LETTER RHO".to_string(),
+            category: "aisp".to_string(),
+            latex_equivalent: Some("\\rho".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("δ".to_string(), UnicodeSymbolInfo {
+            symbol: "δ".to_string(),
+            unicode_name: "GREEK SMALL LETTER DELTA".to_string(),
+            category: "aisp".to_string(),
+            latex_equivalent: Some("\\delta".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("φ".to_string(), UnicodeSymbolInfo {
+            symbol: "φ".to_string(),
+            unicode_name: "GREEK SMALL LETTER PHI".to_string(),
+            category: "aisp".to_string(),
+            latex_equivalent: Some("\\phi".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("τ".to_string(), UnicodeSymbolInfo {
+            symbol: "τ".to_string(),
+            unicode_name: "GREEK SMALL LETTER TAU".to_string(),
+            category: "aisp".to_string(),
+            latex_equivalent: Some("\\tau".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("μ".to_string(), UnicodeSymbolInfo {
+            symbol: "μ".to_string(),
+            unicode_name: "GREEK SMALL LETTER MU".to_string(),
+            category: "aisp".to_string(),
+            latex_equivalent: Some("\\mu".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("σ".to_string(), UnicodeSymbolInfo {
+            symbol: "σ".to_string(),
+            unicode_name: "GREEK SMALL LETTER SIGMA".to_string(),
+            category: "aisp".to_string(),
+            latex_equivalent: Some("\\sigma".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("θ".to_string(), UnicodeSymbolInfo {
+            symbol: "θ".to_string(),
+            unicode_name: "GREEK SMALL LETTER THETA".to_string(),
+            category: "aisp".to_string(),
+            latex_equivalent: Some("\\theta".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("λ".to_string(), UnicodeSymbolInfo {
+            symbol: "λ".to_string(),
+            unicode_name: "GREEK SMALL LETTER LAMBDA".to_string(),
+            category: "lambda_calculus".to_string(),
+            latex_equivalent: Some("\\lambda".to_string()),
+            precedence: 5,
+            associativity: Associativity::Right,
+        });
+        
+        // AISP brackets and structural symbols
+        registry.insert("⟦".to_string(), UnicodeSymbolInfo {
+            symbol: "⟦".to_string(),
+            unicode_name: "MATHEMATICAL LEFT WHITE SQUARE BRACKET".to_string(),
+            category: "structure".to_string(),
+            latex_equivalent: Some("\\llbracket".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⟧".to_string(), UnicodeSymbolInfo {
+            symbol: "⟧".to_string(),
+            unicode_name: "MATHEMATICAL RIGHT WHITE SQUARE BRACKET".to_string(),
+            category: "structure".to_string(),
+            latex_equivalent: Some("\\rrbracket".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⟨".to_string(), UnicodeSymbolInfo {
+            symbol: "⟨".to_string(),
+            unicode_name: "MATHEMATICAL LEFT ANGLE BRACKET".to_string(),
+            category: "structure".to_string(),
+            latex_equivalent: Some("\\langle".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⟩".to_string(), UnicodeSymbolInfo {
+            symbol: "⟩".to_string(),
+            unicode_name: "MATHEMATICAL RIGHT ANGLE BRACKET".to_string(),
+            category: "structure".to_string(),
+            latex_equivalent: Some("\\rangle".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        // Function and type theory
+        registry.insert("→".to_string(), UnicodeSymbolInfo {
+            symbol: "→".to_string(),
+            unicode_name: "RIGHTWARDS ARROW".to_string(),
+            category: "type_theory".to_string(),
+            latex_equivalent: Some("\\to".to_string()),
+            precedence: 2,
+            associativity: Associativity::Right,
+        });
+        
+        registry.insert("↦".to_string(), UnicodeSymbolInfo {
+            symbol: "↦".to_string(),
+            unicode_name: "RIGHTWARDS ARROW FROM BAR".to_string(),
+            category: "type_theory".to_string(),
+            latex_equivalent: Some("\\mapsto".to_string()),
+            precedence: 2,
+            associativity: Associativity::Right,
+        });
+        
+        // Additional mathematical operators
+        registry.insert("≤".to_string(), UnicodeSymbolInfo {
+            symbol: "≤".to_string(),
+            unicode_name: "LESS-THAN OR EQUAL TO".to_string(),
+            category: "comparison".to_string(),
+            latex_equivalent: Some("\\leq".to_string()),
+            precedence: 3,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("≥".to_string(), UnicodeSymbolInfo {
+            symbol: "≥".to_string(),
+            unicode_name: "GREATER-THAN OR EQUAL TO".to_string(),
+            category: "comparison".to_string(),
+            latex_equivalent: Some("\\geq".to_string()),
+            precedence: 3,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("≠".to_string(), UnicodeSymbolInfo {
+            symbol: "≠".to_string(),
+            unicode_name: "NOT EQUAL TO".to_string(),
+            category: "comparison".to_string(),
+            latex_equivalent: Some("\\neq".to_string()),
+            precedence: 3,
+            associativity: Associativity::None,
+        });
+        
+        // Quality tier symbols from AISP  
+        registry.insert("◊".to_string(), UnicodeSymbolInfo {
+            symbol: "◊".to_string(),
+            unicode_name: "LOZENGE".to_string(),
+            category: "aisp_quality".to_string(),
+            latex_equivalent: Some("\\diamond".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⊘".to_string(), UnicodeSymbolInfo {
+            symbol: "⊘".to_string(),
+            unicode_name: "CIRCLED DIVISION SLASH".to_string(),
+            category: "aisp_quality".to_string(),
+            latex_equivalent: Some("\\oslash".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        // AISP mathematical symbols for L₀, L₁, L₂
+        registry.insert("𝕃".to_string(), UnicodeSymbolInfo {
+            symbol: "𝕃".to_string(),
+            unicode_name: "MATHEMATICAL DOUBLE-STRUCK CAPITAL L".to_string(),
+            category: "aisp_layers".to_string(),
+            latex_equivalent: Some("\\mathbb{L}".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        // Subscript symbols
+        registry.insert("₀".to_string(), UnicodeSymbolInfo {
+            symbol: "₀".to_string(),
+            unicode_name: "SUBSCRIPT ZERO".to_string(),
+            category: "subscript".to_string(),
+            latex_equivalent: Some("_0".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("₁".to_string(), UnicodeSymbolInfo {
+            symbol: "₁".to_string(),
+            unicode_name: "SUBSCRIPT ONE".to_string(),
+            category: "subscript".to_string(),
+            latex_equivalent: Some("_1".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("₂".to_string(), UnicodeSymbolInfo {
+            symbol: "₂".to_string(),
+            unicode_name: "SUBSCRIPT TWO".to_string(),
+            category: "subscript".to_string(),
+            latex_equivalent: Some("_2".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("₃".to_string(), UnicodeSymbolInfo {
+            symbol: "₃".to_string(),
+            unicode_name: "SUBSCRIPT THREE".to_string(),
+            category: "subscript".to_string(),
+            latex_equivalent: Some("_3".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("₄".to_string(), UnicodeSymbolInfo {
+            symbol: "₄".to_string(),
+            unicode_name: "SUBSCRIPT FOUR".to_string(),
+            category: "subscript".to_string(),
+            latex_equivalent: Some("_4".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("₅".to_string(), UnicodeSymbolInfo {
+            symbol: "₅".to_string(),
+            unicode_name: "SUBSCRIPT FIVE".to_string(),
+            category: "subscript".to_string(),
+            latex_equivalent: Some("_5".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("₆".to_string(), UnicodeSymbolInfo {
+            symbol: "₆".to_string(),
+            unicode_name: "SUBSCRIPT SIX".to_string(),
+            category: "subscript".to_string(),
+            latex_equivalent: Some("_6".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("₇".to_string(), UnicodeSymbolInfo {
+            symbol: "₇".to_string(),
+            unicode_name: "SUBSCRIPT SEVEN".to_string(),
+            category: "subscript".to_string(),
+            latex_equivalent: Some("_7".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("₈".to_string(), UnicodeSymbolInfo {
+            symbol: "₈".to_string(),
+            unicode_name: "SUBSCRIPT EIGHT".to_string(),
+            category: "subscript".to_string(),
+            latex_equivalent: Some("_8".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("₉".to_string(), UnicodeSymbolInfo {
+            symbol: "₉".to_string(),
+            unicode_name: "SUBSCRIPT NINE".to_string(),
+            category: "subscript".to_string(),
+            latex_equivalent: Some("_9".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        // Superscript symbols
+        registry.insert("⁺".to_string(), UnicodeSymbolInfo {
+            symbol: "⁺".to_string(),
+            unicode_name: "SUPERSCRIPT PLUS SIGN".to_string(),
+            category: "superscript".to_string(),
+            latex_equivalent: Some("^+".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⁻".to_string(), UnicodeSymbolInfo {
+            symbol: "⁻".to_string(),
+            unicode_name: "SUPERSCRIPT MINUS".to_string(),
+            category: "superscript".to_string(),
+            latex_equivalent: Some("^-".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⁰".to_string(), UnicodeSymbolInfo {
+            symbol: "⁰".to_string(),
+            unicode_name: "SUPERSCRIPT ZERO".to_string(),
+            category: "superscript".to_string(),
+            latex_equivalent: Some("^0".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("¹".to_string(), UnicodeSymbolInfo {
+            symbol: "¹".to_string(),
+            unicode_name: "SUPERSCRIPT ONE".to_string(),
+            category: "superscript".to_string(),
+            latex_equivalent: Some("^1".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("²".to_string(), UnicodeSymbolInfo {
+            symbol: "²".to_string(),
+            unicode_name: "SUPERSCRIPT TWO".to_string(),
+            category: "superscript".to_string(),
+            latex_equivalent: Some("^2".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("³".to_string(), UnicodeSymbolInfo {
+            symbol: "³".to_string(),
+            unicode_name: "SUPERSCRIPT THREE".to_string(),
+            category: "superscript".to_string(),
+            latex_equivalent: Some("^3".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⁴".to_string(), UnicodeSymbolInfo {
+            symbol: "⁴".to_string(),
+            unicode_name: "SUPERSCRIPT FOUR".to_string(),
+            category: "superscript".to_string(),
+            latex_equivalent: Some("^4".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⁵".to_string(), UnicodeSymbolInfo {
+            symbol: "⁵".to_string(),
+            unicode_name: "SUPERSCRIPT FIVE".to_string(),
+            category: "superscript".to_string(),
+            latex_equivalent: Some("^5".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⁶".to_string(), UnicodeSymbolInfo {
+            symbol: "⁶".to_string(),
+            unicode_name: "SUPERSCRIPT SIX".to_string(),
+            category: "superscript".to_string(),
+            latex_equivalent: Some("^6".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⁷".to_string(), UnicodeSymbolInfo {
+            symbol: "⁷".to_string(),
+            unicode_name: "SUPERSCRIPT SEVEN".to_string(),
+            category: "superscript".to_string(),
+            latex_equivalent: Some("^7".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⁸".to_string(), UnicodeSymbolInfo {
+            symbol: "⁸".to_string(),
+            unicode_name: "SUPERSCRIPT EIGHT".to_string(),
+            category: "superscript".to_string(),
+            latex_equivalent: Some("^8".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        registry.insert("⁹".to_string(), UnicodeSymbolInfo {
+            symbol: "⁹".to_string(),
+            unicode_name: "SUPERSCRIPT NINE".to_string(),
+            category: "superscript".to_string(),
+            latex_equivalent: Some("^9".to_string()),
+            precedence: 0,
+            associativity: Associativity::None,
+        });
+        
+        // Fixed point and recursive operators
+        registry.insert("fix".to_string(), UnicodeSymbolInfo {
+            symbol: "fix".to_string(),
+            unicode_name: "FIXED POINT COMBINATOR".to_string(),
+            category: "lambda_calculus".to_string(),
+            latex_equivalent: Some("\\text{fix}".to_string()),
+            precedence: 6,
+            associativity: Associativity::Right,
         });
         
         registry
