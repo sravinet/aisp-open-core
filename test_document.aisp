@@ -1,0 +1,16 @@
+𝔸5.1.test@2026-01-30
+
+⟦Ω:Meta⟧
+Vision≜"Test Unicode parsing"
+
+⟦Σ:Types⟧
+Natural≜ℕ
+
+⟦Γ:Rules⟧
+∀x ∈ ℕ: x ≥ 0
+
+⟦Λ:Functions⟧ 
+f≜λx.x + 1
+
+⟦Ε:Evidence⟧
+δ≜0.001

@@ -6,68 +6,26 @@ use pest_derive::Parser;
 use std::collections::HashMap;
 use std::fmt;
 use crate::error::{AispError, AispResult};
-
-// Simplified AST types for parser
-#[derive(Debug, Clone, Default)]
-pub struct AispDocument {
-    pub header: DocumentHeader,
-    pub metadata: DocumentMetadata,
-    pub blocks: Vec<AispBlock>,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct DocumentHeader {
-    pub version: String,
-    pub name: String,
-    pub date: String,
-    pub metadata: Option<String>,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct DocumentMetadata {
-    pub domain: Option<String>,
-    pub protocol: Option<String>,
-}
-
-#[derive(Debug, Clone)]
-pub enum AispBlock {
-    Meta(MetaBlock),
-    Types(TypesBlock),
-    Rules(RulesBlock),
-    Functions(FunctionsBlock),
-    Errors(ErrorsBlock),
-    Evidence(EvidenceBlock),
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct MetaBlock {
-    pub entries: Vec<String>,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct TypesBlock {
-    pub definitions: Vec<String>,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct RulesBlock {
-    pub rules: Vec<String>,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct FunctionsBlock {
-    pub functions: Vec<String>,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ErrorsBlock {
-    pub errors: Vec<String>,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct EvidenceBlock {
-    pub evidence: Vec<String>,
-}
+use crate::ast::canonical::{
+    CanonicalAispDocument as AispDocument,
+    CanonicalAispBlock as AispBlock,
+    DocumentHeader,
+    DocumentMetadata,
+    MetaBlock,
+    TypesBlock,
+    RulesBlock,
+    FunctionsBlock,
+    EvidenceBlock,
+    MetaEntry,
+    MetaValue,
+    TypeDefinition,
+    TypeExpression,
+    LogicalRule,
+    LogicalExpression,
+    FunctionDefinition,
+    LambdaExpression,
+    Span,
+};
 
 
 /// Re-export pest types  
@@ -154,9 +112,11 @@ set_type_expr = { "{" ~ identifier ~ ("," ~ identifier)* ~ "}" }
 basic_type = { "ℕ" | "ℝ" | "ℂ" | "ℚ" | "ℤ" | "𝕊" | "𝔹" | "Unit" | "Natural" | "Boolean" }
 
 lambda_expression = { 
-    "λ" ~ identifier ~ "." ~ (identifier | ASCII_ALPHANUMERIC+) |
+    "λ" ~ lambda_param ~ "." ~ lambda_param |
     identifier
 }
+
+lambda_param = { (ASCII_ALPHA | "_") ~ (ASCII_ALPHANUMERIC | "_")* }
 function_body = {
     identifier |
     logical_expr
@@ -430,7 +390,20 @@ impl RobustAispParser {
 
     /// Error recovery parsing when primary parsing fails
     fn parse_with_error_recovery(&self, input: &str, original_error: pest::error::Error<Rule>) -> ParseResult {
-        let mut document = AispDocument::default();
+        let mut document = AispDocument {
+            header: DocumentHeader {
+                version: "5.1".to_string(),
+                name: "recovered".to_string(),
+                date: "2026-01-30".to_string(),
+                metadata: None,
+            },
+            metadata: DocumentMetadata {
+                domain: None,
+                protocol: None,
+            },
+            blocks: Vec::new(),
+            span: None,
+        };
         let mut errors = vec![self.convert_pest_error_to_parse_error(original_error)];
         let mut warnings = vec![];
         let mut security_issues = vec![];
@@ -486,7 +459,20 @@ impl RobustAispParser {
 
     /// Build AST from successfully parsed Pest pairs
     fn build_ast_from_pairs(&self, pairs: Pairs<Rule>, input: &str) -> AispResult<AispDocument> {
-        let mut document = AispDocument::default();
+        let mut document = AispDocument {
+            header: DocumentHeader {
+                version: String::new(),
+                name: String::new(),
+                date: String::new(),
+                metadata: None,
+            },
+            metadata: DocumentMetadata {
+                domain: None,
+                protocol: None,
+            },
+            blocks: Vec::new(),
+            span: None,
+        };
         
         for pair in pairs {
             match pair.as_rule() {
@@ -575,7 +561,6 @@ impl RobustAispParser {
             Rule::sigma_block => self.parse_sigma_block(pair),
             Rule::gamma_block => self.parse_gamma_block(pair),
             Rule::lambda_block => self.parse_lambda_block(pair),
-            Rule::chi_block => self.parse_chi_block(pair),
             Rule::epsilon_block => self.parse_epsilon_block(pair),
             Rule::malformed_block => {
                 // Handle malformed blocks gracefully
@@ -593,107 +578,287 @@ impl RobustAispParser {
         }
     }
 
-    // Block parsing methods (simplified for space - full implementation would handle each block type)
+    // Block parsing methods for canonical AST
     fn parse_omega_block(&self, pair: Pair<Rule>) -> AispResult<AispBlock> {
-        let mut meta_block = MetaBlock::default();
+        let mut entries = HashMap::new();
+        let mut raw_entries = Vec::new();
         
         for inner in pair.into_inner() {
             match inner.as_rule() {
                 Rule::meta_entries => {
                     for entry in inner.into_inner() {
-                        meta_block.entries.push(entry.as_str().to_string());
+                        let entry_text = entry.as_str().to_string();
+                        raw_entries.push(entry_text.clone());
+                        
+                        // Parse entry format: "key≜value"
+                        if let Some((key, value)) = self.parse_meta_entry(&entry_text) {
+                            entries.insert(key.clone(), MetaEntry {
+                                key: key.clone(),
+                                value: self.parse_meta_value(&value),
+                                span: None,
+                            });
+                        }
                     }
                 }
                 _ => {}
             }
         }
         
+        let meta_block = MetaBlock {
+            entries,
+            raw_entries,
+            span: None,
+        };
+        
         Ok(AispBlock::Meta(meta_block))
+    }
+    
+    fn parse_meta_entry(&self, entry_text: &str) -> Option<(String, String)> {
+        if let Some(pos) = entry_text.find('≜') {
+            let key = entry_text[..pos].trim().to_string();
+            let value = entry_text[pos + '≜'.len_utf8()..].trim().to_string();
+            Some((key, value))
+        } else {
+            None
+        }
+    }
+    
+    fn parse_meta_value(&self, value_text: &str) -> MetaValue {
+        // Try parsing as number first
+        if let Ok(num) = value_text.parse::<f64>() {
+            MetaValue::Number(num)
+        } else if value_text == "true" || value_text == "false" {
+            MetaValue::Boolean(value_text == "true")
+        } else {
+            // Default to string
+            MetaValue::String(value_text.to_string())
+        }
     }
 
     fn parse_sigma_block(&self, pair: Pair<Rule>) -> AispResult<AispBlock> {
-        let mut types_block = TypesBlock::default();
+        let mut definitions = HashMap::new();
+        let mut raw_definitions = Vec::new();
         
         for inner in pair.into_inner() {
             match inner.as_rule() {
                 Rule::type_definitions => {
                     for def in inner.into_inner() {
-                        types_block.definitions.push(def.as_str().to_string());
+                        let def_text = def.as_str().to_string();
+                        raw_definitions.push(def_text.clone());
+                        
+                        // Parse type definition format: "TypeName≜TypeExpression"
+                        if let Some((name, type_expr_text)) = self.parse_type_definition(&def_text) {
+                            definitions.insert(name.clone(), TypeDefinition {
+                                name: name.clone(),
+                                type_expr: self.parse_type_expression(&type_expr_text),
+                                span: None,
+                            });
+                        }
                     }
                 }
                 _ => {}
             }
         }
         
+        let types_block = TypesBlock {
+            definitions,
+            raw_definitions,
+            span: None,
+        };
+        
         Ok(AispBlock::Types(types_block))
+    }
+    
+    fn parse_type_definition(&self, def_text: &str) -> Option<(String, String)> {
+        if let Some(pos) = def_text.find('≜') {
+            let name = def_text[..pos].trim().to_string();
+            let type_expr = def_text[pos + '≜'.len_utf8()..].trim().to_string();
+            Some((name, type_expr))
+        } else {
+            None
+        }
+    }
+    
+    fn parse_type_expression(&self, type_text: &str) -> TypeExpression {
+        // Simplified type expression parsing
+        // For now, treat everything as a custom type
+        TypeExpression::Basic(crate::ast::canonical::BasicType::Custom(type_text.to_string()))
+    }
+    
+    fn parse_logical_expression(&self, expr_text: &str) -> LogicalExpression {
+        // Simplified logical expression parsing
+        // For now, treat everything as a variable
+        LogicalExpression::Variable(expr_text.to_string())
     }
 
     fn parse_gamma_block(&self, pair: Pair<Rule>) -> AispResult<AispBlock> {
-        let mut rules_block = RulesBlock::default();
+        let mut rules = Vec::new();
+        let mut raw_rules = Vec::new();
         
         for inner in pair.into_inner() {
             match inner.as_rule() {
                 Rule::rule_definitions => {
                     for rule in inner.into_inner() {
-                        rules_block.rules.push(rule.as_str().to_string());
+                        let rule_text = rule.as_str().to_string();
+                        raw_rules.push(rule_text.clone());
+                        
+                        rules.push(LogicalRule {
+                            quantifier: None,
+                            expression: self.parse_logical_expression(&rule_text),
+                            raw_text: rule_text,
+                            span: None,
+                        });
                     }
                 }
                 _ => {}
             }
         }
+        
+        let rules_block = RulesBlock {
+            rules,
+            raw_rules,
+            span: None,
+        };
         
         Ok(AispBlock::Rules(rules_block))
     }
 
     fn parse_lambda_block(&self, pair: Pair<Rule>) -> AispResult<AispBlock> {
-        let mut functions_block = FunctionsBlock::default();
+        let mut functions = Vec::new();
+        let mut raw_functions = Vec::new();
         
         for inner in pair.into_inner() {
             match inner.as_rule() {
                 Rule::function_definitions => {
                     for func in inner.into_inner() {
-                        functions_block.functions.push(func.as_str().to_string());
+                        let func_text = func.as_str().to_string();
+                        raw_functions.push(func_text.clone());
+                        
+                        // Parse function definition format: "name≜λparams.body"
+                        if let Some((name, lambda_text)) = self.parse_function_definition(&func_text) {
+                            functions.push(FunctionDefinition {
+                                name: name.clone(),
+                                lambda: self.parse_lambda_expression(&lambda_text),
+                                raw_text: func_text,
+                                span: None,
+                            });
+                        }
                     }
                 }
                 _ => {}
             }
         }
+        
+        let functions_block = FunctionsBlock {
+            functions,
+            raw_functions,
+            span: None,
+        };
         
         Ok(AispBlock::Functions(functions_block))
     }
-
-    fn parse_chi_block(&self, pair: Pair<Rule>) -> AispResult<AispBlock> {
-        let mut errors_block = ErrorsBlock::default();
-        
-        for inner in pair.into_inner() {
-            match inner.as_rule() {
-                Rule::error_definitions => {
-                    for error in inner.into_inner() {
-                        errors_block.errors.push(error.as_str().to_string());
-                    }
+    
+    fn parse_function_definition(&self, func_text: &str) -> Option<(String, String)> {
+        if let Some(pos) = func_text.find('≜') {
+            let name = func_text[..pos].trim().to_string();
+            let body = func_text[pos + '≜'.len_utf8()..].trim().to_string();
+            Some((name, body))
+        } else {
+            None
+        }
+    }
+    
+    fn parse_lambda_expression(&self, lambda_text: &str) -> LambdaExpression {
+        // Simplified lambda parsing for "λx.x" format
+        if lambda_text.starts_with('λ') {
+            if let Some(dot_pos) = lambda_text.find('.') {
+                let param_text = &lambda_text[1..dot_pos].trim();
+                let body_text = &lambda_text[dot_pos + 1..].trim();
+                
+                LambdaExpression {
+                    parameters: vec![param_text.to_string()],
+                    body: self.parse_logical_expression(body_text),
+                    span: None,
                 }
-                _ => {}
+            } else {
+                // Fallback for malformed lambda
+                LambdaExpression {
+                    parameters: vec!["x".to_string()],
+                    body: LogicalExpression::Variable(lambda_text.to_string()),
+                    span: None,
+                }
+            }
+        } else {
+            // Not a lambda expression, treat as simple function
+            LambdaExpression {
+                parameters: vec!["x".to_string()],
+                body: LogicalExpression::Variable(lambda_text.to_string()),
+                span: None,
             }
         }
-        
-        Ok(AispBlock::Errors(errors_block))
     }
 
     fn parse_epsilon_block(&self, pair: Pair<Rule>) -> AispResult<AispBlock> {
-        let mut evidence_block = EvidenceBlock::default();
+        let mut delta: Option<f64> = None;
+        let mut phi: Option<u64> = None;
+        let mut tau: Option<String> = None;
+        let mut metrics = HashMap::new();
+        let mut raw_evidence = Vec::new();
         
         for inner in pair.into_inner() {
             match inner.as_rule() {
                 Rule::evidence_entries => {
                     for evidence in inner.into_inner() {
-                        evidence_block.evidence.push(evidence.as_str().to_string());
+                        let evidence_text = evidence.as_str().to_string();
+                        raw_evidence.push(evidence_text.clone());
+                        
+                        // Parse evidence entry format: "δ≜0.5" or "φ≜98"
+                        self.parse_evidence_entry(&evidence_text, &mut delta, &mut phi, &mut tau, &mut metrics);
                     }
                 }
                 _ => {}
             }
         }
         
+        let evidence_block = EvidenceBlock {
+            delta,
+            phi,
+            tau,
+            metrics,
+            raw_evidence,
+            span: None,
+        };
+        
         Ok(AispBlock::Evidence(evidence_block))
+    }
+    
+    fn parse_evidence_entry(&self, entry_text: &str, delta: &mut Option<f64>, phi: &mut Option<u64>, tau: &mut Option<String>, metrics: &mut HashMap<String, f64>) {
+        if let Some(pos) = entry_text.find('≜') {
+            let key = entry_text[..pos].trim();
+            let value = entry_text[pos + '≜'.len_utf8()..].trim();
+            
+            match key {
+                "δ" => {
+                    if let Ok(val) = value.parse::<f64>() {
+                        *delta = Some(val);
+                    }
+                }
+                "φ" => {
+                    if let Ok(val) = value.parse::<u64>() {
+                        *phi = Some(val);
+                    }
+                }
+                "τ" => {
+                    *tau = Some(value.to_string());
+                }
+                _ => {
+                    // Custom metric
+                    if let Ok(val) = value.parse::<f64>() {
+                        metrics.insert(key.to_string(), val);
+                    }
+                }
+            }
+        }
     }
 
     /// Extract block boundaries for error recovery
@@ -833,13 +998,39 @@ impl RobustAispParser {
     /// Create placeholder block for recovery
     fn create_placeholder_block(&self, block_type: &str) -> AispBlock {
         match block_type {
-            "Omega" => AispBlock::Meta(Default::default()),
-            "Sigma" => AispBlock::Types(Default::default()),
-            "Gamma" => AispBlock::Rules(Default::default()),
-            "Lambda" => AispBlock::Functions(Default::default()),
-            "Chi" => AispBlock::Errors(Default::default()),
-            "Epsilon" => AispBlock::Evidence(Default::default()),
-            _ => AispBlock::Meta(Default::default()),
+            "Omega" => AispBlock::Meta(MetaBlock {
+                entries: HashMap::new(),
+                raw_entries: Vec::new(),
+                span: None,
+            }),
+            "Sigma" => AispBlock::Types(TypesBlock {
+                definitions: HashMap::new(),
+                raw_definitions: Vec::new(),
+                span: None,
+            }),
+            "Gamma" => AispBlock::Rules(RulesBlock {
+                rules: Vec::new(),
+                raw_rules: Vec::new(),
+                span: None,
+            }),
+            "Lambda" => AispBlock::Functions(FunctionsBlock {
+                functions: Vec::new(),
+                raw_functions: Vec::new(),
+                span: None,
+            }),
+            "Epsilon" => AispBlock::Evidence(EvidenceBlock {
+                delta: None,
+                phi: None,
+                tau: None,
+                metrics: HashMap::new(),
+                raw_evidence: Vec::new(),
+                span: None,
+            }),
+            _ => AispBlock::Meta(MetaBlock {
+                entries: HashMap::new(),
+                raw_entries: Vec::new(),
+                span: None,
+            }),
         }
     }
 
