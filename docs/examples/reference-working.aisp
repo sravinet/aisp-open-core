@@ -1,0 +1,17 @@
+𝔸5.1.reference-working@2026-01-30
+
+⟦Ω:Meta⟧{
+  domain≜"formal-verification"
+}
+
+⟦Σ:Types⟧{
+  Natural≜ℕ
+}
+
+⟦Γ:Rules⟧{
+}
+
+⟦Λ:Funcs⟧{
+}
+
+⟦Ε⟧⟨δ≜0.79⟩
