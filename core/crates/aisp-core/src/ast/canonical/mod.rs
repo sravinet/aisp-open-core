@@ -74,6 +74,7 @@ pub fn create_evidence_block(raw_evidence: Vec<String>) -> CanonicalAispBlock {
 
 // Type aliases for backward compatibility during migration
 pub type AispBlock = CanonicalAispBlock;
+pub type AispDocument = CanonicalAispDocument;
 
 #[cfg(test)]
 mod integration_tests {
@@ -120,33 +121,17 @@ mod integration_tests {
     }
 
     #[test]
-    fn test_conversion_integration() {
-        use crate::parser::robust_parser;
+    fn test_canonical_document_creation() {
+        // Test that documents can be created with canonical types
+        let mut doc = create_document("conversion_test", "5.1", "2026-01-27");
+        doc.set_domain("test".to_string());
+        doc.set_protocol("aisp".to_string());
         
-        // Create a robust parser document
-        let robust_doc = robust_parser::AispDocument {
-            header: robust_parser::DocumentHeader {
-                version: "5.1".to_string(),
-                name: "conversion_test".to_string(),
-                date: "2026-01-27".to_string(),
-                metadata: None,
-            },
-            metadata: robust_parser::DocumentMetadata {
-                domain: Some("test".to_string()),
-                protocol: Some("aisp".to_string()),
-            },
-            blocks: vec![
-                robust_parser::AispBlock::Meta(robust_parser::MetaBlock {
-                    entries: vec!["Vision≜\"Converted Document\"".to_string()],
-                }),
-            ],
-        };
+        doc.add_block(create_meta_block(vec!["Vision≜\"Converted Document\"".to_string()]));
 
-        // Convert to canonical
-        let canonical = robust_doc.into_canonical();
-        assert_eq!(canonical.header.name, "conversion_test");
-        assert_eq!(canonical.metadata.domain, Some("test".to_string()));
-        assert_eq!(canonical.blocks.len(), 1);
+        assert_eq!(doc.header.name, "conversion_test");
+        assert_eq!(doc.metadata.domain, Some("test".to_string()));
+        assert_eq!(doc.blocks.len(), 1);
     }
 
     #[test]
