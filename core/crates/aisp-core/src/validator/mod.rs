@@ -6,16 +6,19 @@
 //! This module is organized into focused sub-modules:
 //! - `types`: Core configuration and result types
 //! - `verification_methods`: Individual verification method implementations  
+//! - `structural_validator`: Document structure and required block validation
 //! - `engine`: Main validation orchestration engine
 
 // Re-export public types and main API
 pub use self::types::{ValidationConfig, ValidationResult};
 pub use self::engine::AispValidator;
 pub use self::verification_methods::VerificationMethods;
+pub use self::structural_validator::{StructuralValidator, StructuralValidationConfig, StructuralValidationResult};
 
 // Module declarations
 pub mod types;
 pub mod verification_methods;
+pub mod structural_validator;
 pub mod engine;
 
 // Convenience re-exports for backward compatibility

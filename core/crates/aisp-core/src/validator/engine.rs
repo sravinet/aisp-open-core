@@ -11,6 +11,7 @@ use crate::semantic::SemanticAnalyzer;
 use crate::{AISP_VERSION};
 use super::types::{ValidationConfig, ValidationResult};
 use super::verification_methods::VerificationMethods;
+use super::structural_validator::{StructuralValidator, StructuralValidationConfig};
 use std::time::Instant;
 
 /// Main AISP validator engine
@@ -30,6 +31,7 @@ use std::time::Instant;
 pub struct AispValidator {
     config: ValidationConfig,
     verification_methods: VerificationMethods,
+    structural_validator: StructuralValidator,
 }
 
 impl AispValidator {
@@ -47,10 +49,13 @@ impl AispValidator {
     pub fn new() -> Self {
         let config = ValidationConfig::default();
         let verification_methods = VerificationMethods::new(config.clone());
+        let structural_config = StructuralValidationConfig::default();
+        let structural_validator = StructuralValidator::with_config(structural_config);
         
         Self {
             config,
             verification_methods,
+            structural_validator,
         }
     }
 
@@ -66,16 +71,21 @@ impl AispValidator {
     /// - All verification methods configured according to provided settings
     pub fn with_config(config: ValidationConfig) -> Self {
         let verification_methods = VerificationMethods::new(config.clone());
+        let structural_config = StructuralValidationConfig::default();
+        let structural_validator = StructuralValidator::with_config(structural_config);
         
         Self { 
             config,
             verification_methods,
+            structural_validator,
         }
     }
 
     /// Update validator configuration
     pub fn configure(&mut self, config: ValidationConfig) {
         self.verification_methods = VerificationMethods::new(config.clone());
+        let structural_config = StructuralValidationConfig::default();
+        self.structural_validator = StructuralValidator::with_config(structural_config);
         self.config = config;
     }
 
@@ -137,6 +147,37 @@ impl AispValidator {
             Ok(result) => result,
             Err(validation_result) => return validation_result,
         };
+
+        // Validate document structure
+        let structural_result = match self.structural_validator.validate_structure(&document) {
+            Ok(result) => result,
+            Err(err) => {
+                return ValidationResult::failed(err, document_size);
+            }
+        };
+
+        // Check for structural validation failures
+        if !structural_result.is_valid {
+            let error_message = if !structural_result.missing_blocks.is_empty() {
+                format!("Missing required blocks: {}", structural_result.missing_blocks.join(", "))
+            } else if !structural_result.empty_blocks.is_empty() {
+                format!("Empty blocks not allowed: {}", structural_result.empty_blocks.join(", "))
+            } else if !structural_result.order_violations.is_empty() {
+                format!("Block order violations: {}", structural_result.order_violations.join("; "))
+            } else {
+                "Document structure validation failed".to_string()
+            };
+            
+            return ValidationResult::failed(
+                AispError::validation_error(&error_message),
+                document_size,
+            );
+        }
+
+        // Add structural warnings to overall warnings
+        for warning in &structural_result.warnings {
+            all_warnings.push(AispWarning::warning(warning));
+        }
 
         // Perform semantic analysis
         let (mut analysis, semantic_time) = match self.perform_semantic_analysis(&document, document_size) {
