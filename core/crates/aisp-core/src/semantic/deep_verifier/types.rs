@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 /// Deep verification result with comprehensive analysis
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DeepVerificationResult {
     pub overall_confidence: f64,
     pub semantic_score: f64,
@@ -21,7 +21,7 @@ pub struct DeepVerificationResult {
     pub recommendations: Vec<VerificationRecommendation>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct VerificationDetails {
     pub verified_components: Vec<ComponentVerification>,
     pub failed_verifications: Vec<VerificationFailure>,
@@ -30,7 +30,7 @@ pub struct VerificationDetails {
     pub performance_metrics: PerformanceMetrics,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SecurityAssessment {
     pub threat_level: ThreatLevel,
     pub vulnerability_count: usize,
@@ -41,7 +41,7 @@ pub struct SecurityAssessment {
 
 // Core type definitions
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TypeDefinition {
     pub name: String,
     pub structure: TypeStructure,
@@ -50,7 +50,7 @@ pub struct TypeDefinition {
     pub verification_status: VerificationStatus,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum TypeStructure {
     Primitive(PrimitiveType),
     Composite(CompositeType),
@@ -61,14 +61,14 @@ pub enum TypeStructure {
     Optional(Box<TypeStructure>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TypeConstraint {
     pub constraint_type: ConstraintType,
     pub expression: String,
     pub severity: ConstraintSeverity,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ConstraintType {
     Range,
     Pattern,
@@ -78,7 +78,7 @@ pub enum ConstraintType {
     Validation,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct LogicalAxiom {
     pub name: String,
     pub formula: String,
@@ -86,14 +86,14 @@ pub struct LogicalAxiom {
     pub priority: AxiomPriority,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum AxiomType {
     Foundational,
     Derived,
     Domain,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PlaceholderPattern {
     pub pattern_name: String,
     pub detection_regex: String,
@@ -101,7 +101,7 @@ pub struct PlaceholderPattern {
     pub description: String,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum RiskLevel {
     Low,
     Medium,
@@ -109,7 +109,7 @@ pub enum RiskLevel {
     Critical,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ThreatLevel {
     None,
     Minimal,
@@ -119,7 +119,7 @@ pub enum ThreatLevel {
     Critical,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum SecurityLevel {
     Public,
     Internal,
@@ -128,7 +128,7 @@ pub enum SecurityLevel {
     TopSecret,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum VerificationStatus {
     Pending,
     Verified,
@@ -139,35 +139,35 @@ pub enum VerificationStatus {
 
 // Analysis result types
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TypeAnalysisResult {
     pub type_safety_score: f64,
     pub type_violations: Vec<String>,
     pub type_recommendations: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct LogicAnalysisResult {
     pub consistency_score: f64,
     pub contradictions: Vec<String>,
     pub axiom_violations: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DependencyAnalysisResult {
     pub circular_dependencies: Vec<String>,
     pub dependency_violations: Vec<String>,
     pub impact_score: f64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct MathematicalAnalysisResult {
     pub correctness_score: f64,
     pub proof_violations: Vec<String>,
     pub mathematical_errors: Vec<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DeceptionAnalysisResult {
     pub deception_score: f64,
     pub placeholder_violations: Vec<String>,
@@ -176,38 +176,116 @@ pub struct DeceptionAnalysisResult {
 }
 
 // Supporting types - consolidated from original file
-#[derive(Debug, Clone)] pub struct InferredType { pub type_name: String, pub confidence: f64 }
-#[derive(Debug, Clone)] pub struct TypeSecurityPolicy { pub policy_name: String, pub rules: Vec<String> }
-#[derive(Debug, Clone)] pub struct InferenceRule { pub name: String, pub formula: String }
-#[derive(Debug, Clone)] pub struct ContradictionDetector { pub detection_methods: Vec<String> }
-#[derive(Debug, Clone)] pub struct ProofValidator { pub validation_rules: Vec<String> }
-#[derive(Debug, Clone)] pub struct DependencyGraph { pub nodes: Vec<String>, pub edges: Vec<(String, String)> }
-#[derive(Debug, Clone)] pub struct CircularDependencyDetector { pub algorithms: Vec<String> }
-#[derive(Debug, Clone)] pub struct DependencyImpactAnalyzer { pub impact_metrics: Vec<String> }
-#[derive(Debug, Clone)] pub struct SecurityBoundaryAnalyzer { pub boundary_rules: Vec<String> }
-#[derive(Debug, Clone)] pub struct SMTSolverInterface { pub solver_type: String, pub timeout_ms: u64 }
-#[derive(Debug, Clone)] pub struct MathematicalProperty { pub name: String, pub formula: String }
-#[derive(Debug, Clone)] pub struct CorrectnessProof { pub proof_steps: Vec<String> }
-#[derive(Debug, Clone)] pub struct VerificationResult { pub result: bool, pub confidence: f64 }
-#[derive(Debug, Clone)] pub struct BehavioralAnalyzer { pub analysis_type: String }
-#[derive(Debug, Clone)] pub struct ComplexityAnalyzer { pub metrics: Vec<String> }
-#[derive(Debug, Clone)] pub struct CoverageAnalyzer { pub coverage_types: Vec<String> }
-#[derive(Debug, Clone)] pub struct AuthenticityVerifier { pub verification_methods: Vec<String> }
-#[derive(Debug, Clone)] pub struct ComponentVerification { pub component: String, pub status: VerificationStatus }
-#[derive(Debug, Clone)] pub struct VerificationFailure { pub component: String, pub reason: String }
-#[derive(Debug, Clone)] pub struct VerificationWarning { pub component: String, pub warning: String }
-#[derive(Debug, Clone)] pub struct CoverageMetrics { pub line_coverage: f64, pub branch_coverage: f64 }
-#[derive(Debug, Clone)] pub struct PerformanceMetrics { pub verification_time_ms: u64, pub memory_usage_mb: usize }
-#[derive(Debug, Clone)] pub struct AttackSurfaceAnalysis { pub surface_area: f64, pub vulnerabilities: Vec<String> }
-#[derive(Debug, Clone)] pub struct SecurityRecommendation { pub priority: String, pub action: String }
-#[derive(Debug, Clone)] pub struct ComplianceStatus { pub compliant: bool, pub missing_requirements: Vec<String> }
-#[derive(Debug, Clone)] pub struct VerificationRecommendation { pub priority: String, pub recommendation: String }
-#[derive(Debug, Clone)] pub struct PrimitiveType { pub type_name: String }
-#[derive(Debug, Clone)] pub struct CompositeType { pub fields: Vec<String> }
-#[derive(Debug, Clone)] pub struct FunctionType { pub input_types: Vec<String>, pub output_type: String }
-#[derive(Debug, Clone)] pub struct GenericType { pub base_type: String, pub type_parameters: Vec<String> }
-#[derive(Debug, Clone, PartialEq)] pub enum ConstraintSeverity { Info, Warning, Error, Critical }
-#[derive(Debug, Clone, PartialEq)] pub enum AxiomPriority { Low, Medium, High, Critical }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct InferredType { pub type_name: String, pub confidence: f64 }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct TypeSecurityPolicy { pub policy_name: String, pub rules: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct InferenceRule { pub name: String, pub formula: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ContradictionDetector { pub detection_methods: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ProofValidator { pub validation_rules: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct DependencyGraph { pub nodes: Vec<String>, pub edges: Vec<(String, String)> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct CircularDependencyDetector { pub algorithms: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct DependencyImpactAnalyzer { pub impact_metrics: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct SecurityBoundaryAnalyzer { pub boundary_rules: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct SMTSolverInterface { pub solver_type: String, pub timeout_ms: u64 }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct MathematicalProperty { pub name: String, pub formula: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct CorrectnessProof { pub proof_steps: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct VerificationResult { pub result: bool, pub confidence: f64 }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct BehavioralAnalyzer { pub analysis_type: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ComplexityAnalyzer { pub metrics: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct CoverageAnalyzer { pub coverage_types: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct AuthenticityVerifier { pub verification_methods: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ComponentVerification { pub component: String, pub status: VerificationStatus }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct VerificationFailure { pub component: String, pub reason: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct VerificationWarning { pub component: String, pub warning: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct CoverageMetrics { pub line_coverage: f64, pub branch_coverage: f64 }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct PerformanceMetrics { pub verification_time_ms: u64, pub memory_usage_mb: usize }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct AttackSurfaceAnalysis { pub surface_area: f64, pub vulnerabilities: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct SecurityRecommendation { pub priority: String, pub action: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ComplianceStatus { pub compliant: bool, pub missing_requirements: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct VerificationRecommendation { pub priority: String, pub recommendation: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct PrimitiveType { pub type_name: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct CompositeType { pub fields: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct FunctionType { pub input_types: Vec<String>, pub output_type: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct GenericType { pub base_type: String, pub type_parameters: Vec<String> }
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)] pub enum ConstraintSeverity { Info, Warning, Error, Critical }
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)] pub enum AxiomPriority { Low, Medium, High, Critical }
+
+// Default implementations for production-ready batch verification
+
+impl Default for DeepVerificationResult {
+    fn default() -> Self {
+        Self {
+            overall_confidence: 0.0,
+            semantic_score: 0.0,
+            type_safety_score: 0.0,
+            logic_consistency_score: 0.0,
+            mathematical_correctness_score: 0.0,
+            deception_risk_score: 0.0,
+            verification_details: VerificationDetails::default(),
+            security_assessment: SecurityAssessment::default(),
+            recommendations: Vec::new(),
+        }
+    }
+}
+
+impl Default for VerificationDetails {
+    fn default() -> Self {
+        Self {
+            verified_components: Vec::new(),
+            failed_verifications: Vec::new(),
+            warnings: Vec::new(),
+            coverage_metrics: CoverageMetrics::default(),
+            performance_metrics: PerformanceMetrics::default(),
+        }
+    }
+}
+
+impl Default for SecurityAssessment {
+    fn default() -> Self {
+        Self {
+            threat_level: ThreatLevel::None,
+            vulnerability_count: 0,
+            attack_surface_analysis: AttackSurfaceAnalysis::default(),
+            security_recommendations: Vec::new(),
+            compliance_status: ComplianceStatus::default(),
+        }
+    }
+}
+
+impl Default for CoverageMetrics {
+    fn default() -> Self {
+        Self {
+            line_coverage: 0.0,
+            branch_coverage: 0.0,
+        }
+    }
+}
+
+impl Default for PerformanceMetrics {
+    fn default() -> Self {
+        Self {
+            verification_time_ms: 0,
+            memory_usage_mb: 0,
+        }
+    }
+}
+
+impl Default for AttackSurfaceAnalysis {
+    fn default() -> Self {
+        Self {
+            surface_area: 0.0,
+            vulnerabilities: Vec::new(),
+        }
+    }
+}
+
+impl Default for ComplianceStatus {
+    fn default() -> Self {
+        Self {
+            compliant: false,
+            missing_requirements: Vec::new(),
+        }
+    }
+}
 
 impl fmt::Display for DeepVerificationResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

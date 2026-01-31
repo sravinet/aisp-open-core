@@ -62,7 +62,7 @@ pub struct PerformanceMonitor {
 }
 
 /// Comprehensive verification result integrating all verification layers
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ComprehensiveVerificationResult {
     pub overall_security_score: f64,
     pub enterprise_compliance_score: f64,
@@ -95,7 +95,7 @@ pub enum VerificationStage {
     FinalAssessment,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ExecutionStrategy {
     Sequential,
     Parallel,
@@ -103,7 +103,7 @@ pub enum ExecutionStrategy {
     Adaptive,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum FailureHandlingStrategy {
     FailFast,
     ContinueOnError,
@@ -111,7 +111,7 @@ pub enum FailureHandlingStrategy {
     RiskBasedDecision,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum AttackResistanceRating {
     Minimal,
     Basic,
@@ -120,7 +120,7 @@ pub enum AttackResistanceRating {
     Military,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum SecurityViolationType {
     ParseBypass,
     TypeSafetyViolation,
@@ -131,23 +131,23 @@ pub enum SecurityViolationType {
 }
 
 // Additional supporting types (simplified for space)
-#[derive(Debug, Clone)] pub struct SecurityPolicy { pub policy_name: String, pub enforcement_level: String }
-#[derive(Debug, Clone)] pub struct EnforcementRule { pub rule_id: String, pub condition: String }
-#[derive(Debug, Clone)] pub struct ViolationHandler { pub handler_type: String, pub response: String }
-#[derive(Debug, Clone)] pub struct AuditLogger { pub log_level: String, pub destinations: Vec<String> }
-#[derive(Debug, Clone)] pub struct IncidentResponder { pub response_protocols: Vec<String> }
-#[derive(Debug, Clone)] pub struct ComplianceFramework { pub framework_name: String, pub version: String }
-#[derive(Debug, Clone)] pub struct AuditCheckpoint { pub checkpoint_id: String, pub requirement: String }
-#[derive(Debug, Clone)] pub struct CertificationRequirement { pub requirement_id: String, pub standard: String }
-#[derive(Debug, Clone)] pub struct AuditTrail { pub entries: Vec<String> }
-#[derive(Debug, Clone)] pub struct ReportingEngine { pub report_formats: Vec<String> }
-#[derive(Debug, Clone)] pub struct PerformanceMetric { pub metric_name: String, pub value: f64 }
-#[derive(Debug, Clone)] pub struct ResourceUsageTracker { pub cpu_usage: f64, pub memory_usage: f64 }
-#[derive(Debug, Clone)] pub struct OptimizationEngine { pub optimization_strategies: Vec<String> }
-#[derive(Debug, Clone)] pub struct AlertingSystem { pub alert_channels: Vec<String> }
-#[derive(Debug, Clone)] pub struct ProfilingData { pub profiling_samples: Vec<String> }
-#[derive(Debug, Clone)] pub struct ResourceManager { pub resource_pools: HashMap<String, usize> }
-#[derive(Debug, Clone)] 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct SecurityPolicy { pub policy_name: String, pub enforcement_level: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct EnforcementRule { pub rule_id: String, pub condition: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ViolationHandler { pub handler_type: String, pub response: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct AuditLogger { pub log_level: String, pub destinations: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct IncidentResponder { pub response_protocols: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ComplianceFramework { pub framework_name: String, pub version: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct AuditCheckpoint { pub checkpoint_id: String, pub requirement: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct CertificationRequirement { pub requirement_id: String, pub standard: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct AuditTrail { pub entries: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ReportingEngine { pub report_formats: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct PerformanceMetric { pub metric_name: String, pub value: f64 }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ResourceUsageTracker { pub cpu_usage: f64, pub memory_usage: f64 }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct OptimizationEngine { pub optimization_strategies: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct AlertingSystem { pub alert_channels: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ProfilingData { pub profiling_samples: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ResourceManager { pub resource_pools: HashMap<String, usize> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] 
 pub struct AdversarialTestResults { 
     pub passed_tests: usize, 
     pub total_tests: usize, 
@@ -159,12 +159,12 @@ pub struct AdversarialTestResults {
     pub vulnerabilities_found: Vec<String>,
     pub recommendations: Vec<String>,
 }
-#[derive(Debug, Clone)] pub struct EnterpriseSecurityAssessment { pub security_posture: String, pub threat_landscape: Vec<String> }
-#[derive(Debug, Clone)] pub struct ComplianceStatus { pub compliant_frameworks: Vec<String>, pub violations: Vec<String> }
-#[derive(Debug, Clone)] pub struct PerformanceAnalysis { pub bottlenecks: Vec<String>, pub optimization_opportunities: Vec<String> }
-#[derive(Debug, Clone)] pub struct AuditSummary { pub audit_passed: bool, pub findings: Vec<String> }
-#[derive(Debug, Clone)] pub struct ProductionRecommendation { pub priority: String, pub category: String, pub action: String }
-#[derive(Debug, Clone)] pub struct CertificationEligibility { pub eligible_standards: Vec<String>, pub requirements_met: f64 }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct EnterpriseSecurityAssessment { pub security_posture: String, pub threat_landscape: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ComplianceStatus { pub compliant_frameworks: Vec<String>, pub violations: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct PerformanceAnalysis { pub bottlenecks: Vec<String>, pub optimization_opportunities: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct AuditSummary { pub audit_passed: bool, pub findings: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ProductionRecommendation { pub priority: String, pub category: String, pub action: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct CertificationEligibility { pub eligible_standards: Vec<String>, pub requirements_met: f64 }
 
 impl MultiLayerVerificationPipeline {
     /// Create new multi-layer verification pipeline with enterprise configuration
@@ -882,7 +882,7 @@ impl crate::testing::adversarial_framework::AdversarialTestSuite {
 }
 
 // Supporting types for adversarial testing
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct AttackResult {
     attack_type: String,
     description: String,

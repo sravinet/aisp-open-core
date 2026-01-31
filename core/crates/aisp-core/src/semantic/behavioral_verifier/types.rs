@@ -4,11 +4,11 @@
 //! resource limits, and verification results following SRP architecture.
 
 use std::collections::HashSet;
-use std::time::Instant;
+use std::time::{Instant, Duration};
 use std::fmt;
 
 /// Behavioral verification result
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BehavioralVerificationResult {
     pub overall_score: f64,
     pub execution_safety_score: f64,
@@ -22,7 +22,7 @@ pub struct BehavioralVerificationResult {
 }
 
 /// Security policy for sandbox execution
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SandboxSecurityPolicy {
     pub allow_file_access: bool,
     pub allow_network_access: bool,
@@ -33,7 +33,7 @@ pub struct SandboxSecurityPolicy {
 }
 
 /// Resource limits for safe execution
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ResourceLimits {
     pub max_execution_time_ms: u64,
     pub max_memory_mb: usize,
@@ -44,29 +44,33 @@ pub struct ResourceLimits {
 }
 
 /// Security violation record
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct SecurityViolation {
     pub violation_type: SecurityViolationType,
     pub severity: ViolationSeverity,
     pub description: String,
+    #[serde(skip)]
     pub timestamp: Instant,
     pub context: String,
 }
 
 /// Execution result from behavioral verification
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct ExecutionResult {
     pub function_name: String,
     pub input_parameters: Vec<String>,
     pub output: ExecutionOutput,
-    pub execution_time: std::time::Duration,
+    #[serde(skip)]
+    pub execution_time: Duration,
     pub memory_usage: usize,
     pub security_violations: Vec<SecurityViolation>,
     pub behavior_classification: BehaviorClassification,
 }
 
 /// Behavioral security assessment
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BehavioralSecurityAssessment {
     pub threat_level: ThreatLevel,
     pub attack_surface_size: f64,
@@ -77,7 +81,7 @@ pub struct BehavioralSecurityAssessment {
 
 // Enumerations
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum SandboxOperation {
     MathematicalComputation,
     LogicalEvaluation,
@@ -87,14 +91,14 @@ pub enum SandboxOperation {
     ConditionalExecution,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum SandboxSecurityLevel {
     Strict,      // Maximum security, minimal permissions
     Balanced,    // Balanced security and functionality
     Permissive,  // More permissions for complex operations
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum IsolationMode {
     ProcessIsolation,    // Separate process execution
     ThreadIsolation,     // Thread-based isolation
@@ -102,7 +106,7 @@ pub enum IsolationMode {
     VirtualMachine,      // VM-based isolation
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum SecurityViolationType {
     UnauthorizedFileAccess,
     NetworkAccessAttempt,
@@ -112,7 +116,7 @@ pub enum SecurityViolationType {
     InjectionAttempt,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ViolationSeverity {
     Low,
     Medium,
@@ -120,7 +124,7 @@ pub enum ViolationSeverity {
     Critical,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum ExecutionOutput {
     Success(String),
     Error(String),
@@ -129,7 +133,7 @@ pub enum ExecutionOutput {
     SecurityViolation(String),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum BehaviorClassification {
     Safe,
     Suspicious,
@@ -137,7 +141,7 @@ pub enum BehaviorClassification {
     Unknown,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ThreatLevel {
     Minimal,
     Low,
@@ -146,7 +150,7 @@ pub enum ThreatLevel {
     Critical,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ComplianceLevel {
     NonCompliant,
     PartiallyCompliant,
@@ -155,7 +159,7 @@ pub enum ComplianceLevel {
 }
 
 /// Behavioral violation record
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BehavioralViolation {
     pub violation_type: String,
     pub description: String,
@@ -163,7 +167,7 @@ pub struct BehavioralViolation {
 }
 
 /// Behavioral recommendation for improvements
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BehavioralRecommendation {
     pub priority: String,
     pub action: String,
@@ -171,14 +175,14 @@ pub struct BehavioralRecommendation {
 }
 
 // Coverage tracking
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct CoverageTracker {
     pub line_coverage: f64,
     pub branch_coverage: f64,
 }
 
 // Test statistics
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TestStatistics {
     pub total_tests: usize,
     pub passed_tests: usize,
@@ -274,5 +278,59 @@ mod tests {
         let display = format!("{}", result);
         assert!(display.contains("overall_score: 0.950"));
         assert!(display.contains("safety: 0.980"));
+    }
+}
+// Production-ready Default implementations
+impl Default for BehavioralVerificationResult {
+    fn default() -> Self {
+        Self {
+            overall_score: 0.0,
+            execution_safety_score: 0.0,
+            behavioral_consistency_score: 0.0,
+            property_compliance_score: 0.0,
+            authenticity_score: 0.0,
+            execution_results: Vec::new(),
+            security_assessment: BehavioralSecurityAssessment::default(),
+            violations: Vec::new(),
+            recommendations: Vec::new(),
+        }
+    }
+}
+
+impl Default for BehavioralSecurityAssessment {
+    fn default() -> Self {
+        Self {
+            threat_level: ThreatLevel::Minimal,
+            attack_surface_size: 0.0,
+            vulnerability_count: 0,
+            security_score: 0.0,
+            compliance_level: ComplianceLevel::NonCompliant,
+        }
+    }
+}
+
+impl Default for SecurityViolation {
+    fn default() -> Self {
+        Self {
+            violation_type: SecurityViolationType::SuspiciousBehavior,
+            severity: ViolationSeverity::Low,
+            description: String::new(),
+            timestamp: Instant::now(),
+            context: String::new(),
+        }
+    }
+}
+
+impl Default for ExecutionResult {
+    fn default() -> Self {
+        Self {
+            function_name: String::new(),
+            input_parameters: Vec::new(),
+            output: ExecutionOutput::Success(String::new()),
+            execution_time: Duration::from_secs(0),
+            memory_usage: 0,
+            security_violations: Vec::new(),
+            behavior_classification: BehaviorClassification::Safe,
+        }
     }
 }

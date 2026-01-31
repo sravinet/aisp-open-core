@@ -50,7 +50,7 @@ pub struct VerificationOrchestrator {
 }
 
 /// Comprehensive cross-validation result
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct CrossValidationResult {
     pub overall_consistency_score: f64,
     pub semantic_behavioral_agreement: f64,
@@ -66,7 +66,7 @@ pub struct CrossValidationResult {
     pub final_assessment: FinalSecurityAssessment,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ConsistencyAnalysis {
     pub type_consistency_score: f64,
     pub behavioral_consistency_score: f64,
@@ -77,7 +77,7 @@ pub struct ConsistencyAnalysis {
     pub validation_gaps: Vec<ValidationGap>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct VerificationConflict {
     pub conflict_id: String,
     pub conflict_type: ConflictType,
@@ -88,7 +88,7 @@ pub struct VerificationConflict {
     pub resolution_difficulty: ResolutionDifficulty,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ResolvedConflict {
     pub original_conflict: VerificationConflict,
     pub resolution_method: ResolutionMethod,
@@ -98,7 +98,7 @@ pub struct ResolvedConflict {
     pub minority_opinions: Vec<MinorityOpinion>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FinalSecurityAssessment {
     pub unified_threat_level: ThreatLevel,
     pub cross_validated_vulnerabilities: Vec<ValidatedVulnerability>,
@@ -110,7 +110,7 @@ pub struct FinalSecurityAssessment {
 
 // Supporting types and enums
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ConflictType {
     SemanticBehavioralMismatch,
     TypeSafetyInconsistency,
@@ -120,7 +120,7 @@ pub enum ConflictType {
     DeceptionDetectionDisagreement,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum VerificationLayer {
     SemanticAnalysis,
     BehavioralVerification,
@@ -130,7 +130,7 @@ pub enum VerificationLayer {
     DeceptionDetection,
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy, serde::Serialize, serde::Deserialize)]
 pub enum ConflictSeverity {
     Minor,
     Moderate,
@@ -139,7 +139,7 @@ pub enum ConflictSeverity {
     Blocker,
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy, serde::Serialize, serde::Deserialize)]
 pub enum ResolutionDifficulty {
     Trivial,
     Simple,
@@ -148,7 +148,7 @@ pub enum ResolutionDifficulty {
     ExpertRequired,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ResolutionMethod {
     HighestConfidence,
     WeightedVoting,
@@ -158,7 +158,7 @@ pub enum ResolutionMethod {
     UserIntervention,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum FinalDecision {
     Accept,
     Reject,
@@ -168,29 +168,29 @@ pub enum FinalDecision {
 }
 
 // Additional supporting types (simplified for space)
-#[derive(Debug, Clone)] pub struct ConsistencyRule { pub rule_name: String, pub formula: String }
-#[derive(Debug, Clone)] pub struct CrossCheckValidator { pub validator_name: String, pub check_type: String }
-#[derive(Debug, Clone)] pub struct CorrelationAnalyzer { pub correlation_methods: Vec<String> }
-#[derive(Debug, Clone)] pub struct DiscrepancyDetector { pub detection_algorithms: Vec<String> }
-#[derive(Debug, Clone)] pub struct ResolutionStrategy { pub strategy_name: String, pub applicability: Vec<ConflictType> }
-#[derive(Debug, Clone)] pub struct ConfidenceWeightCalculator { pub calculation_methods: Vec<String> }
-#[derive(Debug, Clone)] pub struct VotingSystem { pub voting_algorithms: Vec<String> }
-#[derive(Debug, Clone)] pub struct EvidenceAggregator { pub aggregation_methods: Vec<String> }
-#[derive(Debug, Clone)] pub struct VerificationPipeline { pub stages: Vec<String> }
-#[derive(Debug, Clone)] pub struct ParallelExecutor { pub thread_pool_size: usize }
-#[derive(Debug, Clone)] pub struct DependencyManager { pub dependencies: HashMap<String, Vec<String>> }
-#[derive(Debug, Clone)] pub struct PerformanceOptimizer { pub optimization_strategies: Vec<String> }
-#[derive(Debug, Clone)] pub struct ValidationCache { pub cached_results: HashMap<String, String> }
-#[derive(Debug, Clone)] pub struct LayerCorrelation { pub layer1: VerificationLayer, pub layer2: VerificationLayer, pub correlation: f64 }
-#[derive(Debug, Clone)] pub struct ConsistencyAnomaly { pub anomaly_type: String, pub description: String }
-#[derive(Debug, Clone)] pub struct ValidationGap { pub gap_type: String, pub severity: String }
-#[derive(Debug, Clone)] pub struct ConflictEvidence { pub evidence_type: String, pub details: Vec<String> }
-#[derive(Debug, Clone)] pub struct Evidence { pub evidence_source: VerificationLayer, pub strength: f64 }
-#[derive(Debug, Clone)] pub struct MinorityOpinion { pub opinion_source: VerificationLayer, pub reasoning: String }
-#[derive(Debug, Clone)] pub struct ValidatedVulnerability { pub vulnerability_type: String, pub validated_by: Vec<VerificationLayer> }
-#[derive(Debug, Clone)] pub struct ComplianceVerification { pub compliant: bool, pub verified_requirements: Vec<String> }
-#[derive(Debug, Clone)] pub struct ActionableRecommendation { pub priority: String, pub action: String, pub validation_layers: Vec<VerificationLayer> }
-#[derive(Debug, Clone)] pub struct IntegrationMetrics { pub pipeline_efficiency: f64, pub verification_time_ms: u64, pub resource_utilization: f64 }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ConsistencyRule { pub rule_name: String, pub formula: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct CrossCheckValidator { pub validator_name: String, pub check_type: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct CorrelationAnalyzer { pub correlation_methods: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct DiscrepancyDetector { pub detection_algorithms: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ResolutionStrategy { pub strategy_name: String, pub applicability: Vec<ConflictType> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ConfidenceWeightCalculator { pub calculation_methods: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct VotingSystem { pub voting_algorithms: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct EvidenceAggregator { pub aggregation_methods: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct VerificationPipeline { pub stages: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ParallelExecutor { pub thread_pool_size: usize }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct DependencyManager { pub dependencies: HashMap<String, Vec<String>> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct PerformanceOptimizer { pub optimization_strategies: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ValidationCache { pub cached_results: HashMap<String, String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct LayerCorrelation { pub layer1: VerificationLayer, pub layer2: VerificationLayer, pub correlation: f64 }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ConsistencyAnomaly { pub anomaly_type: String, pub description: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ValidationGap { pub gap_type: String, pub severity: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ConflictEvidence { pub evidence_type: String, pub details: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct Evidence { pub evidence_source: VerificationLayer, pub strength: f64 }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct MinorityOpinion { pub opinion_source: VerificationLayer, pub reasoning: String }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ValidatedVulnerability { pub vulnerability_type: String, pub validated_by: Vec<VerificationLayer> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ComplianceVerification { pub compliant: bool, pub verified_requirements: Vec<String> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct ActionableRecommendation { pub priority: String, pub action: String, pub validation_layers: Vec<VerificationLayer> }
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)] pub struct IntegrationMetrics { pub pipeline_efficiency: f64, pub verification_time_ms: u64, pub resource_utilization: f64 }
 
 impl CrossValidationChecker {
     /// Create new cross-validation checker with production configuration
@@ -1005,5 +1005,70 @@ mod tests {
         let detected_conflicts = conflicts.unwrap();
         assert!(!detected_conflicts.is_empty());
         assert!(detected_conflicts.iter().any(|c| matches!(c.conflict_type, ConflictType::SemanticBehavioralMismatch)));
+    }
+}
+// Production-ready Default implementations for cross validation
+impl Default for ConsistencyAnalysis {
+    fn default() -> Self {
+        Self {
+            type_consistency_score: 0.0,
+            behavioral_consistency_score: 0.0,
+            logical_consistency_score: 0.0,
+            mathematical_consistency_score: 0.0,
+            cross_layer_correlations: Vec::new(),
+            anomaly_detections: Vec::new(),
+            validation_gaps: Vec::new(),
+        }
+    }
+}
+
+impl Default for IntegrationMetrics {
+    fn default() -> Self {
+        Self {
+            pipeline_efficiency: 0.0,
+            verification_time_ms: 0,
+            resource_utilization: 0.0,
+        }
+    }
+}
+
+impl Default for FinalSecurityAssessment {
+    fn default() -> Self {
+        Self {
+            unified_threat_level: crate::semantic::deep_verifier::types::ThreatLevel::None,
+            cross_validated_vulnerabilities: Vec::new(),
+            security_confidence: 0.0,
+            attack_resistance_score: 0.0,
+            compliance_verification: ComplianceVerification::default(),
+            actionable_recommendations: Vec::new(),
+        }
+    }
+}
+
+impl Default for ComplianceVerification {
+    fn default() -> Self {
+        Self {
+            compliant: false,
+            verified_requirements: Vec::new(),
+        }
+    }
+}
+
+impl Default for CrossValidationResult {
+    fn default() -> Self {
+        Self {
+            overall_consistency_score: 0.0,
+            semantic_behavioral_agreement: 0.0,
+            cross_validation_confidence: 0.0,
+            conflict_resolution_score: 0.0,
+            verification_coverage: 0.0,
+            semantic_results: crate::semantic::deep_verifier::types::DeepVerificationResult::default(),
+            behavioral_results: crate::semantic::behavioral_verifier::types::BehavioralVerificationResult::default(),
+            consistency_analysis: ConsistencyAnalysis::default(),
+            conflicts_detected: Vec::new(),
+            resolved_conflicts: Vec::new(),
+            integration_metrics: IntegrationMetrics::default(),
+            final_assessment: FinalSecurityAssessment::default(),
+        }
     }
 }
