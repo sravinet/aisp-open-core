@@ -7,7 +7,7 @@
 
 use super::format_detection::{DocumentFormat, FormatDetector, FormatAnalysis};
 use super::aisp_extractor::{AispCodeBlockExtractor, ExtractedAispBlock, ExtractionContext};
-use super::robust_parser::AispParser;
+use super::robust_parser::{RobustAispParser, ParseResult};
 use crate::ast::canonical::CanonicalAispDocument as AispDocument;
 use crate::error::{AispError, AispResult};
 
@@ -158,8 +158,15 @@ impl MultiFormatParser {
     fn parse_pure_aisp(&self, content: &str, detection_time_us: u64) -> AispResult<ParsedDocument> {
         let parsing_start = std::time::Instant::now();
         
-        let mut parser = AispParser::new(content.to_string());
-        let document = parser.parse()?;
+        let parser = RobustAispParser::new();
+        let parse_result = parser.parse(content);
+        let document = parse_result.document.ok_or_else(|| {
+            AispError::ParseError {
+                message: "Failed to parse document".to_string(),
+                line: 0,
+                column: 0,
+            }
+        })?;
         
         let parsing_time_us = parsing_start.elapsed().as_micros() as u64;
         
@@ -264,11 +271,18 @@ impl MultiFormatParser {
     
     /// Parse an individual extracted AISP block
     fn parse_extracted_block(&self, extracted_block: &ExtractedAispBlock) -> AispResult<ParsedAispDocument> {
-        let mut parser = AispParser::new(extracted_block.content.clone());
-        let document = parser.parse()?;
+        let parser = RobustAispParser::new();
+        let parse_result = parser.parse(&extracted_block.content);
+        let document = parse_result.document.ok_or_else(|| {
+            AispError::ParseError {
+                message: "Failed to parse extracted block".to_string(),
+                line: 0,
+                column: 0,
+            }
+        })?;
         
         // Collect any warnings from the parser
-        let warnings = parser.warnings().iter()
+        let warnings = parse_result.warnings.iter()
             .map(|w| w.message.clone())
             .collect();
         

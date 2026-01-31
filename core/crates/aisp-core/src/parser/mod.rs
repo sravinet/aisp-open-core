@@ -74,8 +74,15 @@ pub fn parse(source: &str) -> crate::error::AispResult<ParsedDocument> {
 /// This function maintains backward compatibility for existing code
 /// that expects only pure AISP document parsing.
 pub fn parse_aisp_only(source: &str) -> crate::error::AispResult<crate::ast::canonical::AispDocument> {
-    let mut parser = AispParser::new(source.to_string());
-    parser.parse()
+    let parser = RobustAispParser::new();
+    let parse_result = parser.parse(source);
+    parse_result.document.ok_or_else(|| {
+        crate::error::AispError::ParseError {
+            message: "Failed to parse AISP document".to_string(),
+            line: 0,
+            column: 0,
+        }
+    })
 }
 
 /// Convenience function to detect document format without parsing

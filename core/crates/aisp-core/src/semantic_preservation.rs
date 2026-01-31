@@ -506,12 +506,26 @@ through carefully verified transformation rules. □
         let target = transformation(source)?;
         
         // Get semantic interpretation of source  
-        let source_doc = crate::parser::parse(source)?;
-        let source_semantics = self.semantics.interpret(&source_doc)?;
+        let source_parsed = crate::parser::parse(source)?;
+        let source_doc = source_parsed.get_primary_document().ok_or_else(|| {
+            AispError::ParseError { 
+                message: "No primary document found in source".to_string(), 
+                line: 0, 
+                column: 0 
+            }
+        })?;
+        let source_semantics = self.semantics.interpret(source_doc)?;
         
         // Get semantic interpretation of target
-        let target_doc = crate::parser::parse(&target)?;
-        let target_semantics = self.semantics.interpret(&target_doc)?;
+        let target_parsed = crate::parser::parse(&target)?;
+        let target_doc = target_parsed.get_primary_document().ok_or_else(|| {
+            AispError::ParseError { 
+                message: "No primary document found in target".to_string(), 
+                line: 0, 
+                column: 0 
+            }
+        })?;
+        let target_semantics = self.semantics.interpret(target_doc)?;
         
         // Check semantic equivalence
         Ok(self.semantics.semantically_equivalent(&source_semantics, &target_semantics))
