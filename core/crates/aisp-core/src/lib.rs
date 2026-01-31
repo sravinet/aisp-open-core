@@ -27,6 +27,9 @@ pub mod temporal_pattern_detector;
 pub mod temporal_logic_solver;
 pub mod temporal_model_checker;
 
+// Concurrent behavior verification components  
+pub mod concurrent_behavior_verifier;
+
 // Advanced formal verification components
 pub mod property_types;
 pub mod formula_converter;
@@ -57,7 +60,6 @@ pub mod formal_verification;
 
 // Advanced behavioral verification components
 pub mod protocol_state_machine;
-pub mod concurrent_behavior_verifier;
 pub mod resource_utilization;
 pub mod performance_verification;
 
