@@ -91,12 +91,7 @@ epsilon_block = { "⟦" ~ "Ε" ~ (":" ~ "Evidence")? ~ "⟧" ~ ("⟨" ~ evidence
 
 // Block content with enhanced expression support
 meta_entries = { meta_entry* }
-meta_entry = { (forall_constraint | meta_assignment) ~ ";"? }
-forall_constraint = { "∀" ~ variable ~ "∈" ~ type_expr ~ ":" ~ logical_expr }
-meta_assignment = { identifier ~ "≜" ~ (string_literal | identifier) }
-variable = { identifier }
-type_expr = { identifier }
-logical_expr = { identifier ~ "(" ~ identifier ~ ")" ~ "<" ~ number }
+meta_entry = { identifier ~ "≜" ~ (string_literal | identifier) ~ ";"? }
 
 type_definitions = { type_definition* }
 type_definition = { identifier ~ "≜" ~ type_expression ~ ";"? }
@@ -606,46 +601,16 @@ impl RobustAispParser {
             match inner.as_rule() {
                 Rule::meta_entries => {
                     for entry in inner.into_inner() {
-                        match entry.as_rule() {
-                            Rule::meta_assignment => {
-                                let entry_text = entry.as_str().to_string();
-                                raw_entries.push(entry_text.clone());
-                                
-                                // Parse entry format: "key≜value" 
-                                if let Some((key, value)) = self.parse_meta_entry(&entry_text) {
-                                    entries.insert(key.clone(), MetaEntry {
-                                        key: key.clone(),
-                                        value,
-                                        span: None,
-                                    });
-                                }
-                            }
-                            Rule::forall_constraint => {
-                                let entry_text = entry.as_str().to_string();
-                                raw_entries.push(entry_text.clone());
-                                
-                                // Parse universal quantifier: "∀variable∈type:expression"
-                                if let Some((key, value)) = self.parse_forall_constraint(&entry_text) {
-                                    entries.insert(key.clone(), MetaEntry {
-                                        key: key.clone(),
-                                        value,
-                                        span: None,
-                                    });
-                                }
-                            }
-                            _ => {
-                                // Handle other meta entry types or fallback to simple parsing
-                                let entry_text = entry.as_str().to_string();
-                                raw_entries.push(entry_text.clone());
-                                
-                                if let Some((key, value)) = self.parse_meta_entry(&entry_text) {
-                                    entries.insert(key.clone(), MetaEntry {
-                                        key: key.clone(),
-                                        value,
-                                        span: None,
-                                    });
-                                }
-                            }
+                        let entry_text = entry.as_str().to_string();
+                        raw_entries.push(entry_text.clone());
+                        
+                        // Parse entry format: "key≜value" 
+                        if let Some((key, value)) = self.parse_meta_entry(&entry_text) {
+                            entries.insert(key.clone(), MetaEntry {
+                                key: key.clone(),
+                                value,
+                                span: None,
+                            });
                         }
                     }
                 }
@@ -664,41 +629,6 @@ impl RobustAispParser {
     
     fn parse_meta_entry(&self, entry_text: &str) -> Option<(String, MetaValue)> {
         MetaContentParser::parse_entry(entry_text)
-    }
-    
-    fn parse_forall_constraint(&self, constraint_text: &str) -> Option<(String, MetaValue)> {
-        // Parse universal quantifier: "∀variable∈type:expression"
-        // Example: "∀D∈AISP:Ambig(D)<0.02"
-        
-        if !constraint_text.starts_with('∀') {
-            return None;
-        }
-        
-        let text = &constraint_text[1..]; // Remove ∀
-        
-        // Find the ∈ symbol
-        if let Some(in_pos) = text.find('∈') {
-            let variable = text[..in_pos].trim();
-            let rest = &text[in_pos + '∈'.len_utf8()..];
-            
-            // Find the : symbol
-            if let Some(colon_pos) = rest.find(':') {
-                let type_name = rest[..colon_pos].trim();
-                let expression = rest[colon_pos + 1..].trim();
-                
-                // Create a constraint key that captures the structure
-                let key = format!("forall_{}_in_{}", variable, type_name);
-                
-                // Create a logical constraint value
-                let logical_expr = LogicalExpression::Raw(format!(
-                    "∀{}∈{}:{}", variable, type_name, expression
-                ));
-                
-                return Some((key, MetaValue::Constraint(logical_expr)));
-            }
-        }
-        
-        None
     }
 
     fn parse_sigma_block(&self, pair: Pair<Rule>) -> AispResult<AispBlock> {
