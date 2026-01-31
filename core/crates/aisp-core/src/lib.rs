@@ -58,7 +58,7 @@ pub mod formal_verification;
 // Advanced behavioral verification components
 pub mod protocol_state_machine;
 pub mod concurrent_behavior_verifier;
-pub mod resource_utilization_analyzer;
+pub mod resource_utilization;
 pub mod performance_verification;
 
 // Formal methods and remediation components  
