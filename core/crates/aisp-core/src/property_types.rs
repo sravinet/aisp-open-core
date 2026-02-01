@@ -171,7 +171,7 @@ pub struct PropertyContext {
 }
 
 /// Source location in AISP document
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SourceLocation {
     /// Block type where property was found
     pub block_type: String,

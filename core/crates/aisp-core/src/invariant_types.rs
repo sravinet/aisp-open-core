@@ -9,7 +9,7 @@ use crate::{
 use std::time::Duration;
 
 /// Discovered invariant with confidence scoring
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DiscoveredInvariant {
     /// Unique identifier for the invariant
     pub id: String,
@@ -53,7 +53,7 @@ pub enum InvariantType {
 }
 
 /// Evidence supporting an invariant
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct InvariantEvidence {
     /// Type of evidence
     pub evidence_type: EvidenceType,
