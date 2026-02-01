@@ -513,16 +513,16 @@ mod tests {
         let document = CanonicalAispDocument {
             header: DocumentHeader {
                 version: "1.0".to_string(),
-                metadata: DocumentMetadata {
-                    title: "Test Document".to_string(),
-                    description: Some("Test description".to_string()),
-                    author: Some("Test Author".to_string()),
-                    created: None,
-                    modified: None,
-                    tags: Vec::new(),
-                },
+                name: "test".to_string(),
+                date: "2026-01-26".to_string(),
+                metadata: None,
+            },
+            metadata: DocumentMetadata {
+                domain: Some("test".to_string()),
+                protocol: None,
             },
             blocks: Vec::new(),
+            span: None,
         };
         
         // Analyze with shortened duration for testing

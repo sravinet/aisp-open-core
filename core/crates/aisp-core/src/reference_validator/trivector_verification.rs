@@ -9,7 +9,7 @@ use crate::error::AispResult;
 use crate::semantic::DeepVerificationResult;
 use crate::vector_space_verifier::VectorSpaceVerifier;
 use crate::tri_vector_validation::OrthogonalityResult;
-use crate::z3_verification::{PropertyResult, Z3VerificationFacade};
+use crate::z3_verification::{canonical_types::Z3PropertyResult, Z3VerificationFacade};
 
 /// Tri-vector orthogonality verification result
 #[derive(Debug, Clone)]
@@ -188,8 +188,8 @@ impl<'a> TriVectorVerifier<'a> {
              (check-sat)"
         );
 
-        let result = self.z3_verifier.verify_smt_formula(&vh_vs_formula).unwrap_or(PropertyResult::Unknown);
-        let verified = matches!(result, PropertyResult::Proven);
+        let result = self.z3_verifier.verify_smt_formula(&vh_vs_formula).unwrap_or(Z3PropertyResult::Unknown { reason: "Default fallback".to_string(), partial_progress: 0.0 });
+        let verified = matches!(result, Z3PropertyResult::Proven { .. });
         
         if verified {
             certificates.push("VH_VS_ORTHOGONAL_MATHEMATICALLY_VERIFIED".to_string());
@@ -248,8 +248,8 @@ impl<'a> TriVectorVerifier<'a> {
              (check-sat)"
         );
 
-        let result = self.z3_verifier.verify_smt_formula(&vl_vs_formula).unwrap_or(PropertyResult::Unknown);
-        let verified = matches!(result, PropertyResult::Proven);
+        let result = self.z3_verifier.verify_smt_formula(&vl_vs_formula).unwrap_or(Z3PropertyResult::Unknown { reason: "Default fallback".to_string(), partial_progress: 0.0 });
+        let verified = matches!(result, Z3PropertyResult::Proven { .. });
         
         if verified {
             certificates.push("VL_VS_ORTHOGONAL_MATHEMATICALLY_VERIFIED".to_string());

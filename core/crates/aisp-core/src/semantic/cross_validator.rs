@@ -1254,7 +1254,9 @@ mod security_assessor {
             behavioral_results: &BehavioralVerificationResult,
         ) -> ComplianceVerification {
             let semantic_compliant = matches!(semantic_results.security_assessment.threat_level,
-                ThreatLevel::Low | ThreatLevel::Minimal | ThreatLevel::None);
+                crate::semantic::deep_verifier::types::ThreatLevel::Low | 
+                crate::semantic::deep_verifier::types::ThreatLevel::Minimal | 
+                crate::semantic::deep_verifier::types::ThreatLevel::None);
                 
             let behavioral_compliant = matches!(behavioral_results.security_assessment.compliance_level,
                 crate::semantic::behavioral_verifier::ComplianceLevel::FullyCompliant |
@@ -1438,10 +1440,10 @@ mod security_assessor {
             
             // Test conservative approach - higher threat level wins
             let unified = checker.unify_threat_levels(
-                &ThreatLevel::Low,
+                &crate::semantic::deep_verifier::types::ThreatLevel::Low,
                 &crate::semantic::behavioral_verifier::ThreatLevel::High,
             );
-            assert_eq!(unified, ThreatLevel::High);
+            assert_eq!(unified, crate::semantic::deep_verifier::types::ThreatLevel::High);
         }
 
         #[test]
@@ -1482,7 +1484,7 @@ mod security_assessor {
             DeepVerificationResult {
                 security_assessment: SecurityAssessment {
                     vulnerability_count: 1,
-                    threat_level: ThreatLevel::Medium,
+                    threat_level: crate::semantic::deep_verifier::types::ThreatLevel::Medium,
                     ..Default::default()
                 },
                 ..Default::default()
@@ -1529,7 +1531,7 @@ mod security_assessor {
                 type_safety_score: 0.9,
                 mathematical_correctness_score: 0.8,
                 security_assessment: SecurityAssessment {
-                    threat_level: ThreatLevel::Low,
+                    threat_level: crate::semantic::deep_verifier::types::ThreatLevel::Low,
                     ..Default::default()
                 },
                 ..Default::default()

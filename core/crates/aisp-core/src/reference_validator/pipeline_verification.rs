@@ -4,7 +4,7 @@
 //! from reference.md: P_aisp(n) vs P_prose(n) and the 97× improvement
 
 use crate::error::AispResult;
-use crate::z3_verification::{PropertyResult, Z3VerificationFacade};
+use crate::z3_verification::{canonical_types::Z3PropertyResult, Z3VerificationFacade};
 use std::time::Duration;
 
 /// Pipeline verification result
@@ -111,7 +111,7 @@ impl<'a> PipelineVerifier<'a> {
             );
 
             let smt_verified = self.z3_verifier.verify_smt_formula(&smt_formula)
-                .map(|r| matches!(r, PropertyResult::Proven))
+                .map(|r| matches!(r, Z3PropertyResult::Proven { .. }))
                 .unwrap_or(false);
 
             let mathematical_proof = format!(
@@ -166,7 +166,7 @@ impl<'a> PipelineVerifier<'a> {
         );
         
         let exponential_verified = self.z3_verifier.verify_smt_formula(&exponential_growth_formula)
-            .map(|r| matches!(r, PropertyResult::Proven))
+            .map(|r| matches!(r, Z3PropertyResult::Proven { .. }))
             .unwrap_or(false);
         
         Ok(has_97x_improvement && exponential_verified)

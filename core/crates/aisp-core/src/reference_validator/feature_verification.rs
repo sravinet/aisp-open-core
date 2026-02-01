@@ -5,7 +5,7 @@
 
 use crate::ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock};
 use crate::error::AispResult;
-use crate::z3_verification::{PropertyResult, Z3VerificationFacade};
+use crate::z3_verification::{canonical_types::Z3PropertyResult, Z3VerificationFacade};
 
 /// Feature compliance verification result
 #[derive(Debug, Clone)]
@@ -95,7 +95,7 @@ impl<'a> FeatureVerifier<'a> {
                     let smt_formula = self.generate_trivector_smt_formula();
                     
                     smt_verified = self.z3_verifier.verify_smt_formula(&smt_formula)
-                        .map(|r| matches!(r, PropertyResult::Proven))
+                        .map(|r| matches!(r, Z3PropertyResult::Proven { .. }))
                         .unwrap_or(false);
                     
                     math_correct = 768 + 512 + 256 == 1536; // Basic dimension check
@@ -135,7 +135,7 @@ impl<'a> FeatureVerifier<'a> {
                     let smt_formula = self.generate_ambiguity_smt_formula();
                     
                     smt_verified = self.z3_verifier.verify_smt_formula(&smt_formula)
-                        .map(|r| matches!(r, PropertyResult::Proven))
+                        .map(|r| matches!(r, Z3PropertyResult::Proven { .. }))
                         .unwrap_or(false);
                     
                     details = format!("Ambiguity function found, SMT formula verified: {}", smt_verified);
@@ -180,7 +180,7 @@ impl<'a> FeatureVerifier<'a> {
                     let smt_formula = self.generate_ghost_intent_smt_formula();
                     
                     smt_verified = self.z3_verifier.verify_smt_formula(&smt_formula)
-                        .map(|r| matches!(r, PropertyResult::Proven))
+                        .map(|r| matches!(r, Z3PropertyResult::Proven { .. }))
                         .unwrap_or(false);
                     
                     details = format!("Ghost intent search found: ψ_g ≜ ψ_* ⊖ ψ_have, SMT verified: {}", smt_verified);
@@ -367,7 +367,7 @@ impl<'a> FeatureVerifier<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::{AispDocument, DocumentHeader, DocumentMetadata, Span, Position};
+    use crate::ast::canonical::{CanonicalAispDocument as AispDocument, DocumentHeader, DocumentMetadata, Span};
     use crate::z3_verification::Z3VerificationFacade;
     
     fn create_test_document() -> AispDocument {
@@ -383,10 +383,7 @@ mod tests {
                 protocol: None,
             },
             blocks: vec![],
-            span: Span {
-                start: Position { line: 1, column: 1, offset: 0 },
-                end: Position { line: 1, column: 1, offset: 0 },
-            },
+            span: Some(Span::new(0, 0, 1, 1)),
         }
     }
     

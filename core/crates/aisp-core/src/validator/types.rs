@@ -50,7 +50,7 @@ pub struct ValidationConfig {
 
 impl Default for ValidationConfig {
     fn default() -> Self {
-        use crate::enhanced_z3_verification::Z3VerificationFacade;
+        use crate::z3_verification::Z3VerificationFacade;
         
         Self {
             max_document_size: MAX_DOCUMENT_SIZE,

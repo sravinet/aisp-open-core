@@ -953,7 +953,7 @@ mod tests {
         let process = ConcurrentProcess {
             id: "test_process".to_string(),
             name: "Test Process".to_string(),
-            state_machine: ProtocolStateMachine::default(),
+            state_machine: crate::protocol_state_machine::ProtocolStateMachine::default(),
             shared_resources,
             channels: Vec::new(),
             synchronization_primitives: Vec::new(),
