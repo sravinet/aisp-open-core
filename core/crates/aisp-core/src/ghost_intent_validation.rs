@@ -18,7 +18,7 @@
 use crate::{
     ast::canonical::{CanonicalAispDocument as AispDocument, CanonicalAispBlock as AispBlock, *},
     error::*,
-    z3_verification::*,
+    z3_verification::{*, canonical_types::Z3PropertyResult},
 };
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
@@ -370,7 +370,7 @@ impl GhostIntentValidator {
         Ok(Some(BehaviorGapProof {
             id: format!("gap_proof_{}", intended.id),
             gap_formula,
-            verification_result: Some(PropertyResult::Unknown),
+            verification_result: Some(Z3PropertyResult::Unknown { reason: "Ghost intent gap detected".to_string(), partial_progress: 0.0 }),
             certificate: Some("Behavioral gap detected via specification analysis".to_string()),
         }))
     }

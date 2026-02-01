@@ -8,7 +8,7 @@
 use crate::error::AispResult;
 use crate::mathematical_evaluator::{MathEvaluator, MathValue, UndefinedReason};
 use crate::semantic::DeepVerificationResult;
-use crate::z3_verification::{PropertyResult, Z3VerificationFacade};
+use crate::z3_verification::{canonical_types::Z3PropertyResult, Z3VerificationFacade};
 use std::collections::HashMap;
 
 /// Mathematical foundations verification result
@@ -90,7 +90,7 @@ impl<'a> AmbiguityVerifier<'a> {
         
         // Generate SMT formula that handles edge cases
         let smt_formula = self.generate_robust_smt_formula(unique_parses, total_parses);
-        let smt_result = self.z3_verifier.verify_smt_formula(&smt_formula).unwrap_or(PropertyResult::Unknown);
+        let smt_result = self.z3_verifier.verify_smt_formula(&smt_formula).unwrap_or(Z3PropertyResult::Unknown { reason: "Default fallback".to_string(), partial_progress: 0.0 });
         
         // Token efficiency analysis
         let token_efficiency = self.calculate_token_efficiency(semantic_result);
