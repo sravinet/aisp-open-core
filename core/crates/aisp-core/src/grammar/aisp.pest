@@ -14,8 +14,23 @@ aisp_document = {
     EOI 
 }
 
-// Header with version, identifier, and date
-header = { "𝔸" ~ version ~ "." ~ identifier ~ "@" ~ date }
+// Header with version, identifier, and date (supports both formats)
+header = { 
+    aisp_unicode_header | 
+    aisp_text_header | 
+    mixed_header 
+}
+aisp_unicode_header = { "𝔸" ~ version ~ "." ~ identifier ~ "@" ~ date }
+aisp_text_header = { "AISP" ~ " " ~ version ~ document_metadata? }
+mixed_header = { identifier ~ ":" ~ " "? ~ string_literal ~ newline_fields* }
+
+document_metadata = { newline_fields* }
+newline_fields = { 
+    "\n" ~ field_assignment
+}
+field_assignment = { 
+    identifier ~ ":" ~ " "? ~ string_literal
+}
 version = { ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
 identifier = { (ASCII_ALPHANUMERIC | "-" | "_" | ".")+ }
 date = { ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
@@ -131,7 +146,7 @@ logical_rule = {
 }
 
 quantified_expr = { 
-    quantifier ~ variable ~ (":" ~ type_expr)? ~ ":" ~ logical_expr
+    quantifier ~ variable ~ (("∈" ~ type_expr) | (":" ~ type_expr))? ~ ":" ~ logical_expr
 }
 quantifier = { "∀" | "∃" }
 
