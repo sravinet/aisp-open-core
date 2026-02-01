@@ -9,7 +9,7 @@ use crate::{
     error::{AispError, AispResult},
     incompleteness_handler::{IncompletenessHandler, TruthValue, IncompletenessResult},
     mathematical_evaluator::{MathEvaluator, MathValue},
-    z3_verification::{Z3VerificationFacade, PropertyResult},
+    z3_verification::{Z3VerificationFacade, canonical_types::Z3PropertyResult},
 };
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -49,7 +49,7 @@ pub struct AdvancedTheoremResult {
     /// Confidence level in proof (0.0 to 1.0)
     pub confidence: f64,
     /// Z3 verification result
-    pub z3_verification: Option<PropertyResult>,
+    pub z3_verification: Option<Z3PropertyResult>,
 }
 
 /// Methods for proving advanced theorems
@@ -143,8 +143,8 @@ impl AdvancedTheoremProver {
         let z3_result = self.verify_convergence_with_z3(theorem)?;
         
         let proof_status = match (convergence_result, &z3_result) {
-            (TruthValue::True, PropertyResult::Proven) => TruthValue::True,
-            (TruthValue::False, PropertyResult::Disproven) => TruthValue::False,
+            (TruthValue::True, Z3PropertyResult::Proven { .. }) => TruthValue::True,
+            (TruthValue::False, Z3PropertyResult::Disproven { .. }) => TruthValue::False,
             _ => TruthValue::Unknown,
         };
         
@@ -199,7 +199,7 @@ impl AdvancedTheoremProver {
         let z3_formula = self.generate_convergence_formula();
         let z3_result = self.z3_verifier.verify_smt_formula(&z3_formula)?;
         
-        let proof_status = if matches!(z3_result, PropertyResult::Proven) {
+        let proof_status = if matches!(z3_result, Z3PropertyResult::Proven { .. }) {
             TruthValue::True
         } else {
             TruthValue::Unknown
@@ -241,7 +241,7 @@ impl AdvancedTheoremProver {
     }
     
     /// Verify convergence using Z3 SMT solver
-    fn verify_convergence_with_z3(&mut self, theorem: &str) -> AispResult<PropertyResult> {
+    fn verify_convergence_with_z3(&mut self, theorem: &str) -> AispResult<Z3PropertyResult> {
         let formula = if theorem.contains("opt_δ") {
             self.generate_convergence_formula()
         } else {

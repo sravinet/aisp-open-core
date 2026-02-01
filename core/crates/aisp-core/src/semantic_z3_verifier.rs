@@ -7,7 +7,7 @@ use crate::error::{AispError, AispResult};
 use crate::incompleteness_handler::{IncompletenessHandler, TruthValue};
 use crate::mathematical_evaluator::{MathEvaluator, MathValue, UndefinedReason};
 use crate::vector_space_verifier::VectorSpaceVerifier;
-use crate::z3_verification::{Z3VerificationFacade, PropertyResult};
+use crate::z3_verification::{Z3VerificationFacade, canonical_types::Z3PropertyResult};
 use crate::advanced_theorem_prover::{AdvancedTheoremProver, AdvancedTheoremResult};
 use crate::category_theory_verifier::{CategoryTheoryVerifier, CategoryVerificationResult};
 use crate::mathematical_notation_parser::{MathematicalNotationParser, EnhancedMathExpression};
@@ -208,7 +208,7 @@ impl SemanticZ3Verifier {
         let consistency_formula = self.generate_consistency_formula();
         let z3_result = self.z3_facade.verify_smt_formula(&consistency_formula)?;
         
-        let consistency_proof = if matches!(z3_result, PropertyResult::Proven) {
+        let consistency_proof = if matches!(z3_result, Z3PropertyResult::Proven { .. }) {
             Some("Basic logical consistency proven via Z3".to_string())
         } else {
             completeness_violations.push("Z3 could not prove basic logical consistency".to_string());
@@ -217,7 +217,7 @@ impl SemanticZ3Verifier {
         
         Ok(MathematicalConsistencyResult {
             axiom_consistency: system_consistent,
-            logical_coherence: matches!(z3_result, PropertyResult::Proven),
+            logical_coherence: matches!(z3_result, Z3PropertyResult::Proven { .. }),
             mathematical_soundness: handles_div_zero && (vector_result.orthogonality_type == crate::tri_vector_validation::OrthogonalityType::CompletelyOrthogonal),
             completeness_violations,
             consistency_proof,
@@ -234,11 +234,11 @@ impl SemanticZ3Verifier {
         // Generate Z3 verification
         *z3_queries += 1;
         let z3_formula = self.generate_semantic_formula(claim);
-        let z3_result = self.z3_facade.verify_smt_formula(&z3_formula).unwrap_or(PropertyResult::Unknown);
+        let z3_result = self.z3_facade.verify_smt_formula(&z3_formula).unwrap_or(Z3PropertyResult::Unknown { reason: "Default fallback".to_string(), partial_progress: 0.0 });
         
         let is_semantically_valid = match (&incompleteness_result.truth_value, &z3_result) {
-            (TruthValue::True, PropertyResult::Proven) => true,
-            (TruthValue::False, PropertyResult::Disproven) => false,
+            (TruthValue::True, Z3PropertyResult::Proven { .. }) => true,
+            (TruthValue::False, Z3PropertyResult::Disproven { .. }) => false,
             _ => false, // Conservative: require both to agree
         };
         
