@@ -608,13 +608,16 @@ impl PropertyVerifier {
         }
 
         // Fallback for non-Z3 builds
-        Ok(PropertyResult::Unsupported)
+        Ok(PropertyResult::Unsupported {
+            property_type: "Z3 verification".to_string(),
+            suggested_alternative: Some("Enable z3-verification feature".to_string()),
+        })
     }
 
     /// Perform Z3 verification
     #[cfg(feature = "z3-verification")]
-    fn z3_verify(&self, context: &Context, _formula: &str) -> AispResult<PropertyResult> {
-        let _solver = Solver::new(&context);
+    fn z3_verify(&self, _context: &Context, _formula: &str) -> AispResult<PropertyResult> {
+        let _solver = Solver::new();
         
         // For now, return a placeholder result due to Z3 API compatibility issues
         // TODO: Implement proper Z3 verification once API is stable
