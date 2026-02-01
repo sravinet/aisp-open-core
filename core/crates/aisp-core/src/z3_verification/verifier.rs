@@ -5,6 +5,7 @@
 
 use super::{environment::AispZ3Environment, properties::PropertyVerifier, canonical_types::*};
 use crate::{ast::*, error::*, tri_vector_validation::*};
+use crate::ast::canonical::CanonicalAispDocument;
 use std::time::Instant;
 use std::collections::HashMap;
 
@@ -55,7 +56,7 @@ impl EnhancedZ3Verifier {
     /// Verify AISP document with enhanced Z3 capabilities
     pub fn verify_document(
         &mut self,
-        document: &AispDocument,
+        document: &CanonicalAispDocument,
         tri_vector_result: Option<&TriVectorValidationResult>,
     ) -> AispResult<Z3VerificationResult> {
         let start_time = Instant::now();
@@ -189,9 +190,8 @@ impl EnhancedZ3Verifier {
             }
 
             // Create Z3 context and solver
-            let cfg = Config::new();
-            let ctx = Context::new(&cfg);
-            let solver = Solver::new(&ctx);
+            let ctx = Context::thread_local();
+            let solver = Solver::new();
 
             // Parse and execute SMT commands
             let result = match self.parse_and_execute_smt(formula, &ctx, &solver) {
@@ -377,7 +377,7 @@ impl Z3VerificationFacade {
     /// Verify document with enhanced Z3 capabilities
     pub fn verify_document(
         &mut self,
-        document: &AispDocument,
+        document: &CanonicalAispDocument,
         tri_vector_result: Option<&TriVectorValidationResult>,
     ) -> AispResult<Z3VerificationResult> {
         #[cfg(feature = "z3-verification")]

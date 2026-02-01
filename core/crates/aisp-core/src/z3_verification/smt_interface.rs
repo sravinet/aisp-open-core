@@ -3,7 +3,7 @@
 //! Provides genuine Z3 SMT solver integration with comprehensive
 //! syntax validation and counterexample generation.
 
-use super::types::*;
+use super::canonical_types::*;
 use crate::error::*;
 use std::collections::{HashMap, HashSet};
 use std::time::Instant;
@@ -81,8 +81,8 @@ impl SmtInterface {
     }
 
     /// Verify SMT formula with comprehensive validation
-    pub fn verify_smt_formula(&mut self, formula: &str) -> AispResult<PropertyResult> {
-        let _start = Instant::now();
+    pub fn verify_smt_formula(&mut self, formula: &str) -> AispResult<Z3PropertyResult> {
+        let start = Instant::now();
         self.stats.queries_executed += 1;
 
         if self.config.verbose {
@@ -92,7 +92,7 @@ impl SmtInterface {
         // Validate syntax first
         if let Err(syntax_error) = self.validate_smt_syntax(formula) {
             self.stats.syntax_errors += 1;
-            return Ok(PropertyResult::Error(format!("Syntax error: {}", syntax_error)));
+            return Ok(Z3PropertyResult::Error { error_message: format!("Syntax error: {}", syntax_error), error_code: -1 });
         }
 
         if !self.z3_available && self.config.require_z3 {
@@ -110,9 +110,9 @@ impl SmtInterface {
 
         // Fallback for disabled mode
         if !self.config.require_z3 {
-            Ok(PropertyResult::Unknown)
+            Ok(Z3PropertyResult::Unknown { reason: "Formula verification not implemented".to_string(), partial_progress: 0.0 })
         } else {
-            Ok(PropertyResult::Error("Z3 not available".to_string()))
+            Ok(Z3PropertyResult::Error { error_message: "Z3 not available".to_string(), error_code: -2 })
         }
     }
 
@@ -173,7 +173,8 @@ impl SmtInterface {
 
     /// Execute Z3 query with proper error handling
     #[cfg(feature = "z3-verification")]
-    fn execute_z3_query(&mut self, formula: &str) -> AispResult<PropertyResult> {
+    fn execute_z3_query(&mut self, formula: &str) -> AispResult<Z3PropertyResult> {
+        let start = Instant::now();
         let ctx = Context::thread_local();
         let solver = Solver::new();
 
@@ -183,16 +184,16 @@ impl SmtInterface {
                 match sat_result {
                     SatResult::Sat => {
                         self.stats.disproven_properties += 1;
-                        Ok(PropertyResult::Disproven)
+                        Ok(Z3PropertyResult::Disproven { counterexample: "SAT result".to_string(), verification_time: start.elapsed() })
                     }
                     SatResult::Unsat => {
                         self.stats.proven_properties += 1;
-                        Ok(PropertyResult::Proven)
+                        Ok(Z3PropertyResult::Proven { proof_certificate: "UNSAT result".to_string(), verification_time: start.elapsed() })
                     }
-                    SatResult::Unknown => Ok(PropertyResult::Unknown),
+                    SatResult::Unknown => Ok(Z3PropertyResult::Unknown { reason: "Z3 returned unknown".to_string(), partial_progress: 0.5 }),
                 }
             }
-            Err(e) => Ok(PropertyResult::Error(format!("Z3 error: {}", e))),
+            Err(e) => Ok(Z3PropertyResult::Error { error_message: format!("Z3 error: {}", e), error_code: -3 }),
         }
     }
 
@@ -450,7 +451,7 @@ mod tests {
         assert!(result.is_ok());
 
         // With disabled interface, should return Unknown
-        assert_eq!(result.unwrap(), PropertyResult::Unknown);
+        assert!(matches!(result.unwrap(), Z3PropertyResult::Unknown { .. }));
 
         let stats = interface.get_stats();
         assert_eq!(stats.queries_executed, 1);
@@ -466,7 +467,7 @@ mod tests {
         assert!(result.is_ok());
 
         match result.unwrap() {
-            PropertyResult::Error(_) => assert!(true),
+            Z3PropertyResult::Error { .. } => assert!(true),
             _ => panic!("Expected syntax error"),
         }
 

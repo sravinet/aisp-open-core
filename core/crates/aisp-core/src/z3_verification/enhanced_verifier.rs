@@ -3,7 +3,7 @@
 //! This module provides the main Z3 verifier interface optimized for
 //! AISP document verification with comprehensive SMT solving.
 
-use super::{environment::AispZ3Environment, properties::PropertyVerifier, types::*};
+use super::{environment::AispZ3Environment, properties::PropertyVerifier, canonical_types::*};
 use crate::{ast::canonical::CanonicalAispDocument as AispDocument, error::*, tri_vector_validation::*};
 use std::collections::HashMap;
 use std::time::Instant;
@@ -18,26 +18,26 @@ pub struct EnhancedZ3Verifier {
     /// Property verifier
     property_verifier: PropertyVerifier,
     /// Verification configuration
-    config: AdvancedVerificationConfig,
+    config: Z3VerificationConfig,
     /// Current verification statistics
-    stats: EnhancedVerificationStats,
+    stats: Z3VerificationStatistics,
 }
 
 impl EnhancedZ3Verifier {
     /// Create new enhanced Z3 verifier
     pub fn new() -> AispResult<Self> {
-        Self::with_config(AdvancedVerificationConfig::default())
+        Self::with_config(Z3VerificationConfig::default())
     }
 
     /// Create verifier with specific configuration
-    pub fn with_config(config: AdvancedVerificationConfig) -> AispResult<Self> {
+    pub fn with_config(config: Z3VerificationConfig) -> AispResult<Self> {
         #[cfg(feature = "z3-verification")]
         {
             Ok(Self {
                 environment: AispZ3Environment::new(),
                 property_verifier: PropertyVerifier::new(config.clone()),
                 config,
-                stats: EnhancedVerificationStats::default(),
+                stats: Z3VerificationStatistics::default(),
             })
         }
 
@@ -54,69 +54,53 @@ impl EnhancedZ3Verifier {
         &mut self,
         _document: &AispDocument,
         _tri_vector_result: Option<&TriVectorValidationResult>,
-    ) -> AispResult<EnhancedVerificationResult> {
+    ) -> AispResult<Z3VerificationResult> {
         let _start_time = Instant::now();
 
         #[cfg(feature = "z3-verification")]
         {
             // Comprehensive verification would go here
-            Ok(EnhancedVerificationResult {
-                status: VerificationStatus::AllVerified,
-                verified_properties: vec![],
-                proofs: HashMap::new(),
-                counterexamples: HashMap::new(),
-                unsat_cores: HashMap::new(),
-                stats: self.stats.clone(),
+            Ok(Z3VerificationResult {
+                status: Z3VerificationStatus::AllVerified,
+                properties: vec![],
+                statistics: self.stats.clone(),
+                timing: Z3TimingBreakdown::default(),
+                resource_usage: Z3ResourceUsage::default(),
                 diagnostics: vec![],
-                tri_vector_result: None,
             })
         }
 
         #[cfg(not(feature = "z3-verification"))]
         {
-            Ok(EnhancedVerificationResult {
-                status: VerificationStatus::Disabled,
-                verified_properties: vec![],
-                proofs: HashMap::new(),
-                counterexamples: HashMap::new(),
-                unsat_cores: HashMap::new(),
-                stats: EnhancedVerificationStats::default(),
-                diagnostics: vec![SolverDiagnostic {
-                    level: DiagnosticLevel::Warning,
-                    message: "Z3 verification disabled".to_string(),
-                    context: "Feature z3-verification not enabled".to_string(),
-                    timestamp: std::time::SystemTime::now(),
-                }],
-                tri_vector_result: None,
-            })
+            Ok(Z3VerificationResult::new_disabled())
         }
     }
 
     /// Determine overall verification status
-    fn determine_status(&self, property_results: &[VerifiedProperty]) -> VerificationStatus {
+    fn determine_status(&self, property_results: &[Z3VerifiedProperty]) -> Z3VerificationStatus {
         if property_results.is_empty() {
-            return VerificationStatus::Incomplete;
+            return Z3VerificationStatus::Incomplete { completed_count: 0, total_count: 0, reason: "No properties to verify".to_string() };
         }
 
-        let all_verified = property_results.iter().all(|p| p.result == PropertyResult::Proven);
-        let any_failed = property_results.iter().any(|p| p.result == PropertyResult::Disproven);
+        let all_verified = property_results.iter().all(|p| p.is_verified());
+        let any_failed = property_results.iter().any(|p| matches!(p.result, Z3PropertyResult::Disproven { .. }));
 
         if any_failed {
-            VerificationStatus::Failed("One or more properties failed verification".to_string())
+            Z3VerificationStatus::Failed("One or more properties failed verification".to_string())
         } else if all_verified {
-            VerificationStatus::AllVerified
+            Z3VerificationStatus::AllVerified
         } else {
-            VerificationStatus::PartiallyVerified
+            Z3VerificationStatus::PartiallyVerified { verified_count: all_verified as usize, total_count: property_results.len() }
         }
     }
 
     /// Get verification configuration
-    pub fn get_config(&self) -> &AdvancedVerificationConfig {
+    pub fn get_config(&self) -> &Z3VerificationConfig {
         &self.config
     }
 
     /// Get verification statistics
-    pub fn get_stats(&self) -> &EnhancedVerificationStats {
+    pub fn get_stats(&self) -> &Z3VerificationStatistics {
         &self.stats
     }
 
@@ -152,7 +136,7 @@ mod tests {
 
     #[test]
     fn test_verifier_with_config() {
-        let config = AdvancedVerificationConfig {
+        let config = Z3VerificationConfig {
             query_timeout_ms: 15000,
             incremental: false,
             generate_proofs: true,
@@ -161,6 +145,8 @@ mod tests {
             solver_tactics: vec!["simplify".to_string()],
             max_memory_mb: 2048,
             random_seed: Some(123),
+            max_recursion_depth: 100,
+            parallel_solving: false,
         };
 
         #[cfg(feature = "z3-verification")]
@@ -190,7 +176,7 @@ mod tests {
             assert!(result.is_ok());
 
             let verification_result = result.unwrap();
-            assert_eq!(verification_result.status, VerificationStatus::AllVerified);
+            assert_eq!(verification_result.status, Z3VerificationStatus::AllVerified);
         }
 
         #[cfg(not(feature = "z3-verification"))]
@@ -207,30 +193,30 @@ mod tests {
 
             // Test empty properties
             let empty_props = vec![];
-            assert_eq!(verifier.determine_status(&empty_props), VerificationStatus::Incomplete);
+            assert_eq!(verifier.determine_status(&empty_props), Z3VerificationStatus::Incomplete);
 
             // Test all proven properties
             let proven_props = vec![
-                VerifiedProperty::new(
+                Z3VerifiedProperty::new(
                     "test1".to_string(),
-                    PropertyCategory::TypeSafety,
+                    Z3PropertyCategory::TypeSafety,
                     "Test property".to_string(),
-                    PropertyResult::Proven,
+                    Z3PropertyResult::Proven { proof_certificate: "proof".to_string(), verification_time: std::time::Duration::from_millis(100) },
                 ),
             ];
-            assert_eq!(verifier.determine_status(&proven_props), VerificationStatus::AllVerified);
+            assert_eq!(verifier.determine_status(&proven_props), Z3VerificationStatus::AllVerified);
 
             // Test failed property
             let failed_props = vec![
-                VerifiedProperty::new(
+                Z3VerifiedProperty::new(
                     "test2".to_string(),
-                    PropertyCategory::TypeSafety,
+                    Z3PropertyCategory::TypeSafety,
                     "Failed property".to_string(),
-                    PropertyResult::Disproven,
+                    Z3PropertyResult::Disproven { counterexample: "counter".to_string(), verification_time: std::time::Duration::from_millis(100) },
                 ),
             ];
             match verifier.determine_status(&failed_props) {
-                VerificationStatus::Failed(_) => assert!(true),
+                Z3VerificationStatus::Failed(_) => assert!(true),
                 _ => panic!("Expected Failed status"),
             }
         }
@@ -258,7 +244,7 @@ mod tests {
 
     #[test]
     fn test_configuration_validation() {
-        let valid_config = AdvancedVerificationConfig {
+        let valid_config = Z3VerificationConfig {
             query_timeout_ms: 30000,
             incremental: true,
             generate_proofs: false,
@@ -267,6 +253,8 @@ mod tests {
             solver_tactics: vec![],
             max_memory_mb: 1024,
             random_seed: None,
+            max_recursion_depth: 100,
+            parallel_solving: false,
         };
 
         #[cfg(feature = "z3-verification")]
@@ -276,7 +264,7 @@ mod tests {
         }
 
         // Test edge cases
-        let zero_timeout_config = AdvancedVerificationConfig {
+        let zero_timeout_config = Z3VerificationConfig {
             query_timeout_ms: 0,
             incremental: false,
             generate_proofs: true,
@@ -285,6 +273,8 @@ mod tests {
             solver_tactics: vec!["qe".to_string(), "simplify".to_string()],
             max_memory_mb: 0,
             random_seed: Some(0),
+            max_recursion_depth: 100,
+            parallel_solving: false,
         };
 
         #[cfg(feature = "z3-verification")]
