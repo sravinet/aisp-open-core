@@ -7,11 +7,11 @@ use crate::{
     ast::canonical::CanonicalAispDocument as AispDocument,
     error::{AispError, AispResult},
     invariant_discovery::InvariantDiscovery,
-    satisfiability_checker::{SatisfiabilityChecker, SatisfiabilityResult},
+    satisfiability_checker::{SatisfiabilityChecker, SatisfiabilityResult, SatisfiabilityConfig},
     theorem_prover::TheoremProver,
     property_types::PropertyFormula,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
@@ -387,7 +387,7 @@ impl FormalVerifier {
         Self {
             config,
             invariant_discovery: InvariantDiscovery::new(),
-            sat_checker: SatisfiabilityChecker::new(),
+            sat_checker: SatisfiabilityChecker::new(SatisfiabilityConfig::default()),
             theorem_prover: TheoremProver::new(),
             context,
         }
@@ -405,7 +405,7 @@ impl FormalVerifier {
         Self {
             config,
             invariant_discovery: InvariantDiscovery::new(),
-            sat_checker: SatisfiabilityChecker::new(),
+            sat_checker: SatisfiabilityChecker::new(SatisfiabilityConfig::default()),
             theorem_prover: TheoremProver::new(),
             context,
         }
@@ -440,7 +440,7 @@ impl FormalVerifier {
                 }
                 Err(e) => {
                     let failure = VerificationFailure {
-                        property: invariant.property.clone(),
+                        property: format!("{:?}", invariant.formula),
                         reason: FailureReason::ProofGenerationFailed,
                         error_message: e.to_string(),
                         suggestions: vec!["Check property syntax".to_string()],
@@ -456,6 +456,7 @@ impl FormalVerifier {
         
         // Update verification status
         let total_properties = result.verified_invariants.len() + failures.len();
+        let failed_verifications = failures.len();
         result.status = if failures.is_empty() {
             VerificationStatus::Verified
         } else if verified_count > 0 {
@@ -473,7 +474,7 @@ impl FormalVerifier {
             total_time: verification_start.elapsed(),
             properties_checked: total_properties,
             successful_verifications: verified_count,
-            failed_verifications: failures.len(),
+            failed_verifications,
             time_per_method: HashMap::new(),
             resource_usage: ResourceUsageMetrics::default(),
             performance: PerformanceMetrics::default(),
@@ -490,7 +491,7 @@ impl FormalVerifier {
         let property = PropertyFormula::from_invariant(invariant)?;
         
         // Generate proof using theorem prover
-        let proof_tree = self.theorem_prover.prove(&property)?;
+        let proof_tree = self.theorem_prover.prove_formula(&property)?;
         
         // Create formal proof
         let formal_proof = FormalProof {
@@ -520,7 +521,11 @@ impl FormalVerifier {
 
     /// Check satisfiability of document constraints
     fn check_satisfiability(&mut self, document: &AispDocument) -> AispResult<Option<crate::satisfiability_checker::ConstraintModel>> {
-        match self.sat_checker.check_satisfiability(document)? {
+        // First extract invariants from the document
+        let invariants = self.invariant_discovery.discover_invariants(document)?;
+        
+        // Check satisfiability of the extracted invariants
+        match self.sat_checker.check_invariants(&invariants)? {
             SatisfiabilityResult::Satisfiable(model) => Ok(Some(model)),
             SatisfiabilityResult::Unsatisfiable(_) => Ok(None),
             SatisfiabilityResult::Unknown(_) => Ok(None),
@@ -565,7 +570,7 @@ impl PropertyVerifier {
     /// Apply verification strategy to property
     fn apply_strategy(&mut self, strategy: &VerificationStrategy, property: &PropertyFormula) -> AispResult<VerifiedInvariant> {
         // Strategy application would be implemented here
-        Err(AispError::ValidationError("Strategy application not implemented".to_string()))
+        Err(AispError::validation_error("Strategy application not implemented"))
     }
 
     /// Create default verification strategies
@@ -612,7 +617,7 @@ impl StrategySelector {
     /// Select best strategy for property
     pub fn select_strategy(&self, strategies: &[VerificationStrategy], property: &PropertyFormula) -> AispResult<VerificationStrategy> {
         if strategies.is_empty() {
-            return Err(AispError::ValidationError("No strategies available".to_string()));
+            return Err(AispError::validation_error("No strategies available"));
         }
 
         // Simple selection - choose first strategy for now
@@ -654,7 +659,7 @@ impl ProofGenerator {
     /// Generate proof for property
     pub fn generate_proof(&mut self, property: &PropertyFormula) -> AispResult<FormalProof> {
         // Proof generation would be implemented here
-        Err(AispError::ValidationError("Proof generation not implemented".to_string()))
+        Err(AispError::validation_error("Proof generation not implemented"))
     }
 
     /// Create default construction strategies
@@ -826,12 +831,22 @@ impl PropertyFormulaExt for PropertyFormula {
         // Convert invariant to property formula
         // This is a placeholder implementation
         Ok(PropertyFormula {
-            formula: crate::property_types::FormulaStructure::Atomic(
+            structure: crate::property_types::FormulaStructure::Atomic(
                 crate::property_types::AtomicFormula {
-                    predicate: invariant.property.clone(),
+                    predicate: invariant.name.clone(),
                     terms: vec![],
+                    type_signature: None,
                 }
             ),
+            quantifiers: vec![],
+            free_variables: HashSet::new(),
+            predicates: {
+                let mut predicates = HashSet::new();
+                predicates.insert(invariant.name.clone());
+                predicates
+            },
+            functions: HashSet::new(),
+            constants: HashSet::new(),
         })
     }
 }

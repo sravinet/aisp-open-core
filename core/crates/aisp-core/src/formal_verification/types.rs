@@ -12,7 +12,7 @@ use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
 /// Complete formal verification result for an AISP document
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VerificationResult {
     /// Overall verification status
     pub status: VerificationStatus,
@@ -48,7 +48,7 @@ pub enum VerificationStatus {
 }
 
 /// An invariant that has been formally verified
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VerifiedInvariant {
     /// The original discovered invariant
     pub invariant: DiscoveredInvariant,
@@ -63,7 +63,7 @@ pub struct VerifiedInvariant {
 }
 
 /// Formal proof with complete derivation
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FormalProof {
     /// Unique identifier for this proof
     pub id: String,
@@ -82,7 +82,7 @@ pub struct FormalProof {
 }
 
 /// Individual step in a formal proof
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ProofStep {
     /// Step number in sequence
     pub step_number: usize,
@@ -129,7 +129,7 @@ pub enum VerificationMethod {
 }
 
 /// Metrics about proof complexity
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ProofComplexity {
     /// Number of proof steps
     pub steps: usize,
@@ -178,7 +178,7 @@ pub enum FailureReason {
 }
 
 /// Statistics about the verification process
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VerificationStatistics {
     /// Total verification time
     pub total_time: Duration,
@@ -197,7 +197,7 @@ pub struct VerificationStatistics {
 }
 
 /// Resource usage during verification
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ResourceUsageMetrics {
     /// Peak memory usage in bytes
     pub peak_memory: usize,
@@ -212,7 +212,7 @@ pub struct ResourceUsageMetrics {
 }
 
 /// Performance metrics for verification
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PerformanceMetrics {
     /// Properties verified per second
     pub properties_per_second: f64,

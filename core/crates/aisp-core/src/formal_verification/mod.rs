@@ -64,9 +64,9 @@ impl FormalVerificationSystem {
     }
 
     /// Get verification statistics
-    pub fn get_statistics(&self) -> &VerificationStatistics {
+    pub fn get_statistics(&self) -> VerificationStatistics {
         // Would return actual statistics from verifier
-        &VerificationStatistics::default()
+        VerificationStatistics::default()
     }
 }
 

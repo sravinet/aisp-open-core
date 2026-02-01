@@ -696,7 +696,7 @@ impl ProofEngine {
         // Validate generated proof
         let validation = self.validator.validate(&proof)?;
         if validation != ProofValidation::Valid {
-            return Err(AispError::ValidationError("Generated proof failed validation".to_string()));
+            return Err(AispError::validation_error("Generated proof failed validation"));
         }
         
         // Optimize proof if enabled
@@ -715,7 +715,7 @@ impl ProofEngine {
     /// Select appropriate proof generator
     fn select_generator(&self, property: &PropertyFormula) -> AispResult<&ProofGeneratorImpl> {
         self.generators.first()
-            .ok_or_else(|| AispError::ValidationError("No generators available".to_string()))
+            .ok_or_else(|| AispError::validation_error("No generators available"))
     }
 
     /// Apply generator to property
