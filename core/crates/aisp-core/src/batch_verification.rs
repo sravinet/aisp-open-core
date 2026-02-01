@@ -8,7 +8,11 @@
 use crate::{
     ast::canonical::CanonicalAispDocument as AispDocument,
     error::{AispError, AispResult},
-    semantic::verification_pipeline::ComprehensiveVerificationResult,
+    semantic::verification_pipeline::{
+        ComprehensiveVerificationResult, AdversarialTestResults, 
+        EnterpriseSecurityAssessment, ComplianceStatus, PerformanceAnalysis, 
+        AuditSummary, ProductionRecommendation, CertificationEligibility
+    },
     parser::robust_parser::RobustAispParser,
 };
 use std::{

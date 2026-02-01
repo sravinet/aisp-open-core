@@ -55,7 +55,7 @@ pub mod invariant_discovery;
 // Satisfiability checking components
 pub mod satisfiability_checker;
 
-// Formal verification framework
+// Formal verification framework  
 pub mod formal_verification;
 
 // Advanced behavioral verification components
