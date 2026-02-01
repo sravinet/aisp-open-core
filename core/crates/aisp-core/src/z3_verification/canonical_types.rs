@@ -431,6 +431,27 @@ pub struct Z3ProofMetrics {
     pub generation_time: Duration,
 }
 
+impl Z3VerificationResult {
+    /// Create disabled verification result for non-Z3 builds
+    pub fn new_disabled() -> Self {
+        Self {
+            status: Z3VerificationStatus::Disabled,
+            properties: Vec::new(),
+            statistics: Z3VerificationStatistics::default(),
+            timing: Z3TimingBreakdown {
+                preparation_time: Duration::from_secs(0),
+                solving_time: Duration::from_secs(0),
+                processing_time: Duration::from_secs(0),
+                cache_time: Duration::from_secs(0),
+                overhead_time: Duration::from_secs(0),
+            },
+            resource_usage: Z3ResourceUsage::default(),
+            diagnostics: Vec::new(),
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;

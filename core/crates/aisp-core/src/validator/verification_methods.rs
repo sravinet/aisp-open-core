@@ -8,7 +8,8 @@ use crate::semantic::DeepVerificationResult;
 use crate::ast::canonical::CanonicalAispDocument as AispDocument;
 use super::types::ValidationConfig;
 use crate::tri_vector_validation::{TriVectorValidator, TriVectorValidationConfig, TriVectorValidationResult};
-use crate::enhanced_z3_verification::{Z3VerificationFacade, EnhancedVerificationResult};
+use crate::z3_verification::Z3VerificationFacade;
+use crate::z3_verification::canonical_types::Z3VerificationResult;
 use crate::ghost_intent_validation::{GhostIntentValidator, GhostIntentConfig, GhostIntentValidationResult};
 use crate::rossnet_scoring::{RossNetValidator, RossNetConfig, RossNetValidationResult};
 use crate::hebbian_learning::{HebbianValidator, HebbianConfig, HebbianValidationResult};
@@ -90,7 +91,7 @@ impl VerificationMethods {
         &self,
         document: &AispDocument,
         trivector_result: Option<&TriVectorValidationResult>,
-    ) -> AispResult<EnhancedVerificationResult> {
+    ) -> AispResult<Z3VerificationResult> {
         let mut z3_facade = Z3VerificationFacade::new()?;
         z3_facade.verify_document(document, trivector_result)
     }

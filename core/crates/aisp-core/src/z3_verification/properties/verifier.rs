@@ -470,25 +470,25 @@ impl PropertyVerifier {
         let result = self.verify_smt_formula(&smt_formula, constraint)?;
 
         // Update statistics based on actual verification result
-        match result {
-            PropertyResult::Proven => self.stats.successful_proofs += 1,
-            PropertyResult::Disproven => self.stats.counterexamples += 1,
-            PropertyResult::Unknown => {},
-            PropertyResult::Error(_) => {},
-            PropertyResult::Unsupported => {},
+        match &result {
+            PropertyResult::Proven { .. } => self.stats.proven_properties += 1,
+            PropertyResult::Disproven { .. } => self.stats.disproven_properties += 1,
+            PropertyResult::Unknown { .. } => self.stats.unknown_results += 1,
+            PropertyResult::Error { .. } => self.stats.error_count += 1,
+            PropertyResult::Unsupported { .. } => self.stats.error_count += 1,
         }
 
         self.stats.smt_queries += 1;
 
-        Ok(VerifiedProperty {
-            id: format!("orthogonality_{}", constraint.replace(" ", "_")),
-            category: PropertyCategory::TriVectorOrthogonality,
-            description: format!("Orthogonality constraint: {}", constraint),
-            smt_formula,
-            result: result.clone(),
-            verification_time: start_time.elapsed(),
-            proof_certificate: self.generate_orthogonality_certificate(constraint, &result),
-        })
+        Ok(VerifiedProperty::new(
+            format!("orthogonality_{}", constraint.replace(" ", "_")),
+            PropertyCategory::TriVectorOrthogonality,
+            format!("Orthogonality constraint: {}", constraint),
+            result.clone(),
+        )
+        .with_formula(smt_formula)
+        .with_metadata("verification_time_ms".to_string(), start_time.elapsed().as_millis().to_string())
+        .with_metadata("proof_certificate".to_string(), self.generate_orthogonality_certificate(constraint, &result)))
     }
 
     /// Create SMT formula for orthogonality constraint
@@ -516,25 +516,25 @@ impl PropertyVerifier {
         let result = self.verify_smt_formula(&smt_formula, "safety_isolation")?;
 
         // Update statistics
-        match result {
-            PropertyResult::Proven => self.stats.successful_proofs += 1,
-            PropertyResult::Disproven => self.stats.counterexamples += 1,
-            PropertyResult::Unknown => {},
-            PropertyResult::Error(_) => {},
-            PropertyResult::Unsupported => {},
+        match &result {
+            PropertyResult::Proven { .. } => self.stats.proven_properties += 1,
+            PropertyResult::Disproven { .. } => self.stats.disproven_properties += 1,
+            PropertyResult::Unknown { .. } => self.stats.unknown_results += 1,
+            PropertyResult::Error { .. } => self.stats.error_count += 1,
+            PropertyResult::Unsupported { .. } => self.stats.error_count += 1,
         }
 
         self.stats.smt_queries += 1;
 
-        Ok(VerifiedProperty {
-            id: "safety_isolation".to_string(),
-            category: PropertyCategory::TriVectorOrthogonality,
-            description: "Safety constraints are isolated from optimization".to_string(),
-            smt_formula,
-            result: result.clone(),
-            verification_time: start_time.elapsed(),
-            proof_certificate: self.generate_safety_certificate(&result),
-        })
+        Ok(VerifiedProperty::new(
+            "safety_isolation".to_string(),
+            PropertyCategory::TriVectorOrthogonality,
+            "Safety constraints are isolated from optimization".to_string(),
+            result.clone(),
+        )
+        .with_formula(smt_formula)
+        .with_metadata("verification_time_ms".to_string(), start_time.elapsed().as_millis().to_string())
+        .with_metadata("proof_certificate".to_string(), self.generate_safety_certificate(&result)))
     }
 
     /// Create SMT formula for safety isolation
@@ -558,25 +558,25 @@ impl PropertyVerifier {
         let result = self.verify_smt_formula(&smt_formula, "signal_decomposition")?;
 
         // Update statistics
-        match result {
-            PropertyResult::Proven => self.stats.successful_proofs += 1,
-            PropertyResult::Disproven => self.stats.counterexamples += 1,
-            PropertyResult::Unknown => {},
-            PropertyResult::Error(_) => {},
-            PropertyResult::Unsupported => {},
+        match &result {
+            PropertyResult::Proven { .. } => self.stats.proven_properties += 1,
+            PropertyResult::Disproven { .. } => self.stats.disproven_properties += 1,
+            PropertyResult::Unknown { .. } => self.stats.unknown_results += 1,
+            PropertyResult::Error { .. } => self.stats.error_count += 1,
+            PropertyResult::Unsupported { .. } => self.stats.error_count += 1,
         }
 
         self.stats.smt_queries += 1;
 
-        Ok(VerifiedProperty {
-            id: "signal_decomposition".to_string(),
-            category: PropertyCategory::TriVectorOrthogonality,
-            description: "Signal decomposition is unique".to_string(),
-            smt_formula,
-            result: result.clone(),
-            verification_time: start_time.elapsed(),
-            proof_certificate: self.generate_decomposition_certificate(&result),
-        })
+        Ok(VerifiedProperty::new(
+            "signal_decomposition".to_string(),
+            PropertyCategory::TriVectorOrthogonality,
+            "Signal decomposition is unique".to_string(),
+            result.clone(),
+        )
+        .with_formula(smt_formula)
+        .with_metadata("verification_time_ms".to_string(), start_time.elapsed().as_millis().to_string())
+        .with_metadata("proof_certificate".to_string(), self.generate_decomposition_certificate(&result)))
     }
 
     /// Create SMT formula for signal decomposition
@@ -627,8 +627,8 @@ impl PropertyVerifier {
     /// Generate orthogonality certificate
     fn generate_orthogonality_certificate(&self, constraint: &str, result: &PropertyResult) -> String {
         match result {
-            PropertyResult::Proven => format!("CERTIFIED: Orthogonality constraint '{}' is mathematically proven", constraint),
-            PropertyResult::Disproven => format!("COUNTEREXAMPLE: Orthogonality constraint '{}' has counterexample", constraint),
+            PropertyResult::Proven { .. } => format!("CERTIFIED: Orthogonality constraint '{}' is mathematically proven", constraint),
+            PropertyResult::Disproven { .. } => format!("COUNTEREXAMPLE: Orthogonality constraint '{}' has counterexample", constraint),
             _ => format!("INCONCLUSIVE: Orthogonality constraint '{}' verification inconclusive", constraint),
         }
     }
@@ -636,8 +636,8 @@ impl PropertyVerifier {
     /// Generate safety certificate
     fn generate_safety_certificate(&self, result: &PropertyResult) -> String {
         match result {
-            PropertyResult::Proven => "CERTIFIED: Safety isolation is mathematically proven".to_string(),
-            PropertyResult::Disproven => "COUNTEREXAMPLE: Safety isolation violation detected".to_string(),
+            PropertyResult::Proven { .. } => "CERTIFIED: Safety isolation is mathematically proven".to_string(),
+            PropertyResult::Disproven { .. } => "COUNTEREXAMPLE: Safety isolation violation detected".to_string(),
             _ => "INCONCLUSIVE: Safety isolation verification inconclusive".to_string(),
         }
     }
@@ -645,8 +645,8 @@ impl PropertyVerifier {
     /// Generate decomposition certificate
     fn generate_decomposition_certificate(&self, result: &PropertyResult) -> String {
         match result {
-            PropertyResult::Proven => "CERTIFIED: Signal decomposition uniqueness is mathematically proven".to_string(),
-            PropertyResult::Disproven => "COUNTEREXAMPLE: Signal decomposition non-uniqueness detected".to_string(),
+            PropertyResult::Proven { .. } => "CERTIFIED: Signal decomposition uniqueness is mathematically proven".to_string(),
+            PropertyResult::Disproven { .. } => "COUNTEREXAMPLE: Signal decomposition non-uniqueness detected".to_string(),
             _ => "INCONCLUSIVE: Signal decomposition verification inconclusive".to_string(),
         }
     }
@@ -945,14 +945,26 @@ mod tests {
         assert_eq!(cache.statistics.misses, 1);
         
         // Insert and test cache hit
-        cache.insert("formula1".to_string(), PropertyResult::Proven);
+        cache.insert("formula1".to_string(), PropertyResult::Proven {
+            proof_certificate: "test_proof".to_string(),
+            verification_time: std::time::Duration::from_millis(100),
+        });
         assert!(cache.get("formula1").is_some());
         assert_eq!(cache.statistics.hits, 1);
         
         // Test cache eviction
-        cache.insert("formula2".to_string(), PropertyResult::Proven);
-        cache.insert("formula3".to_string(), PropertyResult::Proven);
-        cache.insert("formula4".to_string(), PropertyResult::Proven); // Should trigger eviction
+        cache.insert("formula2".to_string(), PropertyResult::Proven {
+            proof_certificate: "test_proof".to_string(),
+            verification_time: std::time::Duration::from_millis(100),
+        });
+        cache.insert("formula3".to_string(), PropertyResult::Proven {
+            proof_certificate: "test_proof".to_string(),
+            verification_time: std::time::Duration::from_millis(100),
+        });
+        cache.insert("formula4".to_string(), PropertyResult::Proven {
+            proof_certificate: "test_proof".to_string(),
+            verification_time: std::time::Duration::from_millis(100),
+        }); // Should trigger eviction
         
         assert_eq!(cache.statistics.size, 3);
     }
@@ -985,13 +997,22 @@ mod tests {
         let config = AdvancedVerificationConfig::default();
         let verifier = PropertyVerifier::new(config);
         
-        let proven_cert = verifier.generate_orthogonality_certificate("test", &PropertyResult::Proven);
+        let proven_cert = verifier.generate_orthogonality_certificate("test", &PropertyResult::Proven {
+            proof_certificate: "test".to_string(),
+            verification_time: std::time::Duration::from_millis(100),
+        });
         assert!(proven_cert.contains("CERTIFIED"));
         
-        let disproven_cert = verifier.generate_orthogonality_certificate("test", &PropertyResult::Disproven);
+        let disproven_cert = verifier.generate_orthogonality_certificate("test", &PropertyResult::Disproven {
+            counterexample: "test".to_string(),
+            verification_time: std::time::Duration::from_millis(100),
+        });
         assert!(disproven_cert.contains("COUNTEREXAMPLE"));
         
-        let unknown_cert = verifier.generate_orthogonality_certificate("test", &PropertyResult::Unknown);
+        let unknown_cert = verifier.generate_orthogonality_certificate("test", &PropertyResult::Unknown {
+            reason: "test".to_string(),
+            partial_progress: 0.5,
+        });
         assert!(unknown_cert.contains("INCONCLUSIVE"));
     }
 
@@ -1025,9 +1046,18 @@ mod tests {
         let mut cache = FormulaCache::new(config.clone());
         
         // Test LRU eviction
-        cache.insert("formula1".to_string(), PropertyResult::Proven);
-        cache.insert("formula2".to_string(), PropertyResult::Proven);
-        cache.insert("formula3".to_string(), PropertyResult::Proven); // Should evict formula1
+        cache.insert("formula1".to_string(), PropertyResult::Proven {
+            proof_certificate: "test".to_string(),
+            verification_time: std::time::Duration::from_millis(100),
+        });
+        cache.insert("formula2".to_string(), PropertyResult::Proven {
+            proof_certificate: "test".to_string(),
+            verification_time: std::time::Duration::from_millis(100),
+        });
+        cache.insert("formula3".to_string(), PropertyResult::Proven {
+            proof_certificate: "test".to_string(),
+            verification_time: std::time::Duration::from_millis(100),
+        }); // Should evict formula1
         
         assert!(cache.formulas.contains_key("formula2"));
         assert!(cache.formulas.contains_key("formula3"));
@@ -1036,15 +1066,24 @@ mod tests {
         config.eviction_policy = EvictionPolicy::LFU;
         let mut cache_lfu = FormulaCache::new(config);
         
-        cache_lfu.insert("formula1".to_string(), PropertyResult::Proven);
-        cache_lfu.insert("formula2".to_string(), PropertyResult::Proven);
+        cache_lfu.insert("formula1".to_string(), PropertyResult::Proven {
+            proof_certificate: "test".to_string(),
+            verification_time: std::time::Duration::from_millis(100),
+        });
+        cache_lfu.insert("formula2".to_string(), PropertyResult::Proven {
+            proof_certificate: "test".to_string(),
+            verification_time: std::time::Duration::from_millis(100),
+        });
         
         // Access formula1 more times
         cache_lfu.get("formula1");
         cache_lfu.get("formula1");
         cache_lfu.get("formula2");
         
-        cache_lfu.insert("formula3".to_string(), PropertyResult::Proven); // Should evict formula2 (less frequent)
+        cache_lfu.insert("formula3".to_string(), PropertyResult::Proven {
+            proof_certificate: "test".to_string(),
+            verification_time: std::time::Duration::from_millis(100),
+        }); // Should evict formula2 (less frequent)
         
         assert!(cache_lfu.formulas.contains_key("formula1"));
         assert!(cache_lfu.formulas.contains_key("formula3"));
