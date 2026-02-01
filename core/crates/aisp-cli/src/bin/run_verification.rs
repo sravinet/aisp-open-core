@@ -9,7 +9,7 @@ use aisp_core::{
         CanonicalAispDocument as AispDocument,
     },
     formal_verification::{FormalVerifier, VerificationConfig, VerificationMethod},
-    parser_new::AispParser,
+    parser::AispParser,
 };
 use std::time::{Duration, Instant};
 
@@ -53,15 +53,15 @@ fn run_simple_verification() -> Result<(), Box<dyn std::error::Error>> {
 
     // Run verification
     let start_time = Instant::now();
-    let result = verifier.verify_document(&document)?;
+    let result = verifier.verify(&document)?;
     let verification_time = start_time.elapsed();
 
     // Display results
     println!("   Verification time: {:?}", verification_time);
     println!("   Status: {:?}", result.status);
-    println!("   Invariants processed: {}", result.statistics.invariants_processed);
-    println!("   Invariants verified: {}", result.statistics.invariants_verified);
-    println!("   Proofs generated: {}", result.statistics.proofs_generated);
+    println!("   Properties checked: {}", result.statistics.properties_checked);
+    println!("   Successful verifications: {}", result.statistics.successful_verifications);
+    println!("   Proofs generated: {}", result.proofs.len());
 
     if !result.verified_invariants.is_empty() {
         println!("   First verified invariant: {}", result.verified_invariants[0].invariant.name);
@@ -82,48 +82,49 @@ fn run_complex_verification() -> Result<(), Box<dyn std::error::Error>> {
     // Create verifier with custom configuration
     let config = VerificationConfig {
         total_timeout: Duration::from_secs(60),
-        proof_timeout: Duration::from_secs(10),
-        enabled_methods: vec![
+        timeout_per_property: Duration::from_secs(10),
+        methods: vec![
             VerificationMethod::DirectProof,
             VerificationMethod::SmtSolverVerification,
             VerificationMethod::AutomatedProof,
         ],
-        proof_confidence_threshold: 0.7,
         parallel_verification: true,
         worker_threads: 2,
-        enable_proof_cache: true,
-        ..Default::default()
+        enable_proof_generation: true,
+        enable_model_generation: true,
+        memory_limit: 1_000_000_000, // 1GB
+        cache_config: Default::default(),
     };
 
     let mut verifier = FormalVerifier::with_config(config);
 
     // Run verification
-    let result = verifier.verify_document(&document)?;
+    let result = verifier.verify(&document)?;
 
     // Display detailed results
     println!("   Status: {:?}", result.status);
     println!("   Statistics:");
     println!("      Total time: {:?}", result.statistics.total_time);
-    println!("      Invariants processed: {}", result.statistics.invariants_processed);
-    println!("      Invariants verified: {}", result.statistics.invariants_verified);
-    println!("      Average proof time: {:?}", result.statistics.avg_proof_time);
-    println!("      Peak memory usage: {} bytes", result.statistics.memory_stats.peak_usage);
+    println!("      Properties checked: {}", result.statistics.properties_checked);
+    println!("      Successful verifications: {}", result.statistics.successful_verifications);
+    println!("      Failed verifications: {}", result.statistics.failed_verifications);
+    println!("      Peak memory usage: {} bytes", result.statistics.resource_usage.peak_memory);
 
     // Show method distribution
     println!("   Method distribution:");
-    for (method, count) in &result.statistics.method_distribution {
-        println!("      {:?}: {} proofs", method, count);
+    for (method, duration) in &result.statistics.time_per_method {
+        println!("      {:?}: {:?}", method, duration);
     }
 
     // Show proof complexity analysis
     if !result.proofs.is_empty() {
         let avg_complexity = result.proofs.iter()
-            .map(|p| p.complexity.complexity_rating as f64)
+            .map(|p| p.complexity.steps as f64)
             .sum::<f64>() / result.proofs.len() as f64;
-        println!("   Average proof complexity: {:.1}/10", avg_complexity);
+        println!("   Average proof complexity: {:.1} steps", avg_complexity);
 
-        let simple_proofs = result.proofs.iter().filter(|p| p.complexity.is_simple()).count();
-        let complex_proofs = result.proofs.iter().filter(|p| p.complexity.is_complex()).count();
+        let simple_proofs = result.proofs.iter().filter(|p| p.complexity.steps < 10).count();
+        let complex_proofs = result.proofs.iter().filter(|p| p.complexity.steps >= 20).count();
         println!("   Proof complexity distribution: {} simple, {} complex", simple_proofs, complex_proofs);
     }
 
@@ -155,8 +156,14 @@ fn run_parser_integration_test() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Parsing AISP document...");
 
     // Parse the document
-    let mut parser = AispParser::new(aisp_text.to_string());
-    let document = parser.parse()?;
+    let parser = AispParser::new(aisp_text.to_string());
+    let parse_result = parser.parse(aisp_text);
+    
+    if !parse_result.errors.is_empty() {
+        return Err(format!("Parse errors: {:?}", parse_result.errors).into());
+    }
+    
+    let document = parse_result.document.ok_or("Failed to parse document")?;
 
     println!("   Document parsed successfully");
     println!("   Name: {}", document.header.name);
@@ -166,21 +173,21 @@ fn run_parser_integration_test() -> Result<(), Box<dyn std::error::Error>> {
     println!("   Running formal verification...");
 
     let mut verifier = FormalVerifier::new();
-    let result = verifier.verify_document(&document)?;
+    let result = verifier.verify(&document)?;
 
     println!("   Verification Results:");
     println!("      Status: {:?}", result.status);
-    println!("      Processed: {} invariants", result.statistics.invariants_processed);
-    println!("      Verified: {} invariants", result.statistics.invariants_verified);
-    println!("      Generated: {} proofs", result.statistics.proofs_generated);
+    println!("      Properties checked: {}", result.statistics.properties_checked);
+    println!("      Successful verifications: {}", result.statistics.successful_verifications);
+    println!("      Generated: {} proofs", result.proofs.len());
 
     // Show individual proof details
     for (i, proof) in result.proofs.iter().enumerate().take(3) {
-        println!("   Proof {} ({}): {} steps, complexity {}/10",
+        println!("   Proof {} ({}): {} steps, depth {}",
                  i + 1,
-                 proof.id[..8].to_string() + "...",
+                 &proof.id[..8.min(proof.id.len())],
                  proof.complexity.steps,
-                 proof.complexity.complexity_rating);
+                 proof.complexity.logical_depth);
     }
 
     if result.proofs.len() > 3 {
@@ -210,18 +217,18 @@ fn run_performance_analysis() -> Result<(), Box<dyn std::error::Error>> {
         let mut verifier = FormalVerifier::new();
         let start_time = Instant::now();
 
-        match verifier.verify_document(&document) {
+        match verifier.verify(&document) {
             Ok(result) => {
                 let total_time = start_time.elapsed();
                 println!("      Total time: {:?}", total_time);
-                println!("      Invariants: {}/{} verified",
-                         result.statistics.invariants_verified,
-                         result.statistics.invariants_processed);
+                println!("      Properties: {}/{} verified",
+                         result.statistics.successful_verifications,
+                         result.statistics.properties_checked);
                 println!("      Memory peak: {} KB",
-                         result.statistics.memory_stats.peak_usage / 1024);
+                         result.statistics.resource_usage.peak_memory / 1024);
 
                 if !result.proofs.is_empty() {
-                    let avg_proof_time = result.statistics.avg_proof_time;
+                    let avg_proof_time = result.statistics.performance.avg_proof_time;
                     println!("      Avg proof time: {:?}", avg_proof_time);
                 }
             }
@@ -254,27 +261,33 @@ fn run_method_comparison() -> Result<(), Box<dyn std::error::Error>> {
         println!("   Testing {}:", name);
 
         let config = VerificationConfig {
-            enabled_methods: methods,
-            proof_timeout: Duration::from_secs(5),
-            ..Default::default()
+            methods: methods,
+            timeout_per_property: Duration::from_secs(5),
+            total_timeout: Duration::from_secs(30),
+            memory_limit: 500_000_000, // 500MB
+            enable_proof_generation: true,
+            enable_model_generation: false,
+            parallel_verification: false,
+            worker_threads: 1,
+            cache_config: Default::default(),
         };
 
         let mut verifier = FormalVerifier::with_config(config);
         let start_time = Instant::now();
 
-        match verifier.verify_document(&document) {
+        match verifier.verify(&document) {
             Ok(result) => {
                 let verification_time = start_time.elapsed();
                 println!("      Time: {:?}", verification_time);
                 println!("      Success rate: {}/{}",
-                         result.statistics.invariants_verified,
-                         result.statistics.invariants_processed);
+                         result.statistics.successful_verifications,
+                         result.statistics.properties_checked);
 
                 if !result.proofs.is_empty() {
                     let avg_complexity = result.proofs.iter()
-                        .map(|p| p.complexity.complexity_rating as f64)
+                        .map(|p| p.complexity.steps as f64)
                         .sum::<f64>() / result.proofs.len() as f64;
-                    println!("      Avg complexity: {:.1}/10", avg_complexity);
+                    println!("      Avg complexity: {:.1} steps", avg_complexity);
                 }
             }
             Err(e) => {
