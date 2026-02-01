@@ -7,7 +7,7 @@ use super::smt_interface::SmtInterface;
 use super::canonical_types::*;
 use crate::{ast::canonical::{CanonicalAispDocument as AispDocument, *}, error::*, tri_vector_validation::*};
 use std::collections::HashMap;
-use std::time::SystemTime;
+use std::time::{SystemTime, Duration};
 
 /// Z3 verification facade with genuine verification requirements
 pub struct Z3VerificationFacade {
@@ -102,16 +102,17 @@ impl Z3VerificationFacade {
         self.verification_stats.total_properties_checked += properties.len();
         self.verification_stats.successful_verifications += successful;
         self.verification_stats.failed_verifications += failed;
+        let total_props = properties.len();
         
         Ok(Z3VerificationResult {
             status,
             properties,
             statistics: Z3VerificationStatistics {
-                total_properties: properties.len(),
+                total_properties: total_props,
                 smt_queries: self.smt_interface.get_stats().queries_executed,
                 proven_properties: successful,
                 disproven_properties: failed,
-                unknown_results: properties.len() - successful - failed,
+                unknown_results: total_props - successful - failed,
                 error_count: 0,
                 total_time: std::time::Duration::from_millis(100),
                 cache_hit_ratio: 0.0,
@@ -335,13 +336,13 @@ mod tests {
             assert!(result.is_ok());
             
             let verification = result.unwrap();
-            assert!(!verification.verified_properties.is_empty());
+            assert!(!verification.properties.is_empty());
             
             // Check that basic structure properties are verified
-            let header_prop = verification.verified_properties.iter()
+            let header_prop = verification.properties.iter()
                 .find(|p| p.id == "document_header")
                 .unwrap();
-            assert_eq!(header_prop.result, PropertyResult::Proven);
+            assert!(matches!(header_prop.result, Z3PropertyResult::Proven { .. }));
         }
     }
     
@@ -359,13 +360,13 @@ mod tests {
             let verification = result.unwrap();
             
             // Should have both document structure and tri-vector properties
-            assert!(verification.verified_properties.len() >= 2);
+            assert!(verification.properties.len() >= 2);
             
             // Check dimension property
-            let dimension_prop = verification.verified_properties.iter()
+            let dimension_prop = verification.properties.iter()
                 .find(|p| p.id == "tri_vector_dimensions")
                 .unwrap();
-            assert_eq!(dimension_prop.result, PropertyResult::Proven);
+            assert!(matches!(dimension_prop.result, Z3PropertyResult::Proven { .. }));
         }
     }
     
@@ -386,8 +387,8 @@ mod tests {
             // Should return a meaningful result when Z3 is available
             let property_result = result.unwrap();
             assert!(matches!(property_result, 
-                PropertyResult::Proven | PropertyResult::Unknown | PropertyResult::Disproven | 
-                PropertyResult::Error(_) | PropertyResult::Unsupported));
+                Z3PropertyResult::Proven { .. } | Z3PropertyResult::Unknown { .. } | Z3PropertyResult::Disproven { .. } | 
+                Z3PropertyResult::Error { .. } | Z3PropertyResult::Unsupported { .. }));
         }
     }
     
@@ -417,36 +418,42 @@ mod tests {
         
             // Test empty properties
             let empty_props = vec![];
-            assert_eq!(facade.determine_verification_status(&empty_props), VerificationStatus::Incomplete);
+            match facade.determine_verification_status(&empty_props) {
+                Z3VerificationStatus::Incomplete { .. } => assert!(true),
+                _ => panic!("Expected Incomplete status"),
+            }
             
             // Test all proven
             let proven_props = vec![
-                VerifiedProperty {
+                Z3VerifiedProperty {
                     id: "test".to_string(),
-                    category: PropertyCategory::TypeSafety,
+                    category: Z3PropertyCategory::TypeSafety,
                     description: "Test".to_string(),
                     smt_formula: "test formula".to_string(),
-                    result: PropertyResult::Proven,
-                    verification_time: std::time::Duration::from_millis(10),
-                    proof_certificate: None,
+                    result: Z3PropertyResult::Proven { proof_certificate: "test".to_string(), verification_time: Duration::from_millis(10) },
+                    timestamp: SystemTime::now(),
+                    metadata: HashMap::new(),
                 }
             ];
-            assert_eq!(facade.determine_verification_status(&proven_props), VerificationStatus::AllVerified);
+            match facade.determine_verification_status(&proven_props) {
+                Z3VerificationStatus::AllVerified => assert!(true),
+                _ => panic!("Expected AllVerified status"),
+            }
             
             // Test with failure
             let failed_props = vec![
-                VerifiedProperty {
+                Z3VerifiedProperty {
                     id: "test".to_string(),
-                    category: PropertyCategory::TypeSafety,
+                    category: Z3PropertyCategory::TypeSafety,
                     description: "Test".to_string(),
                     smt_formula: "test formula".to_string(),
-                    result: PropertyResult::Disproven,
-                    verification_time: std::time::Duration::from_millis(10),
-                    proof_certificate: None,
+                    result: Z3PropertyResult::Disproven { counterexample: "test".to_string(), verification_time: Duration::from_millis(10) },
+                    timestamp: SystemTime::now(),
+                    metadata: HashMap::new(),
                 }
             ];
             match facade.determine_verification_status(&failed_props) {
-                VerificationStatus::Failed(_) => assert!(true),
+                Z3VerificationStatus::Failed(_) => assert!(true),
                 _ => panic!("Expected Failed status"),
             }
         }
@@ -467,14 +474,14 @@ mod tests {
             let verification = result.unwrap();
             
             // Should have failed properties
-            let failed_props: Vec<_> = verification.verified_properties.iter()
-                .filter(|p| p.result == PropertyResult::Disproven)
+            let failed_props: Vec<_> = verification.properties.iter()
+                .filter(|p| matches!(p.result, Z3PropertyResult::Disproven { .. }))
                 .collect();
             assert!(!failed_props.is_empty());
             
             // Status should reflect failure
             match verification.status {
-                VerificationStatus::Failed(_) => assert!(true),
+                Z3VerificationStatus::Failed(_) => assert!(true),
                 _ => panic!("Expected failure status for invalid document"),
             }
         }
