@@ -314,7 +314,7 @@ impl AispValidator {
     ) -> Result<(
         Option<crate::semantic::DeepVerificationResult>,
         Option<crate::tri_vector_validation::TriVectorValidationResult>,
-        Option<crate::enhanced_z3_verification::EnhancedVerificationResult>,
+        Option<crate::z3_verification::canonical_types::Z3VerificationResult>,
         Option<crate::ghost_intent_validation::GhostIntentValidationResult>,
         Option<crate::rossnet_scoring::RossNetValidationResult>,
         Option<crate::hebbian_learning::HebbianValidationResult>,

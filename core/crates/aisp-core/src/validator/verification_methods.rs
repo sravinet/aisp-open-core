@@ -58,7 +58,6 @@ impl VerificationMethods {
         document: &AispDocument,
         analysis: &DeepVerificationResult,
     ) -> AispResult<DeepVerificationResult> {
-        use crate::z3_verification::Z3VerificationFacade;
         let mut z3_facade = Z3VerificationFacade::new()?;
 
         // The new semantic analysis doesn't provide compatible relational/temporal analysis

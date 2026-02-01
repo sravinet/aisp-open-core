@@ -6,7 +6,7 @@
 use crate::error::*;
 use crate::semantic::{DeepVerificationResult, QualityTier};
 use crate::tri_vector_validation::TriVectorValidationResult;
-use crate::enhanced_z3_verification::EnhancedVerificationResult;
+use crate::z3_verification::canonical_types::Z3VerificationResult;
 use crate::ghost_intent_validation::GhostIntentValidationResult;
 use crate::rossnet_scoring::RossNetValidationResult;
 use crate::hebbian_learning::HebbianValidationResult;
@@ -109,7 +109,7 @@ pub struct ValidationResult {
     /// Tri-vector validation results
     pub trivector_validation: Option<TriVectorValidationResult>,
     /// Enhanced Z3 verification results
-    pub enhanced_z3_verification: Option<EnhancedVerificationResult>,
+    pub enhanced_z3_verification: Option<Z3VerificationResult>,
     /// Ghost intent search validation results
     pub ghost_intent_validation: Option<GhostIntentValidationResult>,
     /// RossNet scoring validation results
@@ -164,7 +164,7 @@ impl ValidationResult {
         ast: Option<AispDocument>,
         formal_verification: Option<DeepVerificationResult>,
         trivector_validation: Option<TriVectorValidationResult>,
-        enhanced_z3_verification: Option<EnhancedVerificationResult>,
+        enhanced_z3_verification: Option<Z3VerificationResult>,
         ghost_intent_validation: Option<GhostIntentValidationResult>,
         rossnet_validation: Option<RossNetValidationResult>,
         hebbian_validation: Option<HebbianValidationResult>,
