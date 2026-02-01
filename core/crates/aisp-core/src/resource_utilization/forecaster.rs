@@ -153,6 +153,9 @@ impl ResourceForecaster {
 
     /// Add historical data point
     pub fn add_data_point(&mut self, resource_type: ResourceType, data_point: DataPoint) {
+        // Clone the resource_type so we can use it later
+        let resource_type_key = resource_type.clone();
+        
         self.historical_data
             .entry(resource_type)
             .or_insert_with(Vec::new)
@@ -160,7 +163,7 @@ impl ResourceForecaster {
         
         // Keep only recent data points based on configuration
         let cutoff_time = std::time::Instant::now() - Duration::from_secs(self.config.historical_periods as u64 * 3600);
-        if let Some(data) = self.historical_data.get_mut(&resource_type) {
+        if let Some(data) = self.historical_data.get_mut(&resource_type_key) {
             data.retain(|point| point.timestamp > cutoff_time);
         }
     }

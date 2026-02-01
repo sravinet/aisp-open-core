@@ -122,7 +122,7 @@ impl MetricsCollector {
         // Collect active resources and calculate overall statistics
         let mut total_measurements = 0;
         let mut sum_averages = 0.0;
-        let mut max_utilization = 0.0;
+        let mut max_utilization: f64 = 0.0;
 
         for (resource_type, stream) in &self.metric_streams {
             summary.active_resources.push(resource_type.clone());

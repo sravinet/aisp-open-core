@@ -221,7 +221,7 @@ impl ResourceUtilizationAnalyzer {
     fn calculate_utilization_summary(&self) -> AispResult<ResourceUtilizationSummary> {
         let total_resources = self.config.target_resources.len();
         let mut total_utilization = 0.0;
-        let mut peak_utilization = 0.0;
+        let mut peak_utilization: f64 = 0.0;
         let mut over_utilized = 0;
         let mut under_utilized = 0;
 

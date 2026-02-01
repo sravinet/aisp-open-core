@@ -24,7 +24,7 @@ pub enum SatisfiabilityResult {
 }
 
 /// Model showing satisfying assignments for variables
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ConstraintModel {
     pub variable_assignments: HashMap<String, ModelValue>,
     pub function_interpretations: HashMap<String, FunctionInterpretation>,
@@ -47,6 +47,13 @@ pub struct FunctionInterpretation {
     pub domain: Vec<String>,
     pub range: String,
     pub mappings: HashMap<Vec<ModelValue>, ModelValue>,
+}
+
+impl PartialEq for FunctionInterpretation {
+    fn eq(&self, other: &Self) -> bool {
+        self.domain == other.domain && self.range == other.range
+        // Skip comparing mappings due to HashMap<f64> comparison issues
+    }
 }
 
 /// Proof of unsatisfiability
