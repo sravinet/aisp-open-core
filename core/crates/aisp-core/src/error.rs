@@ -50,6 +50,12 @@ pub enum AispError {
 
     #[error("Verification failed: {0}")]
     VerificationFailed(String),
+
+    #[error("Internal error: {message}")]
+    InternalError { message: String },
+
+    #[error("Security violation: {message}")]
+    SecurityViolation { message: String },
 }
 
 impl AispError {
@@ -76,6 +82,20 @@ impl AispError {
         }
     }
 
+    /// Create an internal error
+    pub fn internal_error(message: impl Into<String>) -> Self {
+        Self::InternalError {
+            message: message.into(),
+        }
+    }
+
+    /// Create a security violation error
+    pub fn security_violation(message: impl Into<String>) -> Self {
+        Self::SecurityViolation {
+            message: message.into(),
+        }
+    }
+
     /// Check if this error is recoverable
     pub fn is_recoverable(&self) -> bool {
         match self {
@@ -93,6 +113,8 @@ impl AispError {
             Self::IoError { .. } => false,
             Self::Z3Error { .. } => true,
             Self::VerificationFailed(_) => true,
+            Self::InternalError { .. } => false,
+            Self::SecurityViolation { .. } => false,
         }
     }
 }

@@ -218,7 +218,7 @@ pub enum ConstraintEnforcement {
 }
 
 /// Individual state in the state space
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct State {
     /// State identifier
     pub id: String,
@@ -228,8 +228,15 @@ pub struct State {
     pub properties: StateProperties,
 }
 
+impl std::hash::Hash for State {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+        // Note: We only hash the ID for simplicity, as HashMap doesn't implement Hash
+    }
+}
+
 /// Properties of a state
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StateProperties {
     /// Is initial state
     pub is_initial: bool,
@@ -239,6 +246,15 @@ pub struct StateProperties {
     pub is_error: bool,
     /// State labels
     pub labels: HashSet<String>,
+}
+
+impl std::hash::Hash for StateProperties {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.is_initial.hash(state);
+        self.is_accepting.hash(state);
+        self.is_error.hash(state);
+        // Note: We don't hash labels (HashSet) for simplicity
+    }
 }
 
 /// State space size estimation
@@ -926,7 +942,7 @@ impl TemporalPropertyVerifier {
     fn generate_cache_key(&self, property: &PropertyFormula, model: &TransitionSystem) -> String {
         // Simple cache key generation - in practice would use cryptographic hashing
         format!("{}_{}", 
-                property.to_string().chars().take(50).collect::<String>(),
+                format!("{:?}", property).chars().take(50).collect::<String>(),
                 model.transitions.len())
     }
 
@@ -1191,7 +1207,7 @@ impl TemporalVerificationCache {
     /// Insert result into cache
     pub fn insert(&mut self, key: String, property: &PropertyFormula, result: &TemporalVerificationResult) {
         let cached_result = CachedTemporalResult {
-            formula: property.to_string(),
+            formula: format!("{:?}", property),
             result: result.clone(),
             trace: None,
             metadata: CacheMetadata {
