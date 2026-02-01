@@ -674,7 +674,7 @@ impl PropertyVerifier {
             "type_safety_basic".to_string(),
             PropertyCategory::TypeSafety,
             "Basic type safety verification".to_string(),
-            Z3PropertyResult::Proven {
+            PropertyResult::Proven {
                 proof_certificate: "Type safety verified by construction".to_string(),
                 verification_time: std::time::Duration::from_millis(50),
             },
