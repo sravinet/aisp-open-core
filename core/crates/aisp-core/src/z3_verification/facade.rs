@@ -4,9 +4,10 @@
 //! Ensures genuine formal verification or explicit failure.
 
 use super::smt_interface::SmtInterface;
-use super::types::*;
+use super::canonical_types::*;
 use crate::{ast::canonical::{CanonicalAispDocument as AispDocument, *}, error::*, tri_vector_validation::*};
 use std::collections::HashMap;
+use std::time::SystemTime;
 
 /// Z3 verification facade with genuine verification requirements
 pub struct Z3VerificationFacade {
@@ -75,13 +76,13 @@ impl Z3VerificationFacade {
         &mut self,
         document: &AispDocument,
         tri_vector_result: Option<&TriVectorValidationResult>,
-    ) -> AispResult<EnhancedVerificationResult> {
+    ) -> AispResult<Z3VerificationResult> {
         self.verification_stats.document_verifications += 1;
         
         let mut properties = Vec::new();
-        let mut proofs = Vec::new();
-        let mut counterexamples = Vec::new();
-        let mut diagnostics = Vec::new();
+        let mut proofs: Vec<Z3FormalProof> = Vec::new();
+        let mut counterexamples: Vec<Z3CounterexampleModel> = Vec::new();
+        let mut diagnostics: Vec<Z3Diagnostic> = Vec::new();
         
         // Verify basic document structure
         properties.extend(self.verify_document_structure(document)?);
@@ -95,36 +96,34 @@ impl Z3VerificationFacade {
         let status = self.determine_verification_status(&properties);
         
         // Update statistics
-        let successful = properties.iter().filter(|p| p.result == PropertyResult::Proven).count();
-        let failed = properties.iter().filter(|p| p.result == PropertyResult::Disproven).count();
+        let successful = properties.iter().filter(|p| matches!(p.result, Z3PropertyResult::Proven { .. })).count();
+        let failed = properties.iter().filter(|p| matches!(p.result, Z3PropertyResult::Disproven { .. })).count();
         
         self.verification_stats.total_properties_checked += properties.len();
         self.verification_stats.successful_verifications += successful;
         self.verification_stats.failed_verifications += failed;
         
-        Ok(EnhancedVerificationResult {
+        Ok(Z3VerificationResult {
             status,
-            verified_properties: properties,
-            proofs: proofs.into_iter().enumerate().map(|(i, proof)| (format!("proof_{}", i), proof)).collect(),
-            counterexamples: counterexamples.into_iter().enumerate().map(|(i, ce)| (format!("ce_{}", i), ce)).collect(),
-            unsat_cores: HashMap::new(),
-            stats: EnhancedVerificationStats {
-                total_time: std::time::Duration::from_millis(100),
-                verification_time_ms: 100,
+            properties,
+            statistics: Z3VerificationStatistics {
+                total_properties: properties.len(),
                 smt_queries: self.smt_interface.get_stats().queries_executed,
-                successful_proofs: successful,
-                counterexamples: failed,
-                timeouts: 0,
-                peak_memory: 0,
-                z3_stats: HashMap::new(),
+                proven_properties: successful,
+                disproven_properties: failed,
+                unknown_results: properties.len() - successful - failed,
+                error_count: 0,
+                total_time: std::time::Duration::from_millis(100),
+                cache_hit_ratio: 0.0,
             },
-            diagnostics,
-            tri_vector_result: tri_vector_result.cloned(),
+            timing: Z3TimingBreakdown::default(),
+            resource_usage: Z3ResourceUsage::default(),
+            diagnostics: diagnostics,
         })
     }
     
     /// Verify SMT formula directly
-    pub fn verify_smt_formula(&mut self, formula: &str) -> AispResult<PropertyResult> {
+    pub fn verify_smt_formula(&mut self, formula: &str) -> AispResult<Z3PropertyResult> {
         self.smt_interface.verify_smt_formula(formula)
     }
     
@@ -149,83 +148,102 @@ impl Z3VerificationFacade {
     
     // Private implementation methods
     
-    fn verify_document_structure(&mut self, document: &AispDocument) -> AispResult<Vec<VerifiedProperty>> {
+    fn verify_document_structure(&mut self, document: &AispDocument) -> AispResult<Vec<Z3VerifiedProperty>> {
         let mut properties = Vec::new();
         
         // Verify document has required header
-        let header_property = VerifiedProperty {
+        let header_property = Z3VerifiedProperty {
             id: "document_header".to_string(),
-            category: PropertyCategory::StructuralIntegrity,
+            category: Z3PropertyCategory::TypeSafety,
             description: "Document has valid AISP header".to_string(),
             smt_formula: "(assert (>= version 5.0))".to_string(),
             result: if document.header.version.starts_with("5.") {
-                PropertyResult::Proven
+                Z3PropertyResult::Proven {
+                    proof_certificate: "HEADER_VERSION_VERIFIED".to_string(),
+                    verification_time: std::time::Duration::from_millis(10),
+                }
             } else {
-                PropertyResult::Disproven
+                Z3PropertyResult::Disproven {
+                    counterexample: "Invalid version".to_string(),
+                    verification_time: std::time::Duration::from_millis(10),
+                }
             },
-            verification_time: std::time::Duration::from_millis(10),
-            proof_certificate: Some("HEADER_VERSION_VERIFIED".to_string()),
+            timestamp: SystemTime::now(),
+            metadata: HashMap::new(),
         };
         properties.push(header_property);
         
         // Verify document has at least one block
-        let blocks_property = VerifiedProperty {
+        let blocks_property = Z3VerifiedProperty {
             id: "document_blocks".to_string(),
-            category: PropertyCategory::StructuralIntegrity, 
+            category: Z3PropertyCategory::TypeSafety, 
             description: "Document contains at least one block".to_string(),
             smt_formula: "(assert (> (count blocks) 0))".to_string(),
             result: if !document.blocks.is_empty() {
-                PropertyResult::Proven
+                Z3PropertyResult::Proven {
+                    proof_certificate: "DOCUMENT_BLOCKS_VERIFIED".to_string(),
+                    verification_time: std::time::Duration::from_millis(5),
+                }
             } else {
-                PropertyResult::Disproven
+                Z3PropertyResult::Disproven {
+                    counterexample: "No blocks found".to_string(),
+                    verification_time: std::time::Duration::from_millis(5),
+                }
             },
-            verification_time: std::time::Duration::from_millis(5),
-            proof_certificate: Some("DOCUMENT_BLOCKS_VERIFIED".to_string()),
+            timestamp: SystemTime::now(),
+            metadata: HashMap::new(),
         };
         properties.push(blocks_property);
         
         Ok(properties)
     }
     
-    fn verify_tri_vector_properties(&mut self, tri_result: &TriVectorValidationResult) -> AispResult<Vec<VerifiedProperty>> {
+    fn verify_tri_vector_properties(&mut self, tri_result: &TriVectorValidationResult) -> AispResult<Vec<Z3VerifiedProperty>> {
         let mut properties = Vec::new();
         
         // Verify tri-vector dimensions (using available fields from tri_result)
-        let dimension_property = VerifiedProperty {
+        let dimension_property = Z3VerifiedProperty {
             id: "tri_vector_dimensions".to_string(),
-            category: PropertyCategory::MathematicalCorrectness,
+            category: Z3PropertyCategory::MathematicalConsistency,
             description: "Tri-vector validation successful".to_string(),
             smt_formula: "(assert (= (+ vh_dim vl_dim vs_dim) 1536))".to_string(),
             result: if tri_result.valid {
-                PropertyResult::Proven
+                Z3PropertyResult::Proven {
+                    proof_certificate: "TRI_VECTOR_DIMENSIONS_VERIFIED".to_string(),
+                    verification_time: std::time::Duration::from_millis(20),
+                }
             } else {
-                PropertyResult::Disproven
+                Z3PropertyResult::Disproven {
+                    counterexample: "Tri-vector validation failed".to_string(),
+                    verification_time: std::time::Duration::from_millis(20),
+                }
             },
-            verification_time: std::time::Duration::from_millis(20),
-            proof_certificate: Some("TRI_VECTOR_DIMENSIONS_VERIFIED".to_string()),
+            timestamp: SystemTime::now(),
+            metadata: HashMap::new(),
         };
         properties.push(dimension_property);
         
         Ok(properties)
     }
     
-    fn determine_verification_status(&self, properties: &[VerifiedProperty]) -> VerificationStatus {
+    fn determine_verification_status(&self, properties: &[Z3VerifiedProperty]) -> Z3VerificationStatus {
         if properties.is_empty() {
-            return VerificationStatus::Incomplete;
+            return Z3VerificationStatus::Incomplete { completed_count: 0, total_count: 0, reason: "No properties to verify".to_string() };
         }
         
-        let all_proven = properties.iter().all(|p| p.result == PropertyResult::Proven);
-        let any_disproven = properties.iter().any(|p| p.result == PropertyResult::Disproven);
-        let any_error = properties.iter().any(|p| matches!(p.result, PropertyResult::Error(_)));
+        let all_proven = properties.iter().all(|p| matches!(p.result, Z3PropertyResult::Proven { .. }));
+        let any_disproven = properties.iter().any(|p| matches!(p.result, Z3PropertyResult::Disproven { .. }));
+        let any_error = properties.iter().any(|p| matches!(p.result, Z3PropertyResult::Error { .. }));
         
         if any_error {
-            VerificationStatus::Failed("Verification errors encountered".to_string())
+            Z3VerificationStatus::Failed("Verification errors encountered".to_string())
         } else if any_disproven {
-            VerificationStatus::Failed("One or more properties were disproven".to_string())
+            Z3VerificationStatus::Failed("One or more properties were disproven".to_string())
         } else if all_proven {
-            VerificationStatus::AllVerified
+            Z3VerificationStatus::AllVerified
         } else {
-            VerificationStatus::PartiallyVerified
+            let proven_count = properties.iter().filter(|p| matches!(p.result, Z3PropertyResult::Proven { .. })).count();
+            Z3VerificationStatus::PartiallyVerified { verified_count: proven_count, total_count: properties.len() }
         }
     }
 }
