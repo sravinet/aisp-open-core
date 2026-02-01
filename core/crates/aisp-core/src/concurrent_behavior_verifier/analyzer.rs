@@ -433,7 +433,7 @@ impl ConcurrentBehaviorAnalyzer {
     /// Validate analysis completeness and consistency
     fn validate_analysis(&self, analysis: &ConcurrentBehaviorAnalysis) -> AispResult<()> {
         if analysis.concurrent_processes.is_empty() {
-            return Err(AispError::ValidationError("No concurrent processes detected".to_string()));
+            return Err(AispError::validation_error("No concurrent processes detected"));
         }
 
         // Additional validation logic

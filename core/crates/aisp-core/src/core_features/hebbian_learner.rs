@@ -220,6 +220,9 @@ impl EnhancedHebbianLearner {
             .sum::<f64>() / affinities.len() as f64;
         let std_dev = variance.sqrt();
         
+        let positive_relationships = affinities.iter().filter(|&&x| x > 0.0).count();
+        let negative_relationships = affinities.iter().filter(|&&x| x < 0.0).count();
+        
         let mut sorted_affinities = affinities;
         sorted_affinities.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         
@@ -235,8 +238,8 @@ impl EnhancedHebbianLearner {
             } else {
                 sorted_affinities[sorted_affinities.len() / 2]
             },
-            positive_relationships: affinities.iter().filter(|&&x| x > 0.0).count(),
-            negative_relationships: affinities.iter().filter(|&&x| x < 0.0).count(),
+            positive_relationships,
+            negative_relationships,
         }
     }
 

@@ -137,11 +137,14 @@ impl RossNetScorer {
         feedback_components.insert("consistency_penalty".to_string(), consistency_penalty);
         feedback_components.insert("raw_score".to_string(), raw_score);
 
+        let improvement_suggestions = self.generate_improvement_suggestions(&feedback_components);
+        let confidence_level = self.calculate_confidence_level(&feedback_components);
+        
         let feedback = ScoringFeedback {
             score: final_score,
             feedback_components,
-            improvement_suggestions: self.generate_improvement_suggestions(&feedback_components),
-            confidence_level: self.calculate_confidence_level(&feedback_components),
+            improvement_suggestions,
+            confidence_level,
             timestamp: std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
@@ -205,8 +208,10 @@ impl RossNetScorer {
         content_b: &ContentHash,
     ) -> AispResult<f64> {
         // Simple diversity metric based on hash distance
-        let hash_a = content_a.0;
-        let hash_b = content_b.0;
+        let hash_a = u64::from_le_bytes([content_a[0], content_a[1], content_a[2], content_a[3], 
+                                       content_a[4], content_a[5], content_a[6], content_a[7]]);
+        let hash_b = u64::from_le_bytes([content_b[0], content_b[1], content_b[2], content_b[3], 
+                                       content_b[4], content_b[5], content_b[6], content_b[7]]);
         let xor_distance = hash_a ^ hash_b;
         let diversity = (xor_distance.count_ones() as f64) / 64.0; // Normalize to [0,1]
         Ok(diversity)
@@ -219,8 +224,10 @@ impl RossNetScorer {
         content_b: &ContentHash,
     ) -> AispResult<f64> {
         // Simple consistency check - low penalty for similar hashes
-        let hash_a = content_a.0;
-        let hash_b = content_b.0;
+        let hash_a = u64::from_le_bytes([content_a[0], content_a[1], content_a[2], content_a[3], 
+                                       content_a[4], content_a[5], content_a[6], content_a[7]]);
+        let hash_b = u64::from_le_bytes([content_b[0], content_b[1], content_b[2], content_b[3], 
+                                       content_b[4], content_b[5], content_b[6], content_b[7]]);
         let similarity = 1.0 - ((hash_a ^ hash_b).count_ones() as f64) / 64.0;
         let penalty = if similarity > 0.9 { 0.1 } else { 0.0 };
         Ok(penalty)
@@ -344,8 +351,10 @@ impl VectorSimilarityCalculator {
     /// Calculate vector-based similarity
     pub fn calculate(&self, content_a: &ContentHash, content_b: &ContentHash) -> AispResult<f64> {
         // Simple hash-based similarity
-        let hash_a = content_a.0;
-        let hash_b = content_b.0;
+        let hash_a = u64::from_le_bytes([content_a[0], content_a[1], content_a[2], content_a[3], 
+                                       content_a[4], content_a[5], content_a[6], content_a[7]]);
+        let hash_b = u64::from_le_bytes([content_b[0], content_b[1], content_b[2], content_b[3], 
+                                       content_b[4], content_b[5], content_b[6], content_b[7]]);
         let common_bits = !(hash_a ^ hash_b).count_ones();
         let similarity = common_bits as f64 / 64.0;
         Ok(similarity)
@@ -356,8 +365,10 @@ impl SemanticSimilarityCalculator {
     /// Calculate semantic similarity
     pub fn calculate(&self, content_a: &ContentHash, content_b: &ContentHash) -> AispResult<f64> {
         // Placeholder semantic similarity - in real implementation would use embeddings
-        let hash_a = content_a.0;
-        let hash_b = content_b.0;
+        let hash_a = u64::from_le_bytes([content_a[0], content_a[1], content_a[2], content_a[3], 
+                                       content_a[4], content_a[5], content_a[6], content_a[7]]);
+        let hash_b = u64::from_le_bytes([content_b[0], content_b[1], content_b[2], content_b[3], 
+                                       content_b[4], content_b[5], content_b[6], content_b[7]]);
         let semantic_distance = ((hash_a.wrapping_sub(hash_b)) as f64).abs() / u64::MAX as f64;
         let similarity = 1.0 - semantic_distance;
         Ok(similarity.max(0.0).min(1.0))
@@ -368,8 +379,10 @@ impl StructuralSimilarityCalculator {
     /// Calculate structural similarity
     pub fn calculate(&self, content_a: &ContentHash, content_b: &ContentHash) -> AispResult<f64> {
         // Placeholder structural similarity
-        let hash_a = content_a.0;
-        let hash_b = content_b.0;
+        let hash_a = u64::from_le_bytes([content_a[0], content_a[1], content_a[2], content_a[3], 
+                                       content_a[4], content_a[5], content_a[6], content_a[7]]);
+        let hash_b = u64::from_le_bytes([content_b[0], content_b[1], content_b[2], content_b[3], 
+                                       content_b[4], content_b[5], content_b[6], content_b[7]]);
         let structural_score = if hash_a % 3 == hash_b % 3 { 0.8 } else { 0.2 };
         Ok(structural_score)
     }
@@ -516,8 +529,10 @@ mod tests {
     fn test_rossnet_score_calculation() {
         let mut scorer = RossNetScorer::new();
         let context = create_test_context();
-        let content_a = ContentHash(12345);
-        let content_b = ContentHash(67890);
+        let mut content_a = [0u8; 32];
+        let mut content_b = [0u8; 32];
+        content_a[0..8].copy_from_slice(&12345u64.to_le_bytes());
+        content_b[0..8].copy_from_slice(&67890u64.to_le_bytes());
 
         let result = scorer.calculate_score(&content_a, &content_b, &context);
         assert!(result.is_ok());
@@ -531,8 +546,10 @@ mod tests {
     #[test]
     fn test_similarity_engine() {
         let engine = SimilarityEngine::new();
-        let content_a = ContentHash(12345);
-        let content_b = ContentHash(12345); // Same content
+        let mut content_a = [0u8; 32];
+        let mut content_b = [0u8; 32];
+        content_a[0..8].copy_from_slice(&12345u64.to_le_bytes());
+        content_b[0..8].copy_from_slice(&12345u64.to_le_bytes()); // Same content
 
         let similarity = engine.calculate_similarity(&content_a, &content_b).unwrap();
         assert!(similarity > 0.8); // Should be high for identical content
@@ -541,8 +558,10 @@ mod tests {
     #[test]
     fn test_vector_similarity_calculator() {
         let calculator = VectorSimilarityCalculator;
-        let content_a = ContentHash(0b1010101010101010);
-        let content_b = ContentHash(0b1010101010101010);
+        let mut content_a = [0u8; 32];
+        let mut content_b = [0u8; 32];
+        content_a[0..8].copy_from_slice(&0b1010101010101010u64.to_le_bytes());
+        content_b[0..8].copy_from_slice(&0b1010101010101010u64.to_le_bytes());
 
         let similarity = calculator.calculate(&content_a, &content_b).unwrap();
         assert_eq!(similarity, 1.0); // Identical hashes should have similarity 1.0
@@ -552,8 +571,10 @@ mod tests {
     fn test_fitness_evaluator() {
         let evaluator = FitnessEvaluator::new();
         let context = create_test_context();
-        let content_a = ContentHash(123);
-        let content_b = ContentHash(456);
+        let mut content_a = [0u8; 32];
+        let mut content_b = [0u8; 32];
+        content_a[0..8].copy_from_slice(&123u64.to_le_bytes());
+        content_b[0..8].copy_from_slice(&456u64.to_le_bytes());
 
         let fitness = evaluator.evaluate_fitness(&content_a, &content_b, &context).unwrap();
         assert!(fitness >= 0.0 && fitness <= 1.0);
@@ -562,8 +583,10 @@ mod tests {
     #[test]
     fn test_affinity_tracker() {
         let mut tracker = AffinityTracker::new();
-        let content_a = ContentHash(111);
-        let content_b = ContentHash(222);
+        let mut content_a = [0u8; 32];
+        let mut content_b = [0u8; 32];
+        content_a[0..8].copy_from_slice(&111u64.to_le_bytes());
+        content_b[0..8].copy_from_slice(&222u64.to_le_bytes());
 
         // Initial affinity should be 0
         let initial_affinity = tracker.get_affinity(content_a, content_b);
@@ -595,11 +618,15 @@ mod tests {
         let mut scorer = RossNetScorer::new();
         let context = create_test_context();
         
-        let pairs = vec![
-            (ContentHash(123), ContentHash(456)),
-            (ContentHash(789), ContentHash(101)),
-            (ContentHash(112), ContentHash(131)),
-        ];
+        let mut content_pairs = Vec::new();
+        for (a, b) in [(123u64, 456u64), (789u64, 101u64), (112u64, 131u64)] {
+            let mut content_a = [0u8; 32];
+            let mut content_b = [0u8; 32];
+            content_a[0..8].copy_from_slice(&a.to_le_bytes());
+            content_b[0..8].copy_from_slice(&b.to_le_bytes());
+            content_pairs.push((content_a, content_b));
+        }
+        let pairs = content_pairs;
 
         let results = scorer.batch_score(&pairs, &context).unwrap();
         assert_eq!(results.len(), 3);
@@ -645,8 +672,10 @@ mod tests {
     fn test_statistics_tracking() {
         let mut scorer = RossNetScorer::new();
         let context = create_test_context();
-        let content_a = ContentHash(123);
-        let content_b = ContentHash(456);
+        let mut content_a = [0u8; 32];
+        let mut content_b = [0u8; 32];
+        content_a[0..8].copy_from_slice(&123u64.to_le_bytes());
+        content_b[0..8].copy_from_slice(&456u64.to_le_bytes());
 
         // Initial stats
         assert_eq!(scorer.get_statistics().total_scores_calculated, 0);
@@ -666,14 +695,18 @@ mod tests {
         let scorer = RossNetScorer::new();
         
         // Very different hashes should have high diversity
-        let content_a = ContentHash(0x0000000000000000);
-        let content_b = ContentHash(0xFFFFFFFFFFFFFFFF);
+        let mut content_a = [0u8; 32];
+        let mut content_b = [0u8; 32];
+        content_a[0..8].copy_from_slice(&0x0000000000000000u64.to_le_bytes());
+        content_b[0..8].copy_from_slice(&0xFFFFFFFFFFFFFFFFu64.to_le_bytes());
         let diversity = scorer.calculate_diversity_bonus(&content_a, &content_b).unwrap();
         assert!(diversity > 0.8);
 
         // Identical hashes should have low diversity
-        let content_c = ContentHash(12345);
-        let content_d = ContentHash(12345);
+        let mut content_c = [0u8; 32];
+        let mut content_d = [0u8; 32];
+        content_c[0..8].copy_from_slice(&12345u64.to_le_bytes());
+        content_d[0..8].copy_from_slice(&12345u64.to_le_bytes());
         let low_diversity = scorer.calculate_diversity_bonus(&content_c, &content_d).unwrap();
         assert!(low_diversity < 0.2);
     }
@@ -683,14 +716,18 @@ mod tests {
         let scorer = RossNetScorer::new();
         
         // Very similar hashes should have penalty
-        let content_a = ContentHash(12345);
-        let content_b = ContentHash(12345);
+        let mut content_a = [0u8; 32];
+        let mut content_b = [0u8; 32];
+        content_a[0..8].copy_from_slice(&12345u64.to_le_bytes());
+        content_b[0..8].copy_from_slice(&12345u64.to_le_bytes());
         let penalty = scorer.calculate_consistency_penalty(&content_a, &content_b).unwrap();
         assert!(penalty > 0.0);
 
         // Very different hashes should have no penalty
-        let content_c = ContentHash(0x0000000000000000);
-        let content_d = ContentHash(0xFFFFFFFFFFFFFFFF);
+        let mut content_c = [0u8; 32];
+        let mut content_d = [0u8; 32];
+        content_c[0..8].copy_from_slice(&0x0000000000000000u64.to_le_bytes());
+        content_d[0..8].copy_from_slice(&0xFFFFFFFFFFFFFFFFu64.to_le_bytes());
         let no_penalty = scorer.calculate_consistency_penalty(&content_c, &content_d).unwrap();
         assert_eq!(no_penalty, 0.0);
     }
