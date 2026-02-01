@@ -93,7 +93,7 @@ impl PipelineOrchestrator {
             .as_millis();
         
         format!("verification_session_{}_{}", 
-                document.header.document_id.chars().take(8).collect::<String>(), 
+                document.header.name.chars().take(8).collect::<String>(), 
                 timestamp)
     }
 
@@ -159,15 +159,15 @@ impl PipelineOrchestrator {
         match self.execution_strategy {
             ExecutionStrategy::Parallel => {
                 if self.has_circular_dependencies() {
-                    return Err(crate::error::AispError::InternalError(
-                        "Circular dependencies detected - incompatible with parallel execution".to_string()
+                    return Err(crate::error::AispError::internal_error(
+                        "Circular dependencies detected - incompatible with parallel execution"
                     ));
                 }
             }
             ExecutionStrategy::Adaptive => {
                 if self.resource_manager.resource_pools.is_empty() {
-                    return Err(crate::error::AispError::InternalError(
-                        "Adaptive strategy requires resource pools configuration".to_string()
+                    return Err(crate::error::AispError::internal_error(
+                        "Adaptive strategy requires resource pools configuration"
                     ));
                 }
             }

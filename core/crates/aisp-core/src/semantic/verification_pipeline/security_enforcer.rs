@@ -315,8 +315,8 @@ impl SecurityEnforcer {
         if let Some(handler) = self.violation_handlers.get(&violation_type) {
             match handler.handler_type.as_str() {
                 "ImmediateBlock" => {
-                    return Err(crate::error::AispError::SecurityViolation(
-                        format!("{:?}: {}", violation_type, description)
+                    return Err(crate::error::AispError::security_violation(
+                        &format!("{:?}: {}", violation_type, description)
                     ));
                 }
                 "EnhancedAnalysis" => {

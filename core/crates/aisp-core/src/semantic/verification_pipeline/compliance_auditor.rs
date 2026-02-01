@@ -162,8 +162,8 @@ impl ComplianceAuditor {
                 compliant_frameworks.push(framework.framework_name.clone());
                 self.log_audit_success(&session_id, &framework.framework_name);
             } else {
-                violations.extend(framework_result.violations);
                 self.log_audit_violations(&session_id, &framework.framework_name, &framework_result.violations);
+                violations.extend(framework_result.violations);
             }
         }
         
@@ -178,7 +178,7 @@ impl ComplianceAuditor {
             session.violations_found = violations.clone();
         }
         
-        self.finalize_audit_session(&session_id)?;
+        self.finalize_audit(&session_id)?;
         
         Ok(ComplianceStatus {
             compliant_frameworks,
@@ -427,8 +427,8 @@ impl ComplianceAuditor {
             "JSON" => self.generate_json_report(),
             "HTML" => self.generate_html_report(),
             "PDF" => Ok("PDF report generation not implemented".to_string()),
-            _ => Err(crate::error::AispError::InternalError(
-                format!("Unsupported report format: {}", format)
+            _ => Err(crate::error::AispError::internal_error(
+                &format!("Unsupported report format: {}", format)
             )),
         }
     }

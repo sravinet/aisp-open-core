@@ -150,7 +150,7 @@ mod validation_types {
         DeceptionDetection,
     }
 
-    #[derive(Debug, Clone, PartialEq, Copy, serde::Serialize, serde::Deserialize)]
+    #[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Eq, Copy, serde::Serialize, serde::Deserialize)]
     pub enum ConflictSeverity {
         Minor,
         Moderate,
