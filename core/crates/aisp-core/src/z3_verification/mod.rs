@@ -13,6 +13,8 @@
 //!
 //! Compatible with Z3 version 4.15.4 and z3 crate 0.11
 
+pub mod canonical_types;
+pub mod production_verifier;
 pub mod types;
 pub mod environment; 
 pub mod properties;
@@ -21,12 +23,20 @@ pub mod smt_interface;
 pub mod facade;
 pub mod verifier;
 
-// Re-export main interfaces for convenience
-pub use types::{
-    AdvancedVerificationConfig, EnhancedVerificationResult, EnhancedVerificationStats,
-    VerificationStatus, PropertyCategory, PropertyResult, VerifiedProperty,
-    FormalProof, CounterexampleModel, UnsatCore, SolverDiagnostic, DiagnosticLevel,
-    FunctionInterpretation,
+// Re-export main interfaces from canonical types
+pub use canonical_types::{
+    Z3VerificationConfig as AdvancedVerificationConfig, 
+    Z3VerificationResult as EnhancedVerificationResult, 
+    Z3VerificationStatistics as EnhancedVerificationStats,
+    Z3VerificationStatus as VerificationStatus, 
+    Z3PropertyCategory as PropertyCategory, 
+    Z3PropertyResult as PropertyResult, 
+    Z3VerifiedProperty as VerifiedProperty,
+    Z3FormalProof as FormalProof, 
+    Z3CounterexampleModel as CounterexampleModel, 
+    Z3UnsatCore as UnsatCore, 
+    Z3Diagnostic as SolverDiagnostic, 
+    Z3DiagnosticLevel as DiagnosticLevel,
 };
 
 pub use environment::{AispZ3Environment, AispSort, AispFunction, AispConstant};
