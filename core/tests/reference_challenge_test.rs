@@ -21,7 +21,7 @@ fn test_reference_md_mathematical_verification_challenge() {
     println!("=========================================================");
     
     // Load the comprehensive challenge document
-    let challenge_document = match fs::read_to_string("../formal_verification_challenge.aisp") {
+    let challenge_document = match fs::read_to_string("../tests/fixtures/benchmarks/root_formal_verification_challenge.aisp") {
         Ok(content) => content,
         Err(e) => {
             println!("⚠️  Warning: Could not load challenge document: {}", e);
