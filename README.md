@@ -580,6 +580,16 @@ println!("Valid: {}, Tier: {}", result.valid, result.tier.symbol());
 - [Human Guide & Tutorials](./docs/user-guides/HUMAN_GUIDE.md)
 - [Tic-Tac-Toe Comparative Analysis](./evidence/tic-tac-toe/)
 
+## 📚 Documentation Structure
+
+- **[docs/architecture/](./docs/architecture/)** — System architecture, deployment guides, and production readiness assessments
+- **[docs/development/](./docs/development/)** — Testing guides, resolution analysis, and development workflows
+- **[docs/research/](./docs/research/)** — Formal verification analysis, implementation plans, and research reports
+- **[docs/security/](./docs/security/)** — CWE patterns, security specifications, and vulnerability prevention
+- **[docs/user-guides/](./docs/user-guides/)** — AI and human guides for using AISP
+- **[docs/examples/](./docs/examples/)** — Reference documents and working AISP examples
+- **[core/docs/adr/](./core/docs/adr/)** — Architecture Decision Records (ADRs) for technical decisions
+
 ---
 
 ## 🏷️ Keywords

@@ -235,7 +235,7 @@ Document Input → Parser → AST → Semantic Analysis → Z3 Verification → 
 ### **Key Documentation**  
 - `docs/examples/reference.md`: Source specification
 - `core/docs/adr/`: Architecture decision records
-- `TESTING.md`: Testing procedures
+- `docs/development/TESTING.md`: Testing procedures
 
 ### **Validation Targets**
 - `tests/fixtures/valid/*.aisp`: Known-good AISP documents
