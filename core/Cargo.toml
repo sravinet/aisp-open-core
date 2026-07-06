@@ -54,6 +54,10 @@ assert_cmd = "2.0"  # For CLI testing
 # resolving `aisp-core`/`aisp-cli` as a cross-repo git dependency binds them to
 # this nested workspace (the nearest ancestor `[workspace]`), and the missing
 # `workspace.lints` makes cargo skip them as malformed packages.
+#
+# CANONICAL COPY: the repo-root `Cargo.toml` `[workspace.lints.clippy]`. Keep
+# this list identical to it — any lint added/removed there must be mirrored here
+# so behavior does not diverge between the two workspace roots.
 [workspace.lints.clippy]
 field_reassign_with_default = "allow"
 useless_vec = "allow"
