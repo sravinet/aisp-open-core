@@ -79,6 +79,11 @@ lto = true
 # `cargo clippy --workspace --all-targets -- -D warnings` stays green without
 # suppressing correctness lints. Dead-code and rustc semantic lints are NOT
 # allowed here — those are fixed at the source.
+#
+# CANONICAL COPY of the workspace clippy policy. The nested `core/Cargo.toml`
+# workspace mirrors this list (member crates use `lints.workspace = true` and
+# bind to whichever workspace root a consumer resolves them against). Any lint
+# changed here must be mirrored in `core/Cargo.toml`.
 [workspace.lints.clippy]
 field_reassign_with_default = "allow"
 useless_vec = "allow"
