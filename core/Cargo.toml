@@ -48,6 +48,32 @@ uuid = { version = "1.0", features = ["v4"] }  # For proof certificate IDs
 proptest = "1.0"
 assert_cmd = "2.0"  # For CLI testing
 
+# Shared clippy lint policy. Mirrors the repo-root workspace so the member
+# crates (which declare `lints.workspace = true`) inherit the same policy no
+# matter which workspace root a consumer resolves them against. Without this,
+# resolving `aisp-core`/`aisp-cli` as a cross-repo git dependency binds them to
+# this nested workspace (the nearest ancestor `[workspace]`), and the missing
+# `workspace.lints` makes cargo skip them as malformed packages.
+[workspace.lints.clippy]
+field_reassign_with_default = "allow"
+useless_vec = "allow"
+vec_init_then_push = "allow"
+empty_line_after_doc_comments = "allow"
+large_enum_variant = "allow"
+result_large_err = "allow"
+manual_strip = "allow"
+too_many_arguments = "allow"
+manual_ok_err = "allow"
+new_ret_no_self = "allow"
+type_complexity = "allow"
+ptr_arg = "allow"
+format_in_format_args = "allow"
+cloned_ref_to_slice_refs = "allow"
+match_single_binding = "allow"
+arc_with_non_send_sync = "allow"
+single_match = "allow"
+wrong_self_convention = "allow"
+
 [profile.release]
 opt-level = 3
 lto = true
